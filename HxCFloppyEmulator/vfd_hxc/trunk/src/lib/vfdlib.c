@@ -106,7 +106,6 @@ BOOL WINAPI VfdIs64bits()
 BOOL WINAPI VfdIsValidPlatform()
 {
 	BOOL (WINAPI *pfnIsWow64Process)(HANDLE, PBOOL);
-	BOOL wow64;
 
 	if (GetVersion() & 0x80000000) {
 		return FALSE;		// doesn't work on Win9x
