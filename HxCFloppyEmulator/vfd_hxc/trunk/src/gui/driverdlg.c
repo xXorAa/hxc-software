@@ -49,7 +49,7 @@
 
 //	Fallback text string
 
-#define FALLBACK_DRIVER_FILTER	"VFD Driver (vfd.sys)\0vfd.sys\0"
+#define FALLBACK_DRIVER_FILTER	"VFD Driver (vfd.sys)\0vfd*.sys\0"
 #define FALLBACK_DRIVER_TITLE	"VFD Driver"
 
 #define FALLBACK_CONFIRM_STOP					\
@@ -170,7 +170,10 @@ void OnInitDialog(HWND hDlg)
 	//	prepare default driver path
 
 	memcpy(buf, sAppPath, pAppBase - sAppPath);
-	strcpy(&buf[pAppBase - sAppPath], VFD_DRIVER_FILENAME);
+	if(!VfdIs64bits())
+		strcpy(&buf[pAppBase - sAppPath], VFD_DRIVER_FILENAME);
+	else
+		strcpy(&buf[pAppBase - sAppPath], VFD_DRIVER_FILENAME64);
 
 	SetDlgItemText(hDlg, IDC_DRIVER_PATH, buf);
 
