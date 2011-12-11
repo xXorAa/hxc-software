@@ -1,24 +1,24 @@
 # Microsoft Developer Studio Project File - Name="gui" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
-# ** 編集しないでください **
+# ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Application" 0x0101
 
 CFG=gui - Win32 Debug
-!MESSAGE これは有効なﾒｲｸﾌｧｲﾙではありません。 このﾌﾟﾛｼﾞｪｸﾄをﾋﾞﾙﾄﾞするためには NMAKE を使用してください。
-!MESSAGE [ﾒｲｸﾌｧｲﾙのｴｸｽﾎﾟｰﾄ] ｺﾏﾝﾄﾞを使用して実行してください
+!MESSAGE This is not a valid makefile. To build this project using NMAKE,
+!MESSAGE use the Export Makefile command and run
 !MESSAGE 
 !MESSAGE NMAKE /f "vfdwin.mak".
 !MESSAGE 
-!MESSAGE NMAKE の実行時に構成を指定できます
-!MESSAGE ｺﾏﾝﾄﾞ ﾗｲﾝ上でﾏｸﾛの設定を定義します。例:
+!MESSAGE You can specify a configuration when running NMAKE
+!MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
 !MESSAGE NMAKE /f "vfdwin.mak" CFG="gui - Win32 Debug"
 !MESSAGE 
-!MESSAGE 選択可能なﾋﾞﾙﾄﾞ ﾓｰﾄﾞ:
+!MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "gui - Win32 Release" ("Win32 (x86) Application" 用)
-!MESSAGE "gui - Win32 Debug" ("Win32 (x86) Application" 用)
+!MESSAGE "gui - Win32 Release" (based on "Win32 (x86) Application")
+!MESSAGE "gui - Win32 Debug" (based on "Win32 (x86) Application")
 !MESSAGE 
 
 # Begin Project
@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MD /W3 /GX /O2 /I "../inc" /D "NDEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D _WIN32_WINNT=0x500 /FD /c
+# ADD CPP /nologo /MD /W3 /GX /O2 /I "../inc" /D "NDEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D _WIN32_WINNT=0x500 /FR /FD /c
 # SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -77,7 +77,7 @@ PostBuild_Cmds=xcopy $(TargetPath) ..\$(OutDir)\ /y /d /f
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W4 /Gm /GX /Zi /Od /I "../inc" /D "_DEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D _WIN32_WINNT=0x500 /FD /GZ /c
+# ADD CPP /nologo /MTd /W4 /Gm /GX /Zi /Od /I "../inc" /D "_DEBUG" /D "_WINDOWS" /D "WIN32" /D "_MBCS" /D _WIN32_WINNT=0x500 /FR /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x400 /d "_DEBUG"

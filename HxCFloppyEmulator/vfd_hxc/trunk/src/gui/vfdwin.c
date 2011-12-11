@@ -303,10 +303,10 @@ void CommandLine()
 			strcmp(*__argv, "/1.72") == 0) {
 			media_type = VFD_MEDIA_F3_1P7;
 		}
-		else if (strcmp(*__argv, "/288") == 0 ||
+/*		else if (strcmp(*__argv, "/288") == 0 ||
 			strcmp(*__argv, "/2.88") == 0) {
 			media_type = VFD_MEDIA_F3_2P8;
-		}
+		}*/
 
 		//	5.25 inch
 		else if (strcmp(*__argv, "/5") == 0 ||
@@ -460,6 +460,14 @@ void CommandLine()
 			ULONG		media_size;
 			VFD_MEDIA	def_media;
 
+			if(media_type==VFD_MEDIA_NONE)
+			{
+				while(media_type!=VFD_MEDIA_MAX) && (image_size!=VfdGetMediaSize(media_type)))
+				{
+					media_type++;
+				}
+			}
+				
 			media_size = VfdGetMediaSize(media_type);
 
 			if (media_size > image_size) {
@@ -482,7 +490,7 @@ void CommandLine()
 
 			//	check file type
 
-			if (file_type == VFD_FILETYPE_ZIP ||
+			if (file_type == VFD_FILETYPE_ZIP || file_type == VFD_FILETYPE_HFE ||
 				(file_attr & (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ENCRYPTED))) {
 				disk_type = VFD_DISKTYPE_RAM;
 			}
@@ -494,7 +502,7 @@ void CommandLine()
 
 		if (disk_type != VFD_DISKTYPE_FILE) {
 			if (protect != 'W') {
-				protect = 'P';
+			//	protect = 'P';
 			}
 		}
 	}

@@ -771,10 +771,10 @@ VFD ドライバ%0
 MessageId=
 SymbolicName=MSG_DRIVER_OPEN_FILTER
 Language=English
-VFD Driver (vfd.sys)|vfd.sys|%0
+VFD Driver (vfd.sys)|vfd*.sys|%0
 .
 Language=Japanese
-VFD ドライバ (vfd.sys)|vfd.sys|%0
+VFD ドライバ (vfd.sys)|vfd*.sys|%0
 .
 
 MessageId=

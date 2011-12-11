@@ -39,7 +39,7 @@ enum _VFD_MEDIA
 	VFD_MEDIA_F3_1P4,				//	3.5"	1.44MB
 	VFD_MEDIA_F3_1P6,				//	3.5"	1.68MB DMF
 	VFD_MEDIA_F3_1P7,				//	3.5"	1.72MB DMF
-	VFD_MEDIA_F3_2P8,				//	3.5"	2.88MB
+//	VFD_MEDIA_F3_2P8,				//	3.5"	2.88MB
 	VFD_MEDIA_MAX					//	max value placeholder
 };
 
@@ -51,6 +51,7 @@ enum _VFD_FILETYPE
 	VFD_FILETYPE_NONE = 0,			//	no file
 	VFD_FILETYPE_RAW,				//	RAW image file
 	VFD_FILETYPE_ZIP,				//	ZIP compressed image
+	VFD_FILETYPE_HFE,
 	VFD_FILETYPE_MAX				//	max value place holder
 };
 

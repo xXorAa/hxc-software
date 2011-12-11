@@ -206,6 +206,7 @@ CHAR WINAPI VfdChooseLetter();
 //	Check running platform
 
 BOOL WINAPI VfdIsValidPlatform();
+BOOL WINAPI VfdIs64bits();
 
 //	Get VFD notification message value
 

@@ -17,6 +17,7 @@
 
 //  driver file version information
 #define VFD_DRIVER_FILENAME         "vfd.sys"
+#define VFD_DRIVER_FILENAME64       "vfd_x64.sys"
 #define VFD_DRIVER_MAJOR            2
 #define VFD_DRIVER_MINOR            1
 
