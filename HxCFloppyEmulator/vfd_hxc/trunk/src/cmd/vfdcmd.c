@@ -1482,7 +1482,7 @@ int	Open(const char **args)
 
 		//	check file attributes against the disk type
 
-		if (file_type == VFD_FILETYPE_ZIP ||
+		if (file_type == VFD_FILETYPE_ZIP || file_type == VFD_FILETYPE_HFE ||
 			(file_attr & (FILE_ATTRIBUTE_READONLY | FILE_ATTRIBUTE_COMPRESSED | FILE_ATTRIBUTE_ENCRYPTED))) {
 
 			if (disk_type != VFD_DISKTYPE_RAM) {

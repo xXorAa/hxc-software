@@ -440,6 +440,14 @@ void UpdateList(HWND hDlg)
 			GetSystemMessage(ret)));
 	}
 
+	if ((ret = GetAssociatedProgram(".hfe", prog)) == ERROR_SUCCESS) {
+		AddItem(hList, ".hfe", prog);
+	}
+	else {
+		VFDTRACE(0,("UpdateList : GetAssociatedProgram(\".hfe\") - %s",
+			GetSystemMessage(ret)));
+	}
+
 	//
 	//	Search registry for other extensions associated with VfdWin
 	//
