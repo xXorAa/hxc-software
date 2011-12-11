@@ -29,6 +29,7 @@
 //
 
 #define FALLBACK_IMAGE_FILTER	\
+	"SD HxC Floppy Emulator image (hfe)\0*.hfe\0" \
 	"Common image files (bin,dat,fdd,flp,ima,img,vfd)\0" \
 	"*.bin;*.dat;*.fdd;*.flp;*.ima;*.img;*.vfd\0" \
 	"Zip compressed image (imz,zip)\0*.imz;*.zip\0" \
