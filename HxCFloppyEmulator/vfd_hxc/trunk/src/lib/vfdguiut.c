@@ -147,14 +147,17 @@ DWORD WINAPI VfdGuiClose(
 		PSTR msg = ModuleMessage(MSG_MEDIA_MODIFIED);
 
 		for (;;) {
-			reply = MessageBox(hParent, msg ? msg : "save?",
-				VFD_MSGBOX_TITLE, MB_ICONQUESTION | MB_YESNOCANCEL);
+			if (VfdSaveImage(param.hDevice, path, TRUE,FALSE) != ERROR_SUCCESS) {
 
-			if (reply != IDYES) {
-				break;
+				reply = MessageBox(hParent, "Image Save Error ! Retry ?",
+				VFD_MSGBOX_TITLE, MB_ICONERROR | MB_YESNOCANCEL);
+
+				if (reply != IDYES) {
+					break;
+				}
 			}
-
-			if (GuiSaveParam(hParent, &param) == ERROR_SUCCESS) {
+			else
+			{
 				break;
 			}
 		}
