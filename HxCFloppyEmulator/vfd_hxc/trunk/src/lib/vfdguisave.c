@@ -76,7 +76,21 @@ DWORD WINAPI VfdGuiSave(
 
 		//	show dialog box
 
-		ret = GuiSaveParam(hParent, &param);
+		if(path)
+		{
+			if(strlen(path))
+			{
+				ret = VfdSaveImage(param.hDevice, path, TRUE,FALSE);
+			}
+			else
+			{
+				ret = GuiSaveParam(hParent, &param);
+			}
+		}
+		else
+		{
+			ret = GuiSaveParam(hParent, &param);
+		}
 	}
 
 	//	close the source device
@@ -483,7 +497,7 @@ retry:
 
 		int reply = MessageBox(
 			hDlg, msg ? msg : "retry", VFD_MSGBOX_TITLE,
-			MB_ICONEXCLAMATION | MB_CANCELTRYCONTINUE);
+			MB_ICONEXCLAMATION | MB_ABORTRETRYIGNORE);
 
 		if (msg) {
 			LocalFree(msg);
