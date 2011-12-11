@@ -462,7 +462,7 @@ void CommandLine()
 
 			if(media_type==VFD_MEDIA_NONE)
 			{
-				while(media_type!=VFD_MEDIA_MAX) && (image_size!=VfdGetMediaSize(media_type)))
+				while((media_type!=VFD_MEDIA_MAX) && (image_size!=VfdGetMediaSize(media_type)))
 				{
 					media_type++;
 				}

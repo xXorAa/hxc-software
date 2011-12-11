@@ -1253,7 +1253,7 @@ int	Open(const char **args)
 
 			media_type = VFD_MEDIA_F3_1P7;
 		}
-		else if (strcmp(*args, "/288") == 0 ||
+	/*	else if (strcmp(*args, "/288") == 0 ||
 			strcmp(*args, "/2.88") == 0) {
 			if (media_type) {
 				PrintMessage(MSG_DUPLICATE_ARGS, *args);
@@ -1261,7 +1261,7 @@ int	Open(const char **args)
 			}
 
 			media_type = VFD_MEDIA_F3_2P8;
-		}
+		}*/
 
 		//	5.25 inch media
 
