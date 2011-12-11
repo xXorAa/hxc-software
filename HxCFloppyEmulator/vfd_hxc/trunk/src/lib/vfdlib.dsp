@@ -1,24 +1,24 @@
 # Microsoft Developer Studio Project File - Name="lib" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
-# ** 編集しないでください **
+# ** DO NOT EDIT **
 
 # TARGTYPE "Win32 (x86) Dynamic-Link Library" 0x0102
 
 CFG=lib - Win32 Debug
-!MESSAGE これは有効なﾒｲｸﾌｧｲﾙではありません。 このﾌﾟﾛｼﾞｪｸﾄをﾋﾞﾙﾄﾞするためには NMAKE を使用してください。
-!MESSAGE [ﾒｲｸﾌｧｲﾙのｴｸｽﾎﾟｰﾄ] ｺﾏﾝﾄﾞを使用して実行してください
+!MESSAGE This is not a valid makefile. To build this project using NMAKE,
+!MESSAGE use the Export Makefile command and run
 !MESSAGE 
 !MESSAGE NMAKE /f "vfdlib.mak".
 !MESSAGE 
-!MESSAGE NMAKE の実行時に構成を指定できます
-!MESSAGE ｺﾏﾝﾄﾞ ﾗｲﾝ上でﾏｸﾛの設定を定義します。例:
+!MESSAGE You can specify a configuration when running NMAKE
+!MESSAGE by defining the macro CFG on the command line. For example:
 !MESSAGE 
 !MESSAGE NMAKE /f "vfdlib.mak" CFG="lib - Win32 Debug"
 !MESSAGE 
-!MESSAGE 選択可能なﾋﾞﾙﾄﾞ ﾓｰﾄﾞ:
+!MESSAGE Possible choices for configuration are:
 !MESSAGE 
-!MESSAGE "lib - Win32 Release" ("Win32 (x86) Dynamic-Link Library" 用)
-!MESSAGE "lib - Win32 Debug" ("Win32 (x86) Dynamic-Link Library" 用)
+!MESSAGE "lib - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
+!MESSAGE "lib - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE 
 
 # Begin Project
@@ -43,7 +43,7 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MT /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIB_EXPORTS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /GX /O2 /I "../inc" /I "../zlib" /D "NDEBUG" /D "_WINDOWS" /D "WIN32" /D "_USRDLL" /D "LIB_EXPORTS" /D "_MBCS" /D _WIN32_WINNT=0x500 /FD /c
+# ADD CPP /nologo /MT /W3 /GX /O2 /I "../inc" /I "../zlib" /I "../libhxcfe" /D "NDEBUG" /D "_WINDOWS" /D "WIN32" /D "_USRDLL" /D "LIB_EXPORTS" /D "_MBCS" /D _WIN32_WINNT=0x500 /FR /FD /c
 # SUBTRACT CPP /YX
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
@@ -54,7 +54,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
-# ADD LINK32 zlibstat.lib version.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib ole32.lib shell32.lib user32.lib /nologo /version:2.1 /dll /pdb:none /machine:I386 /nodefaultlib:"libc" /out:"Release/vfd.dll" /libpath:"../zlib" /release
+# ADD LINK32 zlibstat.lib version.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib ole32.lib shell32.lib user32.lib ../libhxcfe/libhxcfe.lib /nologo /version:2.1 /dll /pdb:none /machine:I386 /nodefaultlib:"libc" /out:"Release/vfd.dll" /libpath:"../zlib" /release
 # Begin Special Build Tool
 OutDir=.\Release
 TargetPath=.\Release\vfd.dll
@@ -77,7 +77,7 @@ PostBuild_Cmds=xcopy $(TargetPath) ..\$(OutDir)\ /y /d /f
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /MTd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "LIB_EXPORTS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W4 /Gm /GX /Zi /Od /I "../inc" /I "../zlib" /D "_DEBUG" /D "_WINDOWS" /D "WIN32" /D "_USRDLL" /D "LIB_EXPORTS" /D "_MBCS" /D _WIN32_WINNT=0x500 /FD /GZ /c
+# ADD CPP /nologo /MTd /W4 /Gm /GX /Zi /Od /I "../inc" /I "../zlib" /I "../libhxcfe" /D "_DEBUG" /D "_WINDOWS" /D "WIN32" /D "_USRDLL" /D "LIB_EXPORTS" /D "_MBCS" /D _WIN32_WINNT=0x500 /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x400 /d "_DEBUG"
@@ -87,7 +87,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 zlibstat.lib psapi.lib version.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib ole32.lib shell32.lib user32.lib /nologo /dll /pdb:none /debug /machine:I386 /nodefaultlib:"libc" /out:"Debug/vfd.dll" /libpath:"../zlib"
+# ADD LINK32 zlibstat.lib version.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib ole32.lib shell32.lib user32.lib  ../libhxcfe/libhxcfe.lib /nologo /dll /pdb:none /debug /machine:I386 /nodefaultlib:"libc" /out:"Debug/vfd.dll" /libpath:"../zlib"
 # SUBTRACT LINK32 /verbose
 # Begin Special Build Tool
 OutDir=.\Debug

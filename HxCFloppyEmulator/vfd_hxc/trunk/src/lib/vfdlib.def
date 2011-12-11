@@ -82,3 +82,5 @@ EXPORTS
 	VfdImageTip
 
 	VfdIsValidPlatform
+	VfdIs64bits
+
