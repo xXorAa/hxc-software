@@ -636,10 +636,10 @@ ZIP 圧縮ファイルに上書き保存はできません。%0
 MessageId=
 SymbolicName=MSG_OPEN_FILTER
 Language=English
-Common image files (bin,dat,fdd,flp,ima,img,vfd)|*.bin;*.dat;*.fdd;*.flp;*.ima;*.img;*.vfd|ZIP Compressed Image (imz,zip)|*.imz;*.zip|All files (*.*)|*.*|%0
+SD HxC Floppy Emulator image (hfe)|*.hfe|Common image files (bin,dat,fdd,flp,ima,img,vfd)|*.bin;*.dat;*.fdd;*.flp;*.ima;*.img;*.vfd|ZIP Compressed Image (imz,zip)|*.imz;*.zip|All files (*.*)|*.*|%0
 .
 Language=Japanese
-一般的なイメージファイル (bin,dat,fdd,flp,ima,img,vfd)|*.bin;*.dat;*.fdd;*.flp;*.ima;*.img;*.vfd|ZIP圧縮イメージ (imz,zip)|*.imz;*.zip|すべてのファイル (*.*)|*.*|%0
+一般的なイメージファイル (bin,dat,fdd,flp,ima,img,vfd,hfe)|*.bin;*.dat;*.fdd;*.flp;*.ima;*.img;*.vfd;*.hfe|ZIP圧縮イメージ (imz,zip)|*.imz;*.zip|すべてのファイル (*.*)|*.*|%0
 .
 
 MessageId=
