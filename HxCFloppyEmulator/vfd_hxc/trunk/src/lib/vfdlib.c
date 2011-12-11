@@ -56,7 +56,7 @@ BOOL WINAPI DllMain(
 	UNREFERENCED_PARAMETER(lpReserved);
 
 	if (dwReason == DLL_PROCESS_ATTACH) {
-		VFDTRACE(0, ("DLL_PROCESS_ATTACH - %s\n", name));
+		//VFDTRACE(0, ("DLL_PROCESS_ATTACH - %s\n", name));
 
 		//	this DLL doesn't need DLL_THREAD_ATTACH and DLL_THREAD_DETACH
 		DisableThreadLibraryCalls(hInstance);
@@ -69,10 +69,35 @@ BOOL WINAPI DllMain(
 
 	}
 	else if (dwReason == DLL_PROCESS_DETACH) {
-		VFDTRACE(0, ("DLL_PROCESS_DETACH - %s\n", name));
+		//VFDTRACE(0, ("DLL_PROCESS_DETACH - %s\n", name));
 	}
 
 	return TRUE;
+}
+
+BOOL WINAPI VfdIs64bits()
+{
+	BOOL (WINAPI *pfnIsWow64Process)(HANDLE, PBOOL);
+	BOOL wow64;
+
+	if (GetVersion() & 0x80000000) {
+		return FALSE;		// doesn't work on Win9x
+	}
+
+	pfnIsWow64Process = (BOOL (WINAPI *)(HANDLE, PBOOL))
+		GetProcAddress(GetModuleHandle("kernel32.dll"), "IsWow64Process");
+
+	if (pfnIsWow64Process == NULL) {
+		return FALSE;		// NT4 or 2000 -- assured to be 32 bit
+	}
+
+	wow64 = FALSE;
+
+	if (!pfnIsWow64Process(GetCurrentProcess(), &wow64)) {
+		return FALSE;
+	}
+
+	return wow64;
 }
 
 //
@@ -94,13 +119,8 @@ BOOL WINAPI VfdIsValidPlatform()
 		return TRUE;		// NT4 or 2000 -- assured to be 32 bit
 	}
 
-	wow64 = FALSE;
 
-	if (!pfnIsWow64Process(GetCurrentProcess(), &wow64)) {
-		return FALSE;
-	}
-
-	return !wow64;
+	return TRUE;
 }
 
 //
