@@ -463,7 +463,7 @@ VfdQueryImage(
 	IN	PDEVICE_EXTENSION		DeviceExtension,
 	OUT	PVFD_IMAGE_INFO			ImageInfo,
 	IN	ULONG					BufferLength,
-	OUT	PULONG					ReturnLength)
+	OUT	ULONG_PTR*				ReturnLength)
 {
 	//	Check output buffer length
 
