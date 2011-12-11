@@ -27,6 +27,8 @@
 #include "vfdlib.h"
 #include "vfdver.h"
 
+#include "libhxcfe.h"
+
 #ifndef IOCTL_DISK_GET_LENGTH_INFO
 //	Old winioctl.h header doesn't define the following
 
@@ -59,6 +61,39 @@ extern ULONG TraceLine	= 0;
 //
 #define VFD_LINK_CREATED	0
 #define VFD_LINK_REMOVED	1
+
+//
+//	media type functions
+//
+static const struct
+{
+	ULONG	Size;
+	PCSTR	Name;
+	int number_of_track;
+	int number_of_side;
+	int number_of_sector;
+	int bitrate;
+}
+media_tbl[VFD_MEDIA_MAX] =
+{
+	{ 0,						"",0,0,0,250000},					//	VFD_MEDIA_NONE,
+	{ VFD_SECTOR_TO_BYTE(320),	"5.25\" 160KB",40,1,8,250000 },		//	VFD_MEDIA_F5_160
+	{ VFD_SECTOR_TO_BYTE(360),	"5.25\" 180KB",40,1,9,250000 },		//	VFD_MEDIA_F5_180
+	{ VFD_SECTOR_TO_BYTE(640),	"5.25\" 320KB",40,2,8,250000 },		//	VFD_MEDIA_F5_320
+	{ VFD_SECTOR_TO_BYTE(720),	"5.25\" 360KB",40,2,9,250000 },		//	VFD_MEDIA_F5_360
+	{ VFD_SECTOR_TO_BYTE(1280),	"3.5\"  640KB",80,2,8,250000 },		//	VFD_MEDIA_F3_640
+	{ VFD_SECTOR_TO_BYTE(1280),	"5.25\" 640KB",80,2,8,250000 },		//	VFD_MEDIA_F5_640
+	{ VFD_SECTOR_TO_BYTE(1440),	"3.5\"  720KB",80,2,9,250000 },		//	VFD_MEDIA_F3_720
+	{ VFD_SECTOR_TO_BYTE(1440),	"5.25\" 720KB",80,2,9,250000 },		//	VFD_MEDIA_F5_720
+	{ VFD_SECTOR_TO_BYTE(1640),	"3.5\"  820KB",82,2,10,250000 },		//	VFD_MEDIA_F3_820
+	{ VFD_SECTOR_TO_BYTE(2400),	"3.5\"	1.2MB",80,2,15,500000 },		//	VFD_MEDIA_F3_1P2
+	{ VFD_SECTOR_TO_BYTE(2400),	"5.25\" 1.2MB",80,2,15,500000 },		//	VFD_MEDIA_F5_1P2
+	{ VFD_SECTOR_TO_BYTE(2880),	"3.5\"  1.44MB",80,2,18,500000 },		//	VFD_MEDIA_F3_1P4
+	{ VFD_SECTOR_TO_BYTE(3360),	"3.5\"  1.68MB DMF",80,2,21,500000 },	//	VFD_MEDIA_F3_1P6
+	{ VFD_SECTOR_TO_BYTE(3444),	"3.5\"  1.72MB DMF",82,2,21,500000 },	//	VFD_MEDIA_F3_1P7
+	//{ VFD_SECTOR_TO_BYTE(5760),	"3.5\"  2.88MB",80,2,36,1000000}		//	VFD_MEDIA_F3_2P8
+};
+
 
 static void VfdBroadcastLink(
 	CHAR			cLetter,
@@ -297,7 +332,10 @@ DWORD WINAPI VfdInstallDriver(
 		//	supply the file name (vfd.sys)
 
 		file_name = &file_path[len];
-		strcpy(file_name, VFD_DRIVER_FILENAME);
+		if(!VfdIs64bits())
+			strcpy(file_name, VFD_DRIVER_FILENAME);
+		else
+			strcpy(file_name, VFD_DRIVER_FILENAME64);
 	}
 	else {
 
@@ -1281,6 +1319,12 @@ DWORD WINAPI VfdOpenImage(
 	PUCHAR			image_buf = NULL;
 	ULONG			image_size;
 	VFD_FILETYPE	file_type;
+	int i,fsize;
+
+	int side,track,nbsect,nbside,nbtrack;
+	HXCFLOPPYEMULATOR* hxcfe;
+	FLOPPY * fp;
+	SECTORSEARCH* ss;
 
 	//
 	//	Check parameters
@@ -1303,9 +1347,57 @@ DWORD WINAPI VfdOpenImage(
 
 	if (sFileName && *sFileName) {
 
+		HANDLE hFile;
+			
+		hxcfe=hxcfe_init();
+		hxcfe_select_container(hxcfe,"HXC_HFE");
+		fp=hxcfe_floppy_load(hxcfe,(char*)sFileName,0);
+		if(fp)
+		{
+			image_size=hxcfe_getfloppysize(hxcfe,fp,0);
+			image_buf=malloc(image_size);
+			nbsect=9;
+
+			i=0;
+			fsize=media_tbl[i].number_of_track*media_tbl[i].number_of_side*media_tbl[i].number_of_sector*512;
+			while((i<VFD_MEDIA_MAX) && ((unsigned int)fsize!=image_size))
+			{
+				i++;
+				fsize=media_tbl[i].number_of_track*media_tbl[i].number_of_side*media_tbl[i].number_of_sector*512;
+			}
+			
+			nbsect=media_tbl[i].number_of_sector;
+			nbtrack=media_tbl[i].number_of_track;
+			nbside=media_tbl[i].number_of_side;
+
+			ss=hxcfe_init_sectorsearch(hxcfe,fp);
+
+			for(track=0;track<hxcfe_getNumberOfTrack(hxcfe,fp);track++)
+			{
+				for(side=0;side<hxcfe_getNumberOfSide(hxcfe,fp);side++)
+				{
+					hxcfe_readsectordata(ss,track,side,1,nbsect,512,&image_buf[(512*nbsect)*((track*hxcfe_getNumberOfSide(hxcfe,fp))+side)]);
+				}
+			}
+			
+			
+			hxcfe_deinit_sectorsearch(ss);
+
+			hxcfe_floppy_unload(hxcfe,fp);
+
+			hxcfe_deinit(hxcfe);
+
+			file_type = VFD_FILETYPE_HFE;
+			
+			VfdWriteProtect(hDevice, FALSE);
+		}
+		else
+		{
+			hxcfe_deinit(hxcfe);
+
 		//	check file contents and attributes
 
-		HANDLE hFile = CreateFile(sFileName, GENERIC_READ,
+		hFile = CreateFile(sFileName, GENERIC_READ,
 			FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
 
 		if (hFile == INVALID_HANDLE_VALUE) {
@@ -1437,6 +1529,7 @@ DWORD WINAPI VfdOpenImage(
 
 		CloseHandle(hFile);
 
+		}
 		//	Prepare absolute path in the kernel namespace
 
 		if (*sFileName == '\\' && *(sFileName + 1) == '\\') {
@@ -1545,7 +1638,7 @@ DWORD WINAPI VfdOpenImage(
 	if (nDiskType != VFD_DISKTYPE_FILE) {
 		//	protect flag for a RAM disk is set after
 		//	initializing the image buffer
-		image_info->MediaFlags &= ~VFD_FLAG_WRITE_PROTECTED;
+		//image_info->MediaFlags &= ~VFD_FLAG_WRITE_PROTECTED;
 	}
 
 	VFDTRACE(0,
@@ -2659,7 +2752,13 @@ DWORD WINAPI VfdSaveImage(
 	DWORD			ret = ERROR_SUCCESS;
 	PUCHAR			buf = NULL;
 	GET_LENGTH_INFORMATION	length;
-
+	int fpparam;
+	int side,track,nbsect,nbtrack,nbside,sector;
+	HXCFLOPPYEMULATOR* hxcfe;
+	FLOPPY * fp,*fp2;
+	int image_size;
+	FBuilder* fb;
+	int i,fsize;
 
 	ret = ERROR_SUCCESS;
 
@@ -2725,6 +2824,128 @@ DWORD WINAPI VfdSaveImage(
 
 	//	open the destination file
 
+	hxcfe=hxcfe_init();
+	hxcfe_select_container(hxcfe,"HXC_HFE");
+	fp=hxcfe_floppy_load(hxcfe,(char*)sFileName,0);
+	image_size=length.Length.LowPart;
+	if(fp)
+	{
+		i=0;
+		fsize=media_tbl[i].number_of_track*media_tbl[i].number_of_side*media_tbl[i].number_of_sector*512;
+		while((i<VFD_MEDIA_MAX) && (fsize!=image_size))
+		{
+			i++;
+			fsize=media_tbl[i].number_of_track*media_tbl[i].number_of_side*media_tbl[i].number_of_sector*512;
+		}	
+		nbsect=media_tbl[i].number_of_sector;
+		nbtrack=media_tbl[i].number_of_track;
+		nbside=media_tbl[i].number_of_side;
+
+		fb=hxcfe_init_floppy(hxcfe,nbtrack,nbside);
+
+		hxcfe_setTrackBitrate(fb,media_tbl[i].bitrate);
+
+		hxcfe_setSectorGap3(fb,255);
+		hxcfe_setSectorEncoding(fb,IBMFORMAT_DD);
+
+		for(track=0;track<nbtrack;track++)
+		{
+			for(side=0;side<nbside;side++)
+			{
+				hxcfe_pushTrack (fb,300,track,side,IBMFORMAT_DD);
+				for(sector=0;sector<nbsect;sector++)
+				{
+					hxcfe_addSector(fb,1+sector,side,track,&buf[((512*nbsect)*((track*nbside)+side))+(sector*512)],512);
+				}
+				hxcfe_popTrack (fb);
+			}
+		}
+			
+		fp2=hxcfe_get_floppy(fb);
+
+		hxcfe_floppy_getset_params(hxcfe,fp ,GET,INTERFACEMODE,&fpparam);
+		hxcfe_floppy_getset_params(hxcfe,fp2,SET,INTERFACEMODE,&fpparam);
+
+		hxcfe_floppy_getset_params(hxcfe,fp ,GET,DOUBLESTEP,&fpparam);
+		hxcfe_floppy_getset_params(hxcfe,fp2,SET,DOUBLESTEP,&fpparam);
+
+		hxcfe_floppy_export(hxcfe,fp2,(char*)sFileName);
+
+		hxcfe_floppy_unload(hxcfe,fp2);
+		hxcfe_floppy_unload(hxcfe,fp);
+
+		hxcfe_deinit(hxcfe);
+	}
+	else
+	{
+
+	if(strstr((char*)sFileName,".hfe") || strstr((char*)sFileName,".HFE"))
+	{
+
+		hxcfe=hxcfe_init();
+		
+		image_size=length.Length.LowPart;
+		if(hxcfe)
+		{		
+			hxcfe_select_container(hxcfe,"HXC_HFE");
+
+			i=0;
+			fsize=media_tbl[i].number_of_track*media_tbl[i].number_of_side*media_tbl[i].number_of_sector*512;
+			while((i<=VFD_MEDIA_MAX) && (fsize!=image_size))
+			{
+				i++;
+				fsize=media_tbl[i].number_of_track*media_tbl[i].number_of_side*media_tbl[i].number_of_sector*512;
+			}
+
+			nbsect=media_tbl[i].number_of_sector;
+			nbtrack=media_tbl[i].number_of_track;
+			nbside=media_tbl[i].number_of_side;
+
+			fb=hxcfe_init_floppy(hxcfe,nbtrack,nbside);
+
+			hxcfe_setTrackBitrate(fb,media_tbl[i].bitrate);
+
+			hxcfe_setSectorGap3(fb,255);
+			hxcfe_setSectorEncoding(fb,IBMFORMAT_DD);
+
+			for(track=0;track<nbtrack;track++)
+			{
+				for(side=0;side<nbside;side++)
+				{
+					hxcfe_pushTrack (fb,300,track,side,IBMFORMAT_DD);
+					for(sector=0;sector<nbsect;sector++)
+					{
+						hxcfe_addSector(fb,1+sector,side,track,&buf[((512*nbsect)*((track*nbside)+side))+(sector*512)],512);
+					}
+					hxcfe_popTrack (fb);
+				}
+			}
+
+
+			fp2=hxcfe_get_floppy(fb);
+
+			fpparam=IBMPC_DD_FLOPPYMODE;
+			if(media_tbl[i].bitrate>350000)
+				fpparam=IBMPC_HD_FLOPPYMODE;
+
+			hxcfe_floppy_getset_params(hxcfe,fp2,SET,INTERFACEMODE,&fpparam);
+
+			fpparam=0;
+			hxcfe_floppy_getset_params(hxcfe,fp2,SET,DOUBLESTEP,&fpparam);
+
+			hxcfe_floppy_export(hxcfe,fp2,(char*)sFileName);
+
+			hxcfe_floppy_unload(hxcfe,fp2);
+
+			hxcfe_deinit(hxcfe);
+
+		}
+
+
+	}
+	else
+	{
+
 	hFile = CreateFile(sFileName, GENERIC_WRITE, 0, NULL,
 		bOverWrite ? OPEN_ALWAYS : CREATE_NEW, 0, NULL);
 
@@ -2775,6 +2996,8 @@ DWORD WINAPI VfdSaveImage(
 		goto exit_func;
 	}
 
+	}
+	}
 	//	reset the media modified flag
 
 	if (!DeviceIoControl(
@@ -3005,6 +3228,8 @@ DWORD WINAPI VfdCheckImageFile(
 #undef	FUNC
 #define FUNC		"VfdCheckImageFile"
 	HANDLE			hFile;
+	HXCFLOPPYEMULATOR* hxcfe;
+	FLOPPY * fp;
 	DWORD			ret = ERROR_SUCCESS;
 
 	if (!sFileName || !*sFileName || !pAttributes || !pImageSize || !pFileType) {
@@ -3028,6 +3253,21 @@ DWORD WINAPI VfdCheckImageFile(
 	}
 
 	//	Open the target file
+
+	hxcfe=hxcfe_init();
+	hxcfe_select_container(hxcfe,"HXC_HFE");
+	fp=hxcfe_floppy_load(hxcfe,(char*)sFileName,0);
+	if(fp)
+	{
+		*pImageSize=hxcfe_getfloppysize(hxcfe,fp,0);
+		*pFileType = VFD_FILETYPE_HFE;
+		
+		hxcfe_deinit(hxcfe);
+	}
+	else
+	{
+
+	hxcfe_deinit(hxcfe);
 
 	hFile = CreateFile(sFileName, GENERIC_READ | GENERIC_WRITE,
 		0, NULL, OPEN_EXISTING, 0, NULL);
@@ -3080,7 +3320,7 @@ DWORD WINAPI VfdCheckImageFile(
 	}
 
 	CloseHandle(hFile);
-
+	}
 	return ret;
 }
 
@@ -3187,33 +3427,6 @@ CHAR WINAPI VfdChooseLetter()
 	return drive_letter;
 }
 
-//
-//	media type functions
-//
-static const struct
-{
-	ULONG	Size;
-	PCSTR	Name;
-}
-media_tbl[VFD_MEDIA_MAX] =
-{
-	{ 0,						"" },					//	VFD_MEDIA_NONE,
-	{ VFD_SECTOR_TO_BYTE(320),	"5.25\" 160KB" },		//	VFD_MEDIA_F5_160
-	{ VFD_SECTOR_TO_BYTE(360),	"5.25\" 180KB" },		//	VFD_MEDIA_F5_180
-	{ VFD_SECTOR_TO_BYTE(640),	"5.25\" 320KB" },		//	VFD_MEDIA_F5_320
-	{ VFD_SECTOR_TO_BYTE(720),	"5.25\" 360KB" },		//	VFD_MEDIA_F5_360
-	{ VFD_SECTOR_TO_BYTE(1280),	"3.5\"  640KB" },		//	VFD_MEDIA_F3_640
-	{ VFD_SECTOR_TO_BYTE(1280),	"5.25\" 640KB" },		//	VFD_MEDIA_F5_640
-	{ VFD_SECTOR_TO_BYTE(1440),	"3.5\"  720KB" },		//	VFD_MEDIA_F3_720
-	{ VFD_SECTOR_TO_BYTE(1440),	"5.25\" 720KB" },		//	VFD_MEDIA_F5_720
-	{ VFD_SECTOR_TO_BYTE(1640),	"3.5\"  820KB" },		//	VFD_MEDIA_F3_820
-	{ VFD_SECTOR_TO_BYTE(2400),	"3.5\"	1.2MB" },		//	VFD_MEDIA_F3_1P2
-	{ VFD_SECTOR_TO_BYTE(2400),	"5.25\" 1.2MB" },		//	VFD_MEDIA_F5_1P2
-	{ VFD_SECTOR_TO_BYTE(2880),	"3.5\"  1.44MB" },		//	VFD_MEDIA_F3_1P4
-	{ VFD_SECTOR_TO_BYTE(3360),	"3.5\"  1.68MB DMF" },	//	VFD_MEDIA_F3_1P6
-	{ VFD_SECTOR_TO_BYTE(3444),	"3.5\"  1.72MB DMF" },	//	VFD_MEDIA_F3_1P7
-	{ VFD_SECTOR_TO_BYTE(5760),	"3.5\"  2.88MB"}		//	VFD_MEDIA_F3_2P8
-};
 
 //	Lookup the largest media to fit in a size
 
