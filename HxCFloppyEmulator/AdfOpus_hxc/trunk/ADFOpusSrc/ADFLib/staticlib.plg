@@ -1,0 +1,71 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: staticlib - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\Jeff\LOCALS~1\Temp\RSP4529.tmp" with contents
+[
+/nologo /MT /W3 /GX /O2 /I "Lib/Win32" /D "WIN32" /D "NDEBUG" /D "LITT_ENDIAN" /Fp"Release/staticlib.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_bitm.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_cache.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_dir.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_disk.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_dump.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_env.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_file.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_hd.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_link.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\Win32\adf_nativ.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_raw.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_salv.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\adf_util.c"
+"C:\Program Files\ADFOpusSrc\ADFLib\Lib\Win32\nt4_dev.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\Jeff\LOCALS~1\Temp\RSP4529.tmp" 
+Creating temporary file "C:\DOCUME~1\Jeff\LOCALS~1\Temp\RSP452A.tmp" with contents
+[
+/nologo /out:"Bin\Win32\Release\adflibs.lib" 
+".\Release\adf_bitm.obj"
+".\Release\adf_cache.obj"
+".\Release\adf_dir.obj"
+".\Release\adf_disk.obj"
+".\Release\adf_dump.obj"
+".\Release\adf_env.obj"
+".\Release\adf_file.obj"
+".\Release\adf_hd.obj"
+".\Release\adf_link.obj"
+".\Release\adf_nativ.obj"
+".\Release\adf_raw.obj"
+".\Release\adf_salv.obj"
+".\Release\adf_util.obj"
+".\Release\nt4_dev.obj"
+]
+Creating command line "link.exe -lib @C:\DOCUME~1\Jeff\LOCALS~1\Temp\RSP452A.tmp"
+<h3>Output Window</h3>
+Compiling...
+adf_bitm.c
+adf_cache.c
+adf_dir.c
+adf_disk.c
+adf_dump.c
+adf_env.c
+adf_file.c
+adf_hd.c
+adf_link.c
+adf_nativ.c
+adf_raw.c
+adf_salv.c
+adf_util.c
+nt4_dev.c
+Creating library...
+
+
+
+<h3>Results</h3>
+adflibs.lib - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>
