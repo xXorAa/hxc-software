@@ -22,11 +22,12 @@ int	RegisterFileTypes(void)
 {
 	// Array of strings describing Opus file types:
 	// "file type key", "file type target key", "Description", "Icon index within AdfOpus.exe".
-	char	*KeyArray[20] = {".adf", "ADFOpus.adf", "Amiga Disk File",			  "12",
+	char	*KeyArray[24] = {".adf", "ADFOpus.adf", "Amiga Disk File",			  "12",
 							 ".adz", "ADFOpus.adz", "GZipped Amiga Disk File",	  "13",
 							 ".dms", "ADFOpus.dms", "DiskMashed Amiga Disk File", "14",
 							 ".hdf", "ADFOpus.hdf",	"Amiga Hard Disk File",		  "15",
-							 ".dmp", "ADFOpus.dmp", "Amiga Hard Disk Dump File",  "16"};
+							 ".dmp", "ADFOpus.dmp", "Amiga Hard Disk Dump File",  "16",
+							 ".hfe", "ADFOpus.hfe", "HFE Amiga Disk File",  "12"};
 	int			iNumKeys = 20;
 	int			i;
 	char		szError[100];

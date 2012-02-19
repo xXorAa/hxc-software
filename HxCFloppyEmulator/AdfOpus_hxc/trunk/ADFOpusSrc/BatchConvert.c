@@ -118,7 +118,7 @@ void BCAddFiles(HWND dlg)
 	ofn.hwndOwner = dlg;
 	ofn.hInstance = NULL;
 	// Filter indices are adf:1, dms:2, adz:3.
-	ofn.lpstrFilter = "Amiga Disk Files (*.adf)\0*.adf\0Compressed Disk Files (*.adz)\0*.adz\0Diskmasher Files (*.dms)\0*.dms\0\0";
+	ofn.lpstrFilter = "Amiga Disk Files (*.adf)\0*.adf\0Compressed Disk Files (*.adz)\0*.adz\0Diskmasher Files (*.dms)\0*.dms\0HxC Floppy Emulator HFE Files (*.hfe)\0*.hfe\0\0";
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.lpstrFile = strOFNFileNames;

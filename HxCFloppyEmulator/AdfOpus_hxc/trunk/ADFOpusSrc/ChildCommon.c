@@ -27,6 +27,7 @@
 #include "xDMS.h"
 #include "BatchConvert.h"
 #include "zLib.h"
+#include "libhxcfe.h"
 
 
 extern HIMAGELIST ghwndImageList;
@@ -299,6 +300,9 @@ void ChildOnDestroy(HWND win)
 {
 	CHILDINFO	*ci = (CHILDINFO *)GetWindowLong(win, 0);
 
+	HXCFLOPPYEMULATOR* hxcfe;
+	FLOPPY * fp;
+
 	/* unmount volume and device if this an amiga lister */
 ///////////////////////FIXME - to allow for multiple views, etc.
 
@@ -317,6 +321,27 @@ void ChildOnDestroy(HWND win)
 		GZCompress(NULL, ci->temp_path, ci->orig_path);
 		remove(ci->temp_path);
 	}
+
+	if(ci->dfDisk == HFE){
+		//GZCompress(NULL, ci->temp_path, ci->orig_path);
+
+		hxcfe=hxcfe_init();
+		hxcfe_selectContainer(hxcfe,"AMIGA_ADF");
+		fp=hxcfe_floppyLoad(hxcfe,(char*)ci->temp_path,0);
+		if(fp)
+		{
+			hxcfe_selectContainer(hxcfe,"HXC_HFE");
+
+			hxcfe_floppyExport(hxcfe,fp,(char*)ci->orig_path);
+
+			hxcfe_floppyUnload(hxcfe,fp);
+
+			hxcfe_deinit(hxcfe);
+		}
+
+		remove(ci->temp_path);
+	}
+
 
 	// Disable properties menu item and toolbar button, in case they've been left active.
 	hMenu = GetMenu(ghwndFrame);

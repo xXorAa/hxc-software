@@ -46,7 +46,7 @@ BOOL OpenDlg(HWND hwndOwner)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = hwndOwner;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "All supported types\0*.adf;*.adz;*.dms;*.hdf;*.dmp\0Amiga Disk Files (*.adf)\0*.adf\0Compressed Disk Files (*.adz)\0*.adz\0Diskmasher Files (*.dms)\0*.dms\0Hard Disk Files (*.hdf)\0*.hdf\0Device Dump Files (*.dmp)\0*.dmp\0All Files (*.*)\0*.*\0\0";
+	ofn.lpstrFilter = "All supported types\0*.adf;*.adz;*.dms;*.hdf;*.dmp;*.hfe\0Amiga Disk Files (*.adf)\0*.adf\0Compressed Disk Files (*.adz)\0*.adz\0Diskmasher Files (*.dms)\0*.dms\0Hard Disk Files (*.hdf)\0*.hdf\0Device Dump Files (*.dmp)\0*.dmp\0HxC Floppy Emulator HFE Files (*.hfe)\0*.hfe\0All Files (*.*)\0*.*\0\0";
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.lpstrFile = gstrFileName;
