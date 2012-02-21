@@ -126,17 +126,20 @@ void InitAboutBox(HWND dlg)
 	TabCtrl_InsertItem(ai->tabControl, 2, &tie);
 	tie.pszText = "ZLib";
 	TabCtrl_InsertItem(ai->tabControl, 3, &tie);
-	tie.pszText = "Credits";
+	tie.pszText = "hxcfelib";
 	TabCtrl_InsertItem(ai->tabControl, 4, &tie);
-	tie.pszText = "Greets";
+	tie.pszText = "Credits";
 	TabCtrl_InsertItem(ai->tabControl, 5, &tie);
+	tie.pszText = "Greets";
+	TabCtrl_InsertItem(ai->tabControl, 6, &tie);
 
 	ai->pages[0] = CreateDialog(instance, MAKEINTRESOURCE(IDD_ABOUTPAGE1), ai->tabControl, AboutChildDlgProc);
 	ai->pages[1] = CreateDialog(instance, MAKEINTRESOURCE(IDD_ABOUTPAGE4), ai->tabControl, AboutChildDlgProc);
 	ai->pages[2] = CreateDialog(instance, MAKEINTRESOURCE(IDD_ABOUTPAGE6), ai->tabControl, AboutChildDlgProc);
 	ai->pages[3] = CreateDialog(instance, MAKEINTRESOURCE(IDD_ABOUTPAGE5), ai->tabControl, AboutChildDlgProc);
-	ai->pages[4] = CreateDialog(instance, MAKEINTRESOURCE(IDD_ABOUTPAGE2), ai->tabControl, AboutChildDlgProc);
-	ai->pages[5] = CreateDialog(instance, MAKEINTRESOURCE(IDD_ABOUTPAGE3), ai->tabControl, AboutChildDlgProc);
+	ai->pages[4] = CreateDialog(instance, MAKEINTRESOURCE(IDD_ABOUTPAGE7), ai->tabControl, AboutChildDlgProc);
+	ai->pages[5] = CreateDialog(instance, MAKEINTRESOURCE(IDD_ABOUTPAGE2), ai->tabControl, AboutChildDlgProc);
+	ai->pages[6] = CreateDialog(instance, MAKEINTRESOURCE(IDD_ABOUTPAGE3), ai->tabControl, AboutChildDlgProc);
 
 	// Get Opus version number and write to page 1 of About box.
 	LoadString(instance, IDS_VERSION, tempStr, sizeof(tempStr));
@@ -153,7 +156,7 @@ void InitAboutBox(HWND dlg)
 	GetClientRect(ai->tabControl, &rec);
 	TabCtrl_AdjustRect(ai->tabControl, FALSE, &rec);
 
-	for (i = 0 ; i < 6 ; i++) {
+	for (i = 0 ; i < 7 ; i++) {
 		MoveWindow(ai->pages[i], rec.left, rec.top, rec.right - rec.left, rec.bottom - rec.top, FALSE);
 	}
 
@@ -186,6 +189,6 @@ void KillAboutBox(HWND dlg)
 
 	aboutInfo *ai = (aboutInfo *)GetWindowLong(dlg, GWL_USERDATA);
 
-	for (i = 0 ; i < 4 ; i++)
+	for (i = 0 ; i < 7 ; i++)
 		DestroyWindow(ai->pages[i]);
 }

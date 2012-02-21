@@ -51,6 +51,25 @@ END
 
 
 /////////////////////////////////////////////////////////////////////////////
+// French (France) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_FRA)
+#ifdef _WIN32
+LANGUAGE LANG_FRENCH, SUBLANG_FRENCH
+#pragma code_page(1252)
+#endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_HXC2001             BITMAP  DISCARDABLE     "Images\\hxc2001.bmp"
+#endif    // French (France) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
 // English (U.K.) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENG)
@@ -58,6 +77,14 @@ END
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_UK
 #pragma code_page(1252)
 #endif //_WIN32
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_LOGO                BITMAP  DISCARDABLE     "Images\\Logo.bmp"
+IDB_TBBUTTONS           BITMAP  DISCARDABLE     "Images\\Toolbar.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -76,7 +103,7 @@ BEGIN
     DEFPUSHBUTTON   "Close",IDCANCEL,190,195,50,14
 END
 
-IDD_BATCHCONVERTER DIALOGEX 0, 0, 257, 218
+IDD_BATCHCONVERTER DIALOGEX 0, 0, 257, 231
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_CONTEXTHELP
 CAPTION "Batch Converter"
@@ -91,16 +118,18 @@ BEGIN
                     BS_PUSHLIKE,10,107,115,14
     CONTROL         "Compressed Disk Image (ADZ)",IDC_BCADZ,"Button",
                     BS_AUTORADIOBUTTON | BS_PUSHLIKE,135,107,110,14
-    DEFPUSHBUTTON   "Start",IDC_BCSTART,90,196,50,15,WS_DISABLED
-    PUSHBUTTON      "Help",IDC_BCHELP,145,196,50,15
-    PUSHBUTTON      "Close",IDCANCEL,200,196,50,15
+    DEFPUSHBUTTON   "Start",IDC_BCSTART,90,209,50,15,WS_DISABLED
+    PUSHBUTTON      "Help",IDC_BCHELP,145,209,50,15
+    PUSHBUTTON      "Close",IDCANCEL,200,209,50,15
     LISTBOX         IDC_BCFILELIST,10,15,180,55,LBS_MULTIPLESEL | 
                     LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     GROUPBOX        "Source Files",IDC_STATIC,5,5,245,87
-    GROUPBOX        "Output type",IDC_STATIC,5,95,245,31
-    GROUPBOX        "Status",IDC_STATIC,5,129,245,60
-    LISTBOX         IDC_BCSTATUS,10,139,235,45,LBS_NOINTEGRALHEIGHT | 
+    GROUPBOX        "Output type",IDC_STATIC,5,95,245,46
+    GROUPBOX        "Status",IDC_STATIC,5,144,245,60
+    LISTBOX         IDC_BCSTATUS,10,154,235,45,LBS_NOINTEGRALHEIGHT | 
                     WS_VSCROLL | WS_TABSTOP
+    CONTROL         "Disk Image (HFE)",IDC_BCHFE,"Button",BS_AUTORADIOBUTTON | 
+                    BS_PUSHLIKE,10,123,115,14
 END
 
 IDD_ABOUT DIALOG DISCARDABLE  0, 0, 257, 233
@@ -124,12 +153,14 @@ BEGIN
     PUSHBUTTON      "Browse...",IDC_NEWBROWSE,185,15,50,15
     CONTROL         "Disk Image (ADF)",IDC_NEWADF,"Button",
                     BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,10,50,85,10
+    CONTROL         "Disk Image (HFE)",IDC_NEWHFE,"Button",
+                    BS_AUTORADIOBUTTON | WS_TABSTOP,10,59,85,10
     CONTROL         "High Density (1.76MB)",IDC_NEWHD,"Button",
                     BS_AUTOCHECKBOX | WS_TABSTOP,120,50,85,10
     CONTROL         "Hardfile",IDC_NEWHARDFILE,"Button",BS_AUTORADIOBUTTON | 
-                    WS_TABSTOP,10,60,85,10
+                    WS_TABSTOP,10,68,85,10
     CONTROL         "Preset Size",IDC_NEWPRESET,"Button",BS_AUTORADIOBUTTON | 
-                    WS_DISABLED | WS_GROUP | WS_TABSTOP,15,75,80,10
+                    WS_DISABLED | WS_GROUP | WS_TABSTOP,15,78,80,10
     CONTROL         "Slider1",IDC_NEWPRESETSLIDER,"msctls_trackbar32",
                     TBS_AUTOTICKS | TBS_TOP | WS_DISABLED | WS_TABSTOP,115,
                     65,85,20
@@ -191,7 +222,7 @@ BEGIN
                     125,230,10
     CTEXT           "Any comments, ideas or bug reports?",IDC_STATIC,8,156,
                     230,8
-    LTEXT           "",IDC_OPUS_VERSION,83,63,79,8
+    LTEXT           "",IDC_OPUS_VERSION,51,63,136,8
     LTEXT           "This is free software, and you are welcome to redistribute",
                     IDC_STATIC,34,102,179,8
     LTEXT           "it under certain conditions; see help for details.",
@@ -510,6 +541,23 @@ BEGIN
     GROUPBOX        "Tracks And Sectors",IDC_STATIC,7,149,158,47
 END
 
+IDD_ABOUTPAGE7 DIALOG DISCARDABLE  0, 0, 236, 156
+STYLE WS_CHILD
+FONT 8, "MS Sans Serif"
+BEGIN
+    CTEXT           "(C) 2006-2012 Jean-François DEL NERO",IDC_STATIC,18,64,
+                    199,8
+    CTEXT           "HxC Floppy Emulator Library",IDC_STATIC,18,13,199,8
+    CTEXT           "www.hxc2001.com",IDC_STATIC,18,80,199,8
+    CTEXT           "(C) 2006-2012 HxC2001",IDC_STATIC,18,73,199,8
+    CONTROL         230,IDC_STATIC,"Static",SS_BITMAP,87,89,61,57
+    CTEXT           "This version of ADFOpus was patched to support",
+                    IDC_STATIC,18,29,199,8
+    CTEXT           "the SD HxC Floppy Emulator file format (*.HFE)",
+                    IDC_STATIC,18,38,199,8
+    CTEXT           "02/21/2012",IDC_STATIC,16,51,199,8
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -532,7 +580,7 @@ BEGIN
         LEFTMARGIN, 7
         RIGHTMARGIN, 250
         TOPMARGIN, 7
-        BOTTOMMARGIN, 211
+        BOTTOMMARGIN, 224
     END
 
     IDD_ABOUT, DIALOG
@@ -670,6 +718,14 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 221
     END
+
+    IDD_ABOUTPAGE7, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 229
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 149
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -792,14 +848,6 @@ IDI_ICON_DMP            ICON    DISCARDABLE     "Images\\dmp.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Bitmap
-//
-
-IDB_LOGO                BITMAP  DISCARDABLE     "Images\\Logo.bmp"
-IDB_TBBUTTONS           BITMAP  DISCARDABLE     "Images\\Toolbar.bmp"
-
-/////////////////////////////////////////////////////////////////////////////
-//
 // Cursor
 //
 
@@ -839,7 +887,7 @@ END
 
 STRINGTABLE DISCARDABLE 
 BEGIN
-    IDS_VERSION             "ADF Opus v1.2."
+    IDS_VERSION             "ADF Opus v1.2. - (with HFE support patch)"
 END
 
 STRINGTABLE DISCARDABLE 
@@ -868,6 +916,34 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_AUS
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// Bitmap
+//
+
+IDB_NEW                 BITMAP  DISCARDABLE     "images\\new.bmp"
+IDB_OPEN                BITMAP  DISCARDABLE     "images\\open.bmp"
+IDB_CLOSE               BITMAP  DISCARDABLE     "images\\close.bmp"
+IDB_RENAME              BITMAP  DISCARDABLE     "images\\rename.bmp"
+IDB_DELETE              BITMAP  DISCARDABLE     "images\\delete.bmp"
+IDB_CREATEDIR           BITMAP  DISCARDABLE     "images\\createdir.bmp"
+IDB_UPONELEVEL          BITMAP  DISCARDABLE     "images\\uponelev.bmp"
+IDB_INFO                BITMAP  DISCARDABLE     "images\\info.bmp"
+IDB_PROPERTIES          BITMAP  DISCARDABLE     "images\\properti.bmp"
+IDB_OPTIONS             BITMAP  DISCARDABLE     "images\\options.bmp"
+IDB_BATCH               BITMAP  DISCARDABLE     "images\\batch.bmp"
+IDB_DISK2FDI            BITMAP  DISCARDABLE     "images\\disk2fdi.bmp"
+IDB_INSTALL             BITMAP  DISCARDABLE     "images\\install.bmp"
+IDB_DISPLAY             BITMAP  DISCARDABLE     "images\\display.bmp"
+IDB_TILEHOR             BITMAP  DISCARDABLE     "images\\tilehor.bmp"
+IDB_TILEVER             BITMAP  DISCARDABLE     "images\\tilever.bmp"
+IDB_CASCADE             BITMAP  DISCARDABLE     "images\\cascade.bmp"
+IDB_HELP                BITMAP  DISCARDABLE     "images\\help.bmp"
+IDB_ABOUT               BITMAP  DISCARDABLE     "images\\about.bmp"
+IDB_UNDELETE            BITMAP  DISCARDABLE     "images\\undelete.bmp"
+IDB_SHOWUNDELETABLE     BITMAP  DISCARDABLE     "images\\showundel.bmp"
+IDB_TEXTVIEWER          BITMAP  DISCARDABLE     "images\\textviewer.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Dialog
 //
 
@@ -875,7 +951,7 @@ IDD_DISPLAY_BOOTBLOCK DIALOGEX 0, 0, 238, 151
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
 EXSTYLE WS_EX_CONTEXTHELP
 CAPTION "Display Bootblock"
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     PUSHBUTTON      "Help",IDC_BOOTBLOCK_HELP,122,133,50,15
     DEFPUSHBUTTON   "OK",IDOK,181,133,50,15
@@ -886,7 +962,7 @@ IDD_TEXT_VIEWER DIALOGEX 0, 0, 348, 260
 STYLE DS_CENTER | DS_CONTEXTHELP | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | 
     WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 EXSTYLE WS_EX_CONTEXTHELP
-FONT 8, "MS Sans Serif"
+FONT 8, "MS Sans Serif", 0, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,291,239,50,14
     EDITTEXT        IDC_EDIT_TEXT,7,7,334,225,ES_MULTILINE | WS_VSCROLL | 
@@ -922,34 +998,6 @@ END
 #endif    // APSTUDIO_INVOKED
 
 
-/////////////////////////////////////////////////////////////////////////////
-//
-// Bitmap
-//
-
-IDB_NEW                 BITMAP  DISCARDABLE     "images\\new.bmp"
-IDB_OPEN                BITMAP  DISCARDABLE     "images\\open.bmp"
-IDB_CLOSE               BITMAP  DISCARDABLE     "images\\close.bmp"
-IDB_RENAME              BITMAP  DISCARDABLE     "images\\rename.bmp"
-IDB_DELETE              BITMAP  DISCARDABLE     "images\\delete.bmp"
-IDB_CREATEDIR           BITMAP  DISCARDABLE     "images\\createdir.bmp"
-IDB_UPONELEVEL          BITMAP  DISCARDABLE     "images\\uponelev.bmp"
-IDB_INFO                BITMAP  DISCARDABLE     "images\\info.bmp"
-IDB_PROPERTIES          BITMAP  DISCARDABLE     "images\\properti.bmp"
-IDB_OPTIONS             BITMAP  DISCARDABLE     "images\\options.bmp"
-IDB_BATCH               BITMAP  DISCARDABLE     "images\\batch.bmp"
-IDB_DISK2FDI            BITMAP  DISCARDABLE     "images\\disk2fdi.bmp"
-IDB_INSTALL             BITMAP  DISCARDABLE     "images\\install.bmp"
-IDB_DISPLAY             BITMAP  DISCARDABLE     "images\\display.bmp"
-IDB_TILEHOR             BITMAP  DISCARDABLE     "images\\tilehor.bmp"
-IDB_TILEVER             BITMAP  DISCARDABLE     "images\\tilever.bmp"
-IDB_CASCADE             BITMAP  DISCARDABLE     "images\\cascade.bmp"
-IDB_HELP                BITMAP  DISCARDABLE     "images\\help.bmp"
-IDB_ABOUT               BITMAP  DISCARDABLE     "images\\about.bmp"
-IDB_UNDELETE            BITMAP  DISCARDABLE     "images\\undelete.bmp"
-IDB_SHOWUNDELETABLE     BITMAP  DISCARDABLE     "images\\showundel.bmp"
-IDB_TEXTVIEWER          BITMAP  DISCARDABLE     "images\\textviewer.bmp"
-
 #ifndef _MAC
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -975,14 +1023,14 @@ BEGIN
         BEGIN
             VALUE "Comments", "Amiga Disk File Manager\0"
             VALUE "CompanyName", " \0"
-            VALUE "FileDescription", "ADF Opus\0"
+            VALUE "FileDescription", "ADF Opus (with HFE support)\0"
             VALUE "FileVersion", "1, 2, 0, 0\0"
             VALUE "InternalName", "ADFOpus\0"
             VALUE "LegalCopyright", "Copyright © 1998-2003 Gary Harris, Dan Sutherland.\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "ADFOpus.exe\0"
             VALUE "PrivateBuild", "\0"
-            VALUE "ProductName", "ADF Opus\0"
+            VALUE "ProductName", "ADF Opus (with HFE support)\0"
             VALUE "ProductVersion", "1, 2, 0, 0\0"
             VALUE "SpecialBuild", "\0"
         END

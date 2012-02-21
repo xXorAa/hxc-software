@@ -69,6 +69,8 @@
 #define IDB_SHOWUNDELETABLE             226
 #define IDB_TEXTVIEWER                  227
 #define IDD_TEXT_VIEWER                 228
+#define IDD_ABOUTPAGE7                  229
+#define IDB_HXC2001                     230
 #define IDC_NEWPATH                     1004
 #define IDC_NEWADF                      1005
 #define IDC_NEWHARDFILE                 1006
@@ -80,6 +82,7 @@
 #define IDC_NEWFFS                      1012
 #define IDC_NEWINTL                     1013
 #define IDC_NEWLABEL                    1014
+#define IDC_NEWHFE                      1015
 #define IDC_NEWHELP                     1016
 #define IDC_VOLSELOPEN                  1017
 #define IDC_OOK                         1017
@@ -118,6 +121,7 @@
 #define IDC_BCSTATUS                    1053
 #define IDC_BCSTART                     1054
 #define IDC_BCHELP                      1055
+#define IDC_BCHFE                       1056
 #define IDC_DEVVOLLIST                  1058
 #define IDC_BCFILELIST                  1059
 #define IDC_BCADD                       1060
@@ -251,7 +255,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        229
+#define _APS_NEXT_RESOURCE_VALUE        231
 #define _APS_NEXT_COMMAND_VALUE         40127
 #define _APS_NEXT_CONTROL_VALUE         1141
 #define _APS_NEXT_SYMED_VALUE           101

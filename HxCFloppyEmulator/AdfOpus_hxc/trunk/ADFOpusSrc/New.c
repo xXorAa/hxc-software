@@ -17,6 +17,8 @@
 #include "ChildCommon.h"
 #include "Help\AdfOpusHlp.h"
 #include "Install.h"
+#include <imagehlp.h>			// For MakeSureDirectoryPathExists().
+#include "libhxcfe.h"
 
 extern char gstrFileName[MAX_PATH * 2];
 extern HINSTANCE instance;
@@ -61,6 +63,7 @@ LRESULT CALLBACK NewDlgProc(HWND dlg, UINT msg, WPARAM wp, LPARAM lp)
 		IDC_NEWCREATE,			IDH_CREATE_CREATE_BUTTON,
 		IDC_NEWHELP,			IDH_CREATE_HELP_BUTTON,
 		IDCANCEL,				IDH_CREATE_CANCEL_BUTTON,
+		IDC_NEWHFE,				IDH_CREATE_TYPE_HFE,
 		0,0 
 	}; 	
 
@@ -69,6 +72,7 @@ LRESULT CALLBACK NewDlgProc(HWND dlg, UINT msg, WPARAM wp, LPARAM lp)
 	case WM_INITDIALOG:
 		SendMessage(GetDlgItem(dlg, IDC_NEWPRESETSLIDER), TBM_SETRANGE, TRUE, MAKELONG(0, 9));
 		SendMessage(GetDlgItem(dlg, IDC_NEWADF), BM_SETCHECK, BST_CHECKED, 0l);
+		SendMessage(GetDlgItem(dlg, IDC_NEWHFE), BM_SETCHECK, BST_UNCHECKED, 0l);
 		SendMessage(GetDlgItem(dlg, IDC_NEWPRESET), BM_SETCHECK, BST_CHECKED, 0l);
 		SendMessage(GetDlgItem(dlg, IDC_NEWPRESETSLIDER), BM_SETCHECK, BST_CHECKED, 0l);
 		SendMessage(GetDlgItem(dlg, IDC_NEWPRESETSIZE), BM_SETCHECK, BST_CHECKED, 0l);
@@ -86,7 +90,19 @@ LRESULT CALLBACK NewDlgProc(HWND dlg, UINT msg, WPARAM wp, LPARAM lp)
 		case IDC_NEWBROWSE:
 			NewSelectFile(dlg);
 			return TRUE;
+		case IDC_NEWHFE:
+			SetDlgItemText(dlg, IDC_NEWPATH, "NEW.HFE");
+			EnableWindow(GetDlgItem(dlg, IDC_NEWHD), TRUE);
+			EnableWindow(GetDlgItem(dlg, IDC_NEWPRESET), FALSE);
+			EnableWindow(GetDlgItem(dlg, IDC_NEWCUSTOM), FALSE);
+			EnableWindow(GetDlgItem(dlg, IDC_NEWCUSTOMSIZE), FALSE);
+			EnableWindow(GetDlgItem(dlg, IDC_NEWPRESETSIZE), FALSE);
+			EnableWindow(GetDlgItem(dlg, IDC_NEWPRESETSLIDER), FALSE);
+			EnableWindow(GetDlgItem(dlg, IDC_NEWBOOTABLE), TRUE);
+			return TRUE;
+
 		case IDC_NEWADF:
+			SetDlgItemText(dlg, IDC_NEWPATH, "NEW.ADF");
 			EnableWindow(GetDlgItem(dlg, IDC_NEWHD), TRUE);
 			EnableWindow(GetDlgItem(dlg, IDC_NEWPRESET), FALSE);
 			EnableWindow(GetDlgItem(dlg, IDC_NEWCUSTOM), FALSE);
@@ -169,16 +185,26 @@ void NewCreate(HWND dlg)
 		Size = (SendMessage(GetDlgItem(dlg, IDC_NEWHD), BM_GETCHECK, 0, 0l)
 			== BST_CHECKED) ? 1760 << 1 : 1760;		
 	} else {
-		/* hardfile */
-		if (SendMessage(GetDlgItem(dlg, IDC_NEWPRESET), BM_GETCHECK, 0, 0l)
-			== BST_CHECKED) {
-			/* one of the preset sizes */
-			Size = (2 << SendMessage(GetDlgItem(dlg, IDC_NEWPRESETSLIDER),
-				TBM_GETPOS, 0, 0l)) * 1024;
-		} else {
-			/* custom size */
-			GetDlgItemText(dlg, IDC_NEWCUSTOMSIZE, ts, sizeof(ts));
-			Size = atol(ts) << 1;
+
+		iType = SendMessage(GetDlgItem(dlg, IDC_NEWHFE), BM_GETCHECK, 0, 0l);
+		if(iType == BST_CHECKED)
+		{
+			Size = (SendMessage(GetDlgItem(dlg, IDC_NEWHD), BM_GETCHECK, 0, 0l)
+				== BST_CHECKED) ? 1760 << 1 : 1760;		
+		}
+		else
+		{
+			/* hardfile */
+			if (SendMessage(GetDlgItem(dlg, IDC_NEWPRESET), BM_GETCHECK, 0, 0l)
+				== BST_CHECKED) {
+				/* one of the preset sizes */
+				Size = (2 << SendMessage(GetDlgItem(dlg, IDC_NEWPRESETSLIDER),
+					TBM_GETPOS, 0, 0l)) * 1024;
+			} else {
+				/* custom size */
+				GetDlgItemText(dlg, IDC_NEWCUSTOMSIZE, ts, sizeof(ts));
+				Size = atol(ts) << 1;
+			}
 		}
 	}
 
@@ -209,7 +235,7 @@ void NewSelectFile(HWND dlg)
 	ofn.lStructSize = sizeof(OPENFILENAME);
 	ofn.hwndOwner = dlg;
 	ofn.hInstance = NULL;
-	ofn.lpstrFilter = "Amiga Disk File (*.adf)\0*.adf\0Hard Disk File (*.hdf)\0*.hdf\0Any file\0*.*\0";
+	ofn.lpstrFilter = "Amiga Disk File (*.adf)\0*.adf\0HFE Amiga Disk File (*.hfe)\0*.hfe\0Hard Disk File (*.hdf)\0*.hdf\0Any file\0*.*\0";
 	ofn.lpstrCustomFilter = NULL;
 	ofn.nMaxCustFilter = 0;
 	ofn.lpstrFile = gstrFileName;
@@ -252,20 +278,36 @@ LRESULT CALLBACK NewProgressProc(HWND dlg, UINT msg, WPARAM wp, LPARAM lp)
 void NewCreateFile(void *lpVoid)
 {
 	struct Device	*dev;
+	int iType;
 	char			tempStr[31];
 	HWND			dlg = (HWND)lpVoid;
 	int				type = 0;
+	char strNewFileName[MAX_PATH * 2];
 	struct Volume	*vol;
+	HXCFLOPPYEMULATOR* hxcfe;
+	FLOPPY * fp;
 
 	Percent = 0;
 
+	iType = SendMessage(GetDlgItem(dlg, IDC_NEWHFE), BM_GETCHECK, 0, 0l);
+	if(iType == BST_CHECKED)
+	{
+		strcpy(strNewFileName, dirTemp);
+		MakeSureDirectoryPathExists(dirTemp);				// Create temp dir.
+		strcat(strNewFileName,"newfile.adf");
+	}
+	else
+	{
+		strcpy(strNewFileName,gstrFileName);
+	}
+
 	if (Size == 1760) /* 880KB Floppy */
-		dev = adfCreateDumpDevice(gstrFileName, 80, 2, 11);
+		dev = adfCreateDumpDevice(strNewFileName, 80, 2, 11);
 	else
 		if (Size == (1760 * 2)) /* HD Floppy */
-			dev = adfCreateDumpDevice(gstrFileName, 80, 2, 22);
+			dev = adfCreateDumpDevice(strNewFileName, 80, 2, 22);
 		else /* hardfile */
-			dev = adfCreateDumpDevice(gstrFileName, Size, 1, 1);
+			dev = adfCreateDumpDevice(strNewFileName, Size, 1, 1);
 
 	GetDlgItemText(dlg, IDC_NEWLABEL, tempStr, sizeof(tempStr));
 
@@ -288,6 +330,26 @@ void NewCreateFile(void *lpVoid)
 		adfCreateHdFile(dev, tempStr, type);
 
 	adfUnMountDev(dev);
+
+	if(iType == BST_CHECKED)
+	{
+		hxcfe=hxcfe_init();
+		// Load the image
+		fp=hxcfe_floppyLoad(hxcfe,strNewFileName,0);
+		if(fp)
+		{
+			// Select the HFE loader/exporter.
+			hxcfe_selectContainer(hxcfe,"HXC_HFE");
+			// Save the file...
+			hxcfe_floppyExport(hxcfe,fp,gstrFileName);
+			// Free the loaded image
+			hxcfe_floppyUnload(hxcfe,fp);
+		}
+		hxcfe_deinit(hxcfe);
+
+		// Delete intermediate adf.
+		remove(strNewFileName);
+	}
 
 	Done = TRUE;
 }

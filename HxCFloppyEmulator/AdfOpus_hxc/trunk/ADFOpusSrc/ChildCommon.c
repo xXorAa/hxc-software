@@ -323,7 +323,6 @@ void ChildOnDestroy(HWND win)
 	}
 
 	if(ci->dfDisk == HFE){
-		//GZCompress(NULL, ci->temp_path, ci->orig_path);
 
 		hxcfe=hxcfe_init();
 		hxcfe_selectContainer(hxcfe,"AMIGA_ADF");
@@ -331,11 +330,8 @@ void ChildOnDestroy(HWND win)
 		if(fp)
 		{
 			hxcfe_selectContainer(hxcfe,"HXC_HFE");
-
 			hxcfe_floppyExport(hxcfe,fp,(char*)ci->orig_path);
-
 			hxcfe_floppyUnload(hxcfe,fp);
-
 			hxcfe_deinit(hxcfe);
 		}
 

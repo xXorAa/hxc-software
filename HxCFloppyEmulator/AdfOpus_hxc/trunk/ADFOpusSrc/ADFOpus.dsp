@@ -415,6 +415,10 @@ SOURCE=.\Help\history.rtf
 # End Source File
 # Begin Source File
 
+SOURCE=.\Images\hxc2001.bmp
+# End Source File
+# Begin Source File
+
 SOURCE=.\Images\info.bmp
 # End Source File
 # Begin Source File

@@ -165,7 +165,7 @@
 #define	IDH_CREATE_CREATE_BUTTON				7416
 #define	IDH_CREATE_HELP_BUTTON					7417
 #define	IDH_CREATE_CANCEL_BUTTON				7418
-
+#define	IDH_CREATE_TYPE_HFE						7419
 /*
 ** These are the items for the Batch Converter dialogue.
 */

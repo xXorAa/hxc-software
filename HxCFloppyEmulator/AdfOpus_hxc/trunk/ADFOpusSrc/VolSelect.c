@@ -177,7 +177,7 @@ enum DiskFormat	VolGetFormat(HWND dlg)
 	int		iLength, i;
 	char	fileName[MAX_PATH];
 
-	int side,track,nbsect,nbside,nbtrack;
+	int side,track,nbsect;
 	HXCFLOPPYEMULATOR* hxcfe;
 	FLOPPY * fp;
 	SECTORSEARCH* ss;
@@ -226,6 +226,10 @@ enum DiskFormat	VolGetFormat(HWND dlg)
 				case 80*11*2*512:
 					nbsect=11;
 				break;
+				case 80*22*2*512:
+					nbsect=22;
+				break;
+
 			}
 
 			strcpy(gstrFileName, dirTemp);

@@ -10,7 +10,7 @@
 typedef struct _aboutInfo {
 	HWND tabControl;
 	int curPage;
-	HWND pages[4];
+	HWND pages[7];
 } aboutInfo;
 
 LRESULT CALLBACK AboutDlgProc(HWND, UINT, WPARAM, LPARAM);

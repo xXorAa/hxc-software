@@ -16,6 +16,7 @@
 #include "BatchConvert.h"
 #include "zLib.h"
 #include "Help\AdfOpusHlp.h"
+#include "libhxcfe.h"
 
 #define BUFLEN      16384
 
@@ -162,13 +163,24 @@ void BCConvert(HWND dlg)
 	char	fileName[MAX_PATH];
 	HWND	fl = GetDlgItem(dlg, IDC_BCFILELIST);
 	HWND	sl = GetDlgItem(dlg, IDC_BCSTATUS);
+	
+	int side,track,nbsect,image_size;
+	HXCFLOPPYEMULATOR * hxcfe;
+	FLOPPY* fp;
+	SECTORSEARCH* ss;
+	unsigned char * floppybuffer;
+	FILE * f;
 
-	LRESULT	State;
+	LRESULT	State_ADZ;
+	LRESULT	State_ADF;
+	LRESULT	State_HFE;
+
 	HANDLE	hFile;
 	BOOL	bUsingTemp = FALSE;		// TRUE if using temp directory for intermediate file.
 	USHORT	dmsError;
 //	char	dmsErrorMessage[MAX_PATH];
 	BOOL	bOverwriting = TRUE;
+
 
 	count = SendMessage(fl, LB_GETCOUNT, 0, 0l);
 	
@@ -191,8 +203,105 @@ void BCConvert(HWND dlg)
 		
 		strcpy(outBuf, FileRoot);						// Set the outfile name root.
 	
-		// Get the check state of the ADZ output button.
-		State = SendMessage(GetDlgItem(dlg, IDC_BCADZ), BM_GETSTATE, 0, 0);
+		// Get the check state of the output buttons.
+		State_ADZ = SendMessage(GetDlgItem(dlg, IDC_BCADZ), BM_GETSTATE, 0, 0);
+		State_ADF = SendMessage(GetDlgItem(dlg, IDC_BCADF), BM_GETSTATE, 0, 0);
+		State_HFE = SendMessage(GetDlgItem(dlg, IDC_BCHFE), BM_GETSTATE, 0, 0);
+
+		// if hfe.
+		if(strcmp(FileSuf, "hfe") == 0 || strcmp(FileSuf, "HFE") == 0 ){
+			// Print decompression status message.
+			sprintf(statusBuf, "Unpacking file '%s'...", inBuf);	
+
+			// If dms to adz, use temp directory.
+			if(State_ADZ & BST_CHECKED){
+				_splitpath(strOFNFileNames, NULL, NULL, fileName, NULL);	// Get filename.
+				strcpy(outBuf, dirTemp);
+				strcat(outBuf, fileName);
+				strcat(outBuf, ".");
+				bUsingTemp = TRUE;						// Using temp dir.
+			}
+			
+			strcat(outBuf, "adf");						// Set the outfile name suffix.
+			SendMessage(sl, LB_ADDSTRING, 0, (LPARAM)&statusBuf);
+
+			// Check for file overwrite.
+			hFile = CreateFile(outBuf, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+			// If file exists and we're not writing to temp dir, ask.
+			if(hFile != INVALID_HANDLE_VALUE && !bUsingTemp){
+				sprintf(statusBuf, "The file %s already exists.\n Do you want to overwrite this file?", outBuf);
+				// Set bool if not overwriting.
+				if(MessageBox(dlg, statusBuf, "ADF Opus Warning", MB_YESNO|MB_ICONEXCLAMATION) == IDNO){
+					bOverwriting = FALSE;
+				}
+			}
+
+			if(bOverwriting){
+			// Overwrite.
+				// Open HFE
+				hxcfe=hxcfe_init();
+				hxcfe_selectContainer(hxcfe,"HXC_HFE");
+				fp=hxcfe_floppyLoad(hxcfe,(char*)inBuf,0);
+				if(fp)
+				{
+					image_size=hxcfe_getFloppySize(hxcfe,fp,0);
+
+					if(image_size)
+					{
+						floppybuffer=(char*)malloc(image_size);
+
+						nbsect=11;
+						switch(image_size)
+						{
+							case 80*11*2*512:
+								nbsect=11;
+							break;
+							case 80*22*2*512:
+								nbsect=22;
+							break;
+						}
+
+						ss=hxcfe_initSectorSearch(hxcfe,fp);
+
+						for(track=0;track<hxcfe_getNumberOfTrack(hxcfe,fp);track++)
+						{
+							for(side=0;side<hxcfe_getNumberOfSide(hxcfe,fp);side++)
+							{
+								hxcfe_readSectorData(ss,track,side,0,nbsect,512,AMIGA_MFM_ENCODING,&floppybuffer[(512*nbsect)*((track*hxcfe_getNumberOfSide(hxcfe,fp))+side)]);
+							}
+						}
+							
+						hxcfe_deinitSectorSearch(ss);
+
+						hxcfe_floppyUnload(hxcfe,fp);
+
+						hxcfe_deinit(hxcfe);
+							
+						f=fopen(outBuf,"wb");
+						if(f)
+						{
+							fwrite(floppybuffer,image_size,1,f);
+							fclose(f);
+						}
+						
+						free(floppybuffer);
+
+						strcpy(statusBuf, "...file loaded successfully.");
+					}
+
+				}
+				else
+				{
+					hxcfe_deinit(hxcfe);
+					strcpy(statusBuf, "...error occured during HFE Loading.");
+				}
+			}
+			else{
+				// Abort
+				strcpy(statusBuf, "...aborted to avoid overwrite.");
+				SendMessage(sl, LB_ADDSTRING, 0, (LPARAM)&statusBuf);
+			}
+		}
 		
 		// if dms.				 
 		if(strcmp(FileSuf, "dms") == 0 || strcmp(FileSuf, "DMS") == 0 ){
@@ -200,7 +309,7 @@ void BCConvert(HWND dlg)
 			sprintf(statusBuf, "Unpacking file '%s'...", inBuf);	
 
 			// If dms to adz, use temp directory.
-			if(State & BST_CHECKED){
+			if(State_ADZ & BST_CHECKED){
 				_splitpath(strOFNFileNames, NULL, NULL, fileName, NULL);	// Get filename.
 				strcpy(outBuf, dirTemp);
 				strcat(outBuf, fileName);
@@ -242,7 +351,7 @@ void BCConvert(HWND dlg)
 		
 
 		//if adz and adf button selected.
-		if(strcmp(FileSuf, "adz") == 0 || strcmp(FileSuf, "ADZ") == 0 ){
+		if((strcmp(FileSuf, "adz") == 0 || strcmp(FileSuf, "ADZ") == 0) && (State_ADF & BST_CHECKED) ){
 			// Print decompression status message.
 			sprintf(statusBuf, "Unpacking file '%s'...", inBuf);	
 			strcat(outBuf, "adf");						// Set the outfile name suffix.
@@ -255,9 +364,11 @@ void BCConvert(HWND dlg)
 		}
 
 		//if adf or decompressed dms and adz button selected.
-		if((strcmp(FileSuf, "adf") == 0 || strcmp(FileSuf, "ADF") == 0 )
-			|| ((strcmp(FileSuf, "dms") == 0 || strcmp(FileSuf, "DMS") == 0) 
-			&& (State & BST_CHECKED))){
+		if(
+			(   ( strcmp(FileSuf, "adf") == 0 || strcmp(FileSuf, "ADF") == 0 ) 
+			||  ( strcmp(FileSuf, "dms") == 0 || strcmp(FileSuf, "DMS") == 0 ) ) 
+			&&  (State_ADZ & BST_CHECKED) )
+		{
 			
 			// If recompressing an adf'd dms, remove the suffixes and
 			// write last status message.
@@ -283,6 +394,54 @@ void BCConvert(HWND dlg)
 				remove(inBuf);
 		}
 
+
+		// hfe button selected.
+		if(  ( ( strcmp(FileSuf, "adf") == 0 || strcmp(FileSuf, "ADF") == 0 )
+			|| ( strcmp(FileSuf, "dms") == 0 || strcmp(FileSuf, "DMS") == 0 ) 
+			|| ( strcmp(FileSuf, "adz") == 0 || strcmp(FileSuf, "ADZ") == 0 ) )
+			&& (State_HFE & BST_CHECKED) ){
+			
+			// If recompressing an adf'd dms, remove the suffixes and
+			// write last status message.
+			if(strcmp(FileSuf, "dms") == 0 || strcmp(FileSuf, "DMS") == 0){
+				SendMessage(sl, LB_ADDSTRING, 0, (LPARAM)&statusBuf);	
+				strcpy(inBuf, outBuf);
+				strcpy(outBuf, FileRoot);
+			}
+
+			// Print compression status message.
+			sprintf(statusBuf, "Compressing file '%s'...", inBuf);	
+
+			strcat(outBuf, "hfe");						// Set the outfile name suffix.
+			SendMessage(sl, LB_ADDSTRING, 0, (LPARAM)&statusBuf);
+
+			hxcfe=hxcfe_init();
+
+			// Select the D88 loader.
+			hxcfe_selectContainer(hxcfe,"AUTOSELECT");
+
+			// Load the image
+			fp=hxcfe_floppyLoad(hxcfe,inBuf,0);
+			if(fp)
+			{
+				// Select the HFE loader/exporter.
+				hxcfe_selectContainer(hxcfe,"HXC_HFE");
+				// Save the file...
+				hxcfe_floppyExport(hxcfe,fp,outBuf);
+				// Free the loaded image
+				hxcfe_floppyUnload(hxcfe,fp);
+				strcpy(statusBuf, "...file compressed successfully.");
+			}
+			else
+			{
+				strcpy(statusBuf, "...failed to compress file.");
+			}
+			hxcfe_deinit(hxcfe);
+
+			// Delete intermediate adf.
+			if(strcmp(FileSuf, "dms") == 0 || strcmp(FileSuf, "DMS") == 0)
+				remove(inBuf);
+		}
 		//no dms compression at this stage.
 
 		SendMessage(sl, LB_ADDSTRING, 0, (LPARAM)&statusBuf);		// Write final status message.
@@ -303,8 +462,10 @@ void BCConvert(HWND dlg)
 	// Re-enable output buttons once operations are complete.
 	SendMessage(GetDlgItem(dlg, IDC_BCADF), BM_SETCHECK, BST_CHECKED, 0);
 	SendMessage(GetDlgItem(dlg, IDC_BCADZ), BM_SETCHECK, BST_UNCHECKED, 0);
+	SendMessage(GetDlgItem(dlg, IDC_BCHFE), BM_SETCHECK, BST_UNCHECKED, 0);
 	EnableWindow(GetDlgItem(dlg, IDC_BCADF), TRUE);
 	EnableWindow(GetDlgItem(dlg, IDC_BCADZ), TRUE);
+	EnableWindow(GetDlgItem(dlg, IDC_BCHFE), TRUE);
 
 	BCUpdateButtons(dlg);						// Dis/enable buttons.
 }
@@ -327,14 +488,40 @@ void BCUpdateButtons(HWND dlg)
 	if(iFileTypeSelected == 1){
 		// ADF and ADZ buttons are checkboxes. Uncheck and check.
 		SendMessage(GetDlgItem(dlg, IDC_BCADF), BM_SETCHECK, BST_UNCHECKED, 0);
-		SendMessage(GetDlgItem(dlg, IDC_BCADZ), BM_SETCHECK, BST_CHECKED, 0);
+		SendMessage(GetDlgItem(dlg, IDC_BCADZ), BM_SETCHECK, BST_UNCHECKED, 0);
+		SendMessage(GetDlgItem(dlg, IDC_BCHFE), BM_SETCHECK, BST_CHECKED, 0);
+		EnableWindow(GetDlgItem(dlg, IDC_BCADZ), TRUE);
+		EnableWindow(GetDlgItem(dlg, IDC_BCHFE), TRUE);
 		EnableWindow(GetDlgItem(dlg, IDC_BCADF), FALSE);
 	}
 	// If ADZs have been selected, disable the ADZ output button.
 	if(iFileTypeSelected == 2){
 		SendMessage(GetDlgItem(dlg, IDC_BCADZ), BM_SETCHECK, BST_UNCHECKED, 0);
-		SendMessage(GetDlgItem(dlg, IDC_BCADF), BM_SETCHECK, BST_CHECKED, 0);
+		SendMessage(GetDlgItem(dlg, IDC_BCADF), BM_SETCHECK, BST_UNCHECKED, 0);
+		SendMessage(GetDlgItem(dlg, IDC_BCHFE), BM_SETCHECK, BST_CHECKED, 0);
 		EnableWindow(GetDlgItem(dlg, IDC_BCADZ), FALSE);
+		EnableWindow(GetDlgItem(dlg, IDC_BCHFE), TRUE);
+		EnableWindow(GetDlgItem(dlg, IDC_BCADF), TRUE);
+	}	
+
+	// If DMSs have been selected
+	if(iFileTypeSelected == 3){
+		SendMessage(GetDlgItem(dlg, IDC_BCADZ), BM_SETCHECK, BST_UNCHECKED, 0);
+		SendMessage(GetDlgItem(dlg, IDC_BCADF), BM_SETCHECK, BST_UNCHECKED, 0);
+		SendMessage(GetDlgItem(dlg, IDC_BCHFE), BM_SETCHECK, BST_CHECKED, 0);
+		EnableWindow(GetDlgItem(dlg, IDC_BCADZ), TRUE);
+		EnableWindow(GetDlgItem(dlg, IDC_BCHFE), TRUE);
+		EnableWindow(GetDlgItem(dlg, IDC_BCADF), TRUE);
+	}
+
+	// If HFEs have been selected
+	if(iFileTypeSelected == 4){
+		SendMessage(GetDlgItem(dlg, IDC_BCADZ), BM_SETCHECK, BST_UNCHECKED, 0);
+		SendMessage(GetDlgItem(dlg, IDC_BCADF), BM_SETCHECK, BST_CHECKED, 0);
+		SendMessage(GetDlgItem(dlg, IDC_BCHFE), BM_SETCHECK, BST_UNCHECKED, 0);
+		EnableWindow(GetDlgItem(dlg, IDC_BCADZ), TRUE);
+		EnableWindow(GetDlgItem(dlg, IDC_BCHFE), FALSE);
+		EnableWindow(GetDlgItem(dlg, IDC_BCADF), TRUE);
 	}
 
 }
