@@ -1,0 +1,90 @@
+Part list: 
+all capacitors should be rated at a minimum of 6.3V (preferably 10V).
+
+C1,C4,C5,C6,C7,C8,C9,C10,C11,C12,C13,C14,C15,C16,C17,C18,C19,C20:
+100nF capacitors (SMD 1206)
+(farnell: 757664)
+
+C21: (optional)
+100uF Electrolytic Capacitor 
+
+C2:
+10nF capacitor (SMD 1206)
+(farnell: 757603)
+
+C3:
+10uF Electrolytic Capacitor (SMD 1206)
+(farnell: 9694684)
+
+D1,D2,D3,D4:
+ 3mm LEDs 
+
+L1: (optional-> you can replace this by a strap)
+ FERRITE 
+
+R1:
+10k resistor (SMD 1206)
+(farnell: 9240640)
+
+R5,R25,R26,R27:
+ 220 ohms resistors (SMD 1206)
+(farnell: 9240446)
+
+R2, R9 :
+4.7kohms resistors (SMD 1206)
+(farnell: 613782)
+
+R10,R12,R14,R16,R18,R20,R22:
+ 1kohms 1/4 watt resistors
+(farnell: 9339051)
+
+R6 :
+Strap 0 ohms.
+
+U2 :
+ 74LS14 (Hex inverting Schmitt trigger)
+(farnell: 1105967)
+
+U3,U4:
+74LS06 (Hex inverting gate with Open Collector Outputs)
+(farnell: 9592180)
+
+U2,U3,U4 (carrier):
+14 pins DIL carrier.
+(farnell: 1101346)
+
+U5:
+ 32KB SRAM (256kbits) 5V DIP28: 
+ (HY62256,UM61256FK,MS62256L,W24M257AK,TE11M256A,CY62256,CY7C199...)
+(digikey: 428-2037-5-ND)
+
+U6;
+ MAX7000 CPLD: EPM7128SLC84
+(digikey: 544-1208-5-ND or 544-1207-5-ND / farnell :1549459 or 3128210)
+or
+ Atmel ATF1500 CPLD : ATF1508AS
+
+U6 (carrier): 
+ 84 pins PLCC carrier
+(farnell: 1103876)
+
+U10:
+FTDI FT245RL USB Bridge
+(farnell: 1146034)
+
+Y3:
+ 5V 16MHZ oscillator (DIL14 or DIL8 format)
+(farnell: 9510052)
+
+J1:
+type B USB connector
+(farnell: 1177885)
+
+CON2:
+"HE-10" 2*17 connector (34 pins)
+(farnell: 1107930)
+
+D5: (optional)
+Double ESD protection diodes 5V  PESD5V0S2UAT
+(farnell: 8737738)
+

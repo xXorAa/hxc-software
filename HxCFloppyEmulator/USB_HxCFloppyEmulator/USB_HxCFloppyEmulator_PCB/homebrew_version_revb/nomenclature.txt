@@ -1,0 +1,62 @@
+Nomenclature: 
+
+C1,C4,C5,C6,C7,C8,C9,C10,C11,C12,C13,C14,C15,C16,C17,C18,C19,C20 :
+ Condensateurs 100nF (CMS 1206)
+
+C2:
+ Condensateur 10nF (CMS 1206)
+
+C3:
+ Condensateur CMS 10uF polarisé (CMS 1206)
+
+D1,D2,D3,D4:
+ LEDS (3mm de diametre)
+
+L1:
+ FERRITE (optionnel)
+
+R1:
+ Resistance 10k (CMS 1206)
+
+R5,R25,R26,R27:
+ Resistances 220 ohms (CMS 1206)
+
+R9,R11,R13,R15,R17,R19,R21:
+ Resistances 4.7k 1/4 de watt
+
+R10,R12,R14,R16,R18,R20,R22:
+  Resistances 1k 1/4 de watt
+
+U2,U3,U4:
+ Portes logiques 74LS05
+
+U2,U3,U4 (supports):
+ Supports DIL 14 broches
+
+U5:
+ SRAM 32Ko (256kbits) 5V DIP28: 
+ (HY62256,UM61256FK,MS62256L,W24M257AK,TE11M256A,CY62256,CY7C199...)
+
+U6;
+ CPLD MAX7000 : EPM7128SLC84
+ou
+ CPLD Atmel ATF1508AS
+
+U6 (support): 
+ Support PLCC 84 broches
+
+U10:
+ Interface USB FTDI FT245RL
+
+Y2:
+ Oscillateur 5V 16MHZ (Boitier DIL14 ou DIL8)
+
+CON1:
+ Embase USB type B
+
+CON2:
+ Connecteur "HE-10" 2*17 (34 broches) 1 
+
+J50,J51,J52,J54,J56,J57,J58,J59,J60,J61,J62,J63:
+ Straps 13 
+

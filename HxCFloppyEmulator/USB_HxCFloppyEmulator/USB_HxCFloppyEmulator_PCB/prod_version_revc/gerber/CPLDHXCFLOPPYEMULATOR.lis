@@ -1,0 +1,183 @@
+Post Processor Report
+OrCAD FILE: E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.MAX
+Sat Jul 26 14:06:02 2008
+
+*********************************************************
+
+Output file: E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.TOP
+
+Aperture totals for E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.TOP:
+---------------------------------------------------------
+D20:  0.0140 ROUND  --      32 Draws,       0 Flashes
+D23:  0.0240 ROUND  --       1 Draws,       0 Flashes
+D33:  0.0100 ROUND  --     544 Draws,       0 Flashes
+D37:  0.0600 SQUARE --       0 Draws,      10 Flashes
+D45:  0.0140 ROUND  --       0 Draws,     265 Flashes
+D46:  0.0050 ROUND  --   18642 Draws,       0 Flashes
+D48:  0.0320 ROUND  --       3 Draws,       0 Flashes
+D53:  0.0120 ROUND  --       1 Draws,       0 Flashes
+D54:  0.0140 ROUND  --       0 Draws,      31 Flashes
+D69:  0.0660 ROUND  --       0 Draws,      30 Flashes
+D73:  0.0590 x 0.1120 RECTANGLE -----       2 Flashes
+D75:  0.0320 x 0.0380 RECTANGLE -----       2 Flashes
+D78:  0.0500 x 0.0340 RECTANGLE -----       1 Flashes
+D79:  0.0400 x 0.0340 RECTANGLE -----       2 Flashes
+D85:  0.0680 ROUND  --       0 Draws,      21 Flashes
+D87:  0.1500 ROUND  --       0 Draws,       4 Flashes
+D89:  0.0340 ROUND  --       2 Draws,       0 Flashes
+D90:  0.0480 ROUND  --      42 Draws,       0 Flashes
+D91:  0.0680 SQUARE --       0 Draws,       1 Flashes
+D92:  0.0660 SQUARE --       0 Draws,       4 Flashes
+D93:  0.0640 ROUND  --       0 Draws,     192 Flashes
+D94:  0.0640 SQUARE --       0 Draws,      11 Flashes
+D96:  0.1200 x 0.1201 RECTANGLE -----       2 Flashes
+D97:  0.1496 ROUND  --       0 Draws,       2 Flashes
+D98:  0.0640 ROUND  --       0 Draws,      23 Flashes
+---------------------------------------------------------
+ 25 D-Codes      -----   19267 Draws,     603 Flashes
+
+*********************************************************
+
+Output file: E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.BOT
+
+Aperture totals for E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.BOT:
+---------------------------------------------------------
+D18:  0.0900 x 0.0160 OBLONG    -----      25 Flashes
+D19:  0.0900 x 0.0160 RECTANGLE -----       3 Flashes
+D20:  0.0140 ROUND  --     518 Draws,       0 Flashes
+D21:  0.0160 ROUND  --     106 Draws,       0 Flashes
+D23:  0.0240 ROUND  --      19 Draws,       0 Flashes
+D33:  0.0100 ROUND  --     401 Draws,       0 Flashes
+D37:  0.0600 SQUARE --       0 Draws,      42 Flashes
+D45:  0.0140 ROUND  --       0 Draws,     265 Flashes
+D46:  0.0050 ROUND  --   25081 Draws,       0 Flashes
+D48:  0.0320 ROUND  --      48 Draws,       0 Flashes
+D51:  0.0180 ROUND  --       2 Draws,       0 Flashes
+D53:  0.0120 ROUND  --       4 Draws,       0 Flashes
+D54:  0.0140 ROUND  --       0 Draws,      31 Flashes
+D69:  0.0660 ROUND  --       0 Draws,      30 Flashes
+D85:  0.0680 ROUND  --       0 Draws,      21 Flashes
+D87:  0.1500 ROUND  --       0 Draws,       4 Flashes
+D90:  0.0480 ROUND  --      38 Draws,       0 Flashes
+D91:  0.0680 SQUARE --       0 Draws,       1 Flashes
+D92:  0.0660 SQUARE --       0 Draws,       4 Flashes
+D93:  0.0640 ROUND  --       0 Draws,     192 Flashes
+D94:  0.0640 SQUARE --       0 Draws,      11 Flashes
+D97:  0.1496 ROUND  --       0 Draws,       2 Flashes
+D98:  0.0640 ROUND  --       0 Draws,      23 Flashes
+---------------------------------------------------------
+ 23 D-Codes      -----   26217 Draws,     654 Flashes
+
+*********************************************************
+
+Output file: E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.SMT
+
+Aperture totals for E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.SMT:
+---------------------------------------------------------
+D37:  0.0600 SQUARE --       0 Draws,      10 Flashes
+D69:  0.0660 ROUND  --       0 Draws,      30 Flashes
+D73:  0.0590 x 0.1120 RECTANGLE -----       2 Flashes
+D75:  0.0320 x 0.0380 RECTANGLE -----       2 Flashes
+D78:  0.0500 x 0.0340 RECTANGLE -----       1 Flashes
+D79:  0.0400 x 0.0340 RECTANGLE -----       2 Flashes
+D85:  0.0680 ROUND  --       0 Draws,      32 Flashes
+D87:  0.1500 ROUND  --       0 Draws,       4 Flashes
+D91:  0.0680 SQUARE --       0 Draws,       1 Flashes
+D92:  0.0660 SQUARE --       0 Draws,       4 Flashes
+D93:  0.0640 ROUND  --       0 Draws,     181 Flashes
+D94:  0.0640 SQUARE --       0 Draws,      11 Flashes
+D99:  0.1535 ROUND  --       0 Draws,       2 Flashes
+D100: 0.0680 ROUND  --       0 Draws,      23 Flashes
+D101: 0.1200 SQUARE --       0 Draws,       2 Flashes
+---------------------------------------------------------
+ 15 D-Codes      -----       0 Draws,     307 Flashes
+
+*********************************************************
+
+Output file: E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.SMB
+
+Aperture totals for E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.SMB:
+---------------------------------------------------------
+D18:  0.0900 x 0.0160 OBLONG    -----      25 Flashes
+D19:  0.0900 x 0.0160 RECTANGLE -----       3 Flashes
+D37:  0.0600 SQUARE --       0 Draws,      42 Flashes
+D69:  0.0660 ROUND  --       0 Draws,      30 Flashes
+D85:  0.0680 ROUND  --       0 Draws,      32 Flashes
+D87:  0.1500 ROUND  --       0 Draws,       4 Flashes
+D91:  0.0680 SQUARE --       0 Draws,       1 Flashes
+D92:  0.0660 SQUARE --       0 Draws,       4 Flashes
+D93:  0.0640 ROUND  --       0 Draws,     181 Flashes
+D94:  0.0640 SQUARE --       0 Draws,      11 Flashes
+D99:  0.1535 ROUND  --       0 Draws,       2 Flashes
+D100: 0.0680 ROUND  --       0 Draws,      23 Flashes
+---------------------------------------------------------
+ 12 D-Codes      -----       0 Draws,     358 Flashes
+
+*********************************************************
+
+Output file: E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.SST
+
+Aperture totals for E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.SST:
+---------------------------------------------------------
+D32:  0.0080 ROUND  --     523 Draws,       0 Flashes
+D33:  0.0100 ROUND  --     151 Draws,       0 Flashes
+D57:  0.0060 ROUND  --     142 Draws,       0 Flashes
+---------------------------------------------------------
+  3 D-Codes      -----     816 Draws,       0 Flashes
+
+*********************************************************
+
+Output file: E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.DRD
+
+Aperture totals for E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT\CPLDHXCFLOPPYEMULATOR.DRD:
+---------------------------------------------------------
+D30:  0.0500 ROUND  --       5 Draws,       0 Flashes
+D33:  0.0100 ROUND  --    2106 Draws,       0 Flashes
+---------------------------------------------------------
+  2 D-Codes      -----    2111 Draws,       0 Flashes
+
+
+*********************************************************
+
+Aperture totals for entire project:
+---------------------------------------------------------
+D18:  0.0900 x 0.0160 OBLONG    -----      50 Flashes
+D19:  0.0900 x 0.0160 RECTANGLE -----       6 Flashes
+D20:  0.0140 ROUND  --     550 Draws,       0 Flashes
+D21:  0.0160 ROUND  --     106 Draws,       0 Flashes
+D23:  0.0240 ROUND  --      20 Draws,       0 Flashes
+D30:  0.0500 ROUND  --       5 Draws,       0 Flashes
+D32:  0.0080 ROUND  --     523 Draws,       0 Flashes
+D33:  0.0100 ROUND  --    3202 Draws,       0 Flashes
+D37:  0.0600 SQUARE --       0 Draws,     104 Flashes
+D45:  0.0140 ROUND  --       0 Draws,     530 Flashes
+D46:  0.0050 ROUND  --   43723 Draws,       0 Flashes
+D48:  0.0320 ROUND  --      51 Draws,       0 Flashes
+D51:  0.0180 ROUND  --       2 Draws,       0 Flashes
+D53:  0.0120 ROUND  --       5 Draws,       0 Flashes
+D54:  0.0140 ROUND  --       0 Draws,      62 Flashes
+D57:  0.0060 ROUND  --     142 Draws,       0 Flashes
+D69:  0.0660 ROUND  --       0 Draws,     120 Flashes
+D73:  0.0590 x 0.1120 RECTANGLE -----       4 Flashes
+D75:  0.0320 x 0.0380 RECTANGLE -----       4 Flashes
+D78:  0.0500 x 0.0340 RECTANGLE -----       2 Flashes
+D79:  0.0400 x 0.0340 RECTANGLE -----       4 Flashes
+D85:  0.0680 ROUND  --       0 Draws,     106 Flashes
+D87:  0.1500 ROUND  --       0 Draws,      16 Flashes
+D89:  0.0340 ROUND  --       2 Draws,       0 Flashes
+D90:  0.0480 ROUND  --      80 Draws,       0 Flashes
+D91:  0.0680 SQUARE --       0 Draws,       4 Flashes
+D92:  0.0660 SQUARE --       0 Draws,      16 Flashes
+D93:  0.0640 ROUND  --       0 Draws,     746 Flashes
+D94:  0.0640 SQUARE --       0 Draws,      44 Flashes
+D96:  0.1200 x 0.1201 RECTANGLE -----       2 Flashes
+D97:  0.1496 ROUND  --       0 Draws,       4 Flashes
+D98:  0.0640 ROUND  --       0 Draws,      46 Flashes
+D99:  0.1535 ROUND  --       0 Draws,       4 Flashes
+D100: 0.0680 ROUND  --       0 Draws,      46 Flashes
+D101: 0.1200 SQUARE --       0 Draws,       2 Flashes
+---------------------------------------------------------
+ 35 D-Codes      -----   48411 Draws,    1922 Flashes
+
+
+No warnings or errors.

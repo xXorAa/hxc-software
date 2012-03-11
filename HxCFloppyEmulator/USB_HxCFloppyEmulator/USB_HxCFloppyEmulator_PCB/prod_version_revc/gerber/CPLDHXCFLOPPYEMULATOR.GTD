@@ -1,0 +1,77 @@
+{Environment
+	{FilesPath  E:\HXCFLOPPYEMULATOR_IPCORE\PCB\PROD_VERSION_REVC\ORCAD_LAYOUT}
+}
+{Layers
+	{Layer  1
+		{File        CPLDHXCFLOPPYEMULATOR.TOP}
+		{LyrName     -}
+		{ApList      }
+		{Visibility  On}
+		{FlashColor  DodgerBlue4}
+		{DrawColor   DodgerBlue4}
+		{Type        Top}
+	}
+	{Layer  2
+		{File        CPLDHXCFLOPPYEMULATOR.BOT}
+		{LyrName     -}
+		{ApList      }
+		{Visibility  On}
+		{FlashColor  Blue}
+		{DrawColor   Blue}
+		{Type        Bottom}
+	}
+	{Layer  3
+		{File        CPLDHXCFLOPPYEMULATOR.SMT}
+		{LyrName     -}
+		{ApList      }
+		{Visibility  On}
+		{FlashColor  Yellow}
+		{DrawColor   Yellow}
+		{Type        Other}
+	}
+	{Layer  4
+		{File        CPLDHXCFLOPPYEMULATOR.SMB}
+		{LyrName     -}
+		{ApList      }
+		{Visibility  On}
+		{FlashColor  vga16green}
+		{DrawColor   vga16green}
+		{Type        Other}
+	}
+	{Layer  5
+		{File        CPLDHXCFLOPPYEMULATOR.SST}
+		{LyrName     -}
+		{ApList      }
+		{Visibility  On}
+		{FlashColor  vga16magenta}
+		{DrawColor   vga16magenta}
+		{Type        Other}
+	}
+	{Layer  6
+		{File        CPLDHXCFLOPPYEMULATOR.DRD}
+		{LyrName     -}
+		{ApList      }
+		{Visibility  On}
+		{FlashColor  col2}
+		{DrawColor   col2}
+		{Type        Other}
+	}
+}
+{Format Gerber
+	{Dialect           RS274X}
+	{m.n               3.4}
+	{Mode              Absolute}
+	{ZeroSuppression   Leading}
+	{Terminator        0x2a, 0xD, 0xA}
+	{Metric            No}
+	{Modal             No}
+	{UserData          Yes}
+	{Nets              No}
+	{Gcmds             Yes}
+	{CharSet           ASCII}
+	{Arcs360           No}
+	{ArcsModal         Yes}
+	{HonorCrLf         No}
+	{Comments          Yes}
+	{Flags             0}
+}
