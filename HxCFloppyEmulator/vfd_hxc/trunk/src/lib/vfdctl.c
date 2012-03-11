@@ -73,25 +73,27 @@ static const struct
 	int number_of_side;
 	int number_of_sector;
 	int bitrate;
+	int rpm;
 }
+
 media_tbl[VFD_MEDIA_MAX] =
 {
-	{ 0,						"",0,0,0,250000},					//	VFD_MEDIA_NONE,
-	{ VFD_SECTOR_TO_BYTE(320),	"5.25\" 160KB",40,1,8,250000 },		//	VFD_MEDIA_F5_160
-	{ VFD_SECTOR_TO_BYTE(360),	"5.25\" 180KB",40,1,9,250000 },		//	VFD_MEDIA_F5_180
-	{ VFD_SECTOR_TO_BYTE(640),	"5.25\" 320KB",40,2,8,250000 },		//	VFD_MEDIA_F5_320
-	{ VFD_SECTOR_TO_BYTE(720),	"5.25\" 360KB",40,2,9,250000 },		//	VFD_MEDIA_F5_360
-	{ VFD_SECTOR_TO_BYTE(1280),	"3.5\"  640KB",80,2,8,250000 },		//	VFD_MEDIA_F3_640
-	{ VFD_SECTOR_TO_BYTE(1280),	"5.25\" 640KB",80,2,8,250000 },		//	VFD_MEDIA_F5_640
-	{ VFD_SECTOR_TO_BYTE(1440),	"3.5\"  720KB",80,2,9,250000 },		//	VFD_MEDIA_F3_720
-	{ VFD_SECTOR_TO_BYTE(1440),	"5.25\" 720KB",80,2,9,250000 },		//	VFD_MEDIA_F5_720
-	{ VFD_SECTOR_TO_BYTE(1640),	"3.5\"  820KB",82,2,10,250000 },		//	VFD_MEDIA_F3_820
-	{ VFD_SECTOR_TO_BYTE(2400),	"3.5\"	1.2MB",80,2,15,500000 },		//	VFD_MEDIA_F3_1P2
-	{ VFD_SECTOR_TO_BYTE(2400),	"5.25\" 1.2MB",80,2,15,500000 },		//	VFD_MEDIA_F5_1P2
-	{ VFD_SECTOR_TO_BYTE(2880),	"3.5\"  1.44MB",80,2,18,500000 },		//	VFD_MEDIA_F3_1P4
-	{ VFD_SECTOR_TO_BYTE(3360),	"3.5\"  1.68MB DMF",80,2,21,500000 },	//	VFD_MEDIA_F3_1P6
-	{ VFD_SECTOR_TO_BYTE(3444),	"3.5\"  1.72MB DMF",82,2,21,500000 },	//	VFD_MEDIA_F3_1P7
-	//{ VFD_SECTOR_TO_BYTE(5760),	"3.5\"  2.88MB",80,2,36,1000000}		//	VFD_MEDIA_F3_2P8
+	{ 0,						"",0,0,0,250000,300},					//	VFD_MEDIA_NONE,
+	{ VFD_SECTOR_TO_BYTE(320),	"5.25\" 160KB",40,1,8,250000,300 },		//	VFD_MEDIA_F5_160
+	{ VFD_SECTOR_TO_BYTE(360),	"5.25\" 180KB",40,1,9,250000,300 },		//	VFD_MEDIA_F5_180
+	{ VFD_SECTOR_TO_BYTE(640),	"5.25\" 320KB",40,2,8,250000,300 },		//	VFD_MEDIA_F5_320
+	{ VFD_SECTOR_TO_BYTE(720),	"5.25\" 360KB",40,2,9,250000,300 },		//	VFD_MEDIA_F5_360
+	{ VFD_SECTOR_TO_BYTE(1280),	"3.5\"  640KB",80,2,8,250000,300 },		//	VFD_MEDIA_F3_640
+	{ VFD_SECTOR_TO_BYTE(1280),	"5.25\" 640KB",80,2,8,250000,300 },		//	VFD_MEDIA_F5_640
+	{ VFD_SECTOR_TO_BYTE(1440),	"3.5\"  720KB",80,2,9,250000,300 },		//	VFD_MEDIA_F3_720
+	{ VFD_SECTOR_TO_BYTE(1440),	"5.25\" 720KB",80,2,9,250000,300 },		//	VFD_MEDIA_F5_720
+	{ VFD_SECTOR_TO_BYTE(1640),	"3.5\"  820KB",82,2,10,250000,300 },		//	VFD_MEDIA_F3_820
+	{ VFD_SECTOR_TO_BYTE(2400),	"3.5\"	1.2MB",80,2,15,500000,360 },		//	VFD_MEDIA_F3_1P2
+	{ VFD_SECTOR_TO_BYTE(2400),	"5.25\" 1.2MB",80,2,15,500000,360 },		//	VFD_MEDIA_F5_1P2
+	{ VFD_SECTOR_TO_BYTE(2880),	"3.5\"  1.44MB",80,2,18,500000,300 },		//	VFD_MEDIA_F3_1P4
+	{ VFD_SECTOR_TO_BYTE(3360),	"3.5\"  1.68MB DMF",80,2,21,500000,300 },	//	VFD_MEDIA_F3_1P6
+	{ VFD_SECTOR_TO_BYTE(3444),	"3.5\"  1.72MB DMF",82,2,21,500000,300 },	//	VFD_MEDIA_F3_1P7
+	//{ VFD_SECTOR_TO_BYTE(5760),	"3.5\"  2.88MB",80,2,36,1000000,300}		//	VFD_MEDIA_F3_2P8
 };
 
 
@@ -2852,7 +2854,7 @@ DWORD WINAPI VfdSaveImage(
 		{
 			for(side=0;side<nbside;side++)
 			{
-				hxcfe_pushTrack (fb,300,track,side,IBMFORMAT_DD);
+				hxcfe_pushTrack (fb,media_tbl[i].rpm,track,side,IBMFORMAT_DD);
 				for(sector=0;sector<nbsect;sector++)
 				{
 					hxcfe_addSector(fb,1+sector,side,track,&buf[((512*nbsect)*((track*nbside)+side))+(sector*512)],512);
@@ -2912,7 +2914,7 @@ DWORD WINAPI VfdSaveImage(
 			{
 				for(side=0;side<nbside;side++)
 				{
-					hxcfe_pushTrack (fb,300,track,side,IBMFORMAT_DD);
+					hxcfe_pushTrack (fb,media_tbl[i].rpm,track,side,IBMFORMAT_DD);
 					for(sector=0;sector<nbsect;sector++)
 					{
 						hxcfe_addSector(fb,1+sector,side,track,&buf[((512*nbsect)*((track*nbside)+side))+(sector*512)],512);
