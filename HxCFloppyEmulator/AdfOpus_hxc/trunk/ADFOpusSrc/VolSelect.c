@@ -183,6 +183,7 @@ enum DiskFormat	VolGetFormat(HWND dlg)
 	SECTORSEARCH* ss;
 	int image_size;
 	FILE * f;
+	int loaderId;
 
 	char * floppybuffer;
 
@@ -210,8 +211,8 @@ enum DiskFormat	VolGetFormat(HWND dlg)
 
 	// Open HFE
 	hxcfe=hxcfe_init();
-	hxcfe_selectContainer(hxcfe,"HXC_HFE");
-	fp=hxcfe_floppyLoad(hxcfe,(char*)gstrFileName,0);
+	loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
+	fp=hxcfe_floppyLoad(hxcfe,(char*)gstrFileName,loaderId,0);
 	if(fp)
 	{
 		image_size=hxcfe_getFloppySize(hxcfe,fp,0);

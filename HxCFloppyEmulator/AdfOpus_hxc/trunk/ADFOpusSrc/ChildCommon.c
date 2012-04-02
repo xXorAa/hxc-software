@@ -302,6 +302,7 @@ void ChildOnDestroy(HWND win)
 
 	HXCFLOPPYEMULATOR* hxcfe;
 	FLOPPY * fp;
+	int loaderId;
 
 	/* unmount volume and device if this an amiga lister */
 ///////////////////////FIXME - to allow for multiple views, etc.
@@ -325,12 +326,12 @@ void ChildOnDestroy(HWND win)
 	if(ci->dfDisk == HFE){
 
 		hxcfe=hxcfe_init();
-		hxcfe_selectContainer(hxcfe,"AMIGA_ADF");
-		fp=hxcfe_floppyLoad(hxcfe,(char*)ci->temp_path,0);
+		loaderId=hxcfe_getLoaderID(hxcfe,"AMIGA_ADF");
+		fp=hxcfe_floppyLoad(hxcfe,(char*)ci->temp_path,loaderId,0);
 		if(fp)
 		{
-			hxcfe_selectContainer(hxcfe,"HXC_HFE");
-			hxcfe_floppyExport(hxcfe,fp,(char*)ci->orig_path);
+			loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
+			hxcfe_floppyExport(hxcfe,fp,(char*)ci->orig_path,loaderId);
 			hxcfe_floppyUnload(hxcfe,fp);
 			hxcfe_deinit(hxcfe);
 		}

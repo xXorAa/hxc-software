@@ -168,6 +168,7 @@ void BCConvert(HWND dlg)
 	HXCFLOPPYEMULATOR * hxcfe;
 	FLOPPY* fp;
 	SECTORSEARCH* ss;
+	int loaderId;
 	unsigned char * floppybuffer;
 	FILE * f;
 
@@ -240,8 +241,8 @@ void BCConvert(HWND dlg)
 			// Overwrite.
 				// Open HFE
 				hxcfe=hxcfe_init();
-				hxcfe_selectContainer(hxcfe,"HXC_HFE");
-				fp=hxcfe_floppyLoad(hxcfe,(char*)inBuf,0);
+				loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
+				fp=hxcfe_floppyLoad(hxcfe,(char*)inBuf,loaderId,0);
 				if(fp)
 				{
 					image_size=hxcfe_getFloppySize(hxcfe,fp,0);
@@ -417,17 +418,17 @@ void BCConvert(HWND dlg)
 
 			hxcfe=hxcfe_init();
 
-			// Select the D88 loader.
-			hxcfe_selectContainer(hxcfe,"AUTOSELECT");
-
+			fp=0;
+			loaderId=hxcfe_autoSelectLoader(hxcfe,inBuf,0);
 			// Load the image
-			fp=hxcfe_floppyLoad(hxcfe,inBuf,0);
+			if(loaderId>=0)
+				fp=hxcfe_floppyLoad(hxcfe,inBuf,loaderId,0);
 			if(fp)
 			{
 				// Select the HFE loader/exporter.
-				hxcfe_selectContainer(hxcfe,"HXC_HFE");
+				loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
 				// Save the file...
-				hxcfe_floppyExport(hxcfe,fp,outBuf);
+				hxcfe_floppyExport(hxcfe,fp,outBuf,loaderId);
 				// Free the loaded image
 				hxcfe_floppyUnload(hxcfe,fp);
 				strcpy(statusBuf, "...file compressed successfully.");

@@ -286,6 +286,7 @@ void NewCreateFile(void *lpVoid)
 	struct Volume	*vol;
 	HXCFLOPPYEMULATOR* hxcfe;
 	FLOPPY * fp;
+	int loaderId;
 
 	Percent = 0;
 
@@ -334,14 +335,19 @@ void NewCreateFile(void *lpVoid)
 	if(iType == BST_CHECKED)
 	{
 		hxcfe=hxcfe_init();
+
+		fp=0;
 		// Load the image
-		fp=hxcfe_floppyLoad(hxcfe,strNewFileName,0);
+		loaderId=hxcfe_autoSelectLoader(hxcfe,strNewFileName,0);
+			// Load the image
+		if(loaderId>=0)
+			fp=hxcfe_floppyLoad(hxcfe,strNewFileName,loaderId,0);
 		if(fp)
 		{
 			// Select the HFE loader/exporter.
-			hxcfe_selectContainer(hxcfe,"HXC_HFE");
+			loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
 			// Save the file...
-			hxcfe_floppyExport(hxcfe,fp,gstrFileName);
+			hxcfe_floppyExport(hxcfe,fp,gstrFileName,loaderId);
 			// Free the loaded image
 			hxcfe_floppyUnload(hxcfe,fp);
 		}

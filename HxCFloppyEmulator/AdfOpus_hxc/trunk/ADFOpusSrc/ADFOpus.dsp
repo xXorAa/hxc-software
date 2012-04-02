@@ -16,10 +16,10 @@ CFG=ADFOpus - Win32 Debug
 !MESSAGE NMAKE /f "ADFOpus.mak" CFG="ADFOpus - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
-!MESSAGE 
+!MESSAGE
 !MESSAGE "ADFOpus - Win32 Release" (based on "Win32 (x86) Application")
 !MESSAGE "ADFOpus - Win32 Debug" (based on "Win32 (x86) Application")
-!MESSAGE 
+!MESSAGE
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
@@ -33,17 +33,17 @@ RSC=rc.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "ADFOpus___Win32_Release"
-# PROP BASE Intermediate_Dir "ADFOpus___Win32_Release"
-# PROP BASE Target_Dir ""
+# PROP BASE Output_Dir "..\..\..\build\"
+# PROP BASE Intermediate_Dir "..\..\..\build\ADFOpus_Release"
+# PROP BASE Target_Dir "..\..\..\build\"
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "Release"
-# PROP Intermediate_Dir "Release"
+# PROP Output_Dir "..\..\..\build\"
+# PROP Intermediate_Dir "..\..\..\build\ADFOpus_Release"
 # PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
+# PROP Target_Dir "..\..\..\build\"
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /MT /W3 /Gi /GX /O2 /I "adflib/lib" /I "adflib/lib/win32" /I "xdms" /I "zlib" /I "libhxcfe" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /FR /YX"Pch.h" /FD /c
+# ADD CPP /nologo /MT /W3 /Gi /GX /O2 /I "adflib/lib" /I "adflib/lib/win32" /I "xdms" /I "zlib" /I "..\..\..\libhxcfe\trunk\sources" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /FR /YX"Pch.h" /FD /c
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /win32
 # SUBTRACT MTL /mktyplib203
@@ -54,29 +54,29 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 adflibs.lib xdms.lib zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib imagehlp.lib /nologo /version:1.0 /subsystem:windows /machine:I386 /nodefaultlib:"libc" /libpath:"ADFLib\Bin\Win32\Release" /libpath:"xdms\Release" /libpath:"Zlib\Release"
+# ADD LINK32 adflibs.lib xdms.lib zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib imagehlp.lib /nologo /version:1.0 /subsystem:windows /machine:I386 /nodefaultlib:"libc" /libpath:"..\..\..\build\" /libpath:"xdms\Release" /libpath:"Zlib\Release"
 # SUBTRACT LINK32 /verbose /nodefaultlib
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Desc=Copying help files...
-PostBuild_Cmds=copy help\adfopus.hlp ADFOpus.hlp	copy help\adfopus.cnt ADFOpus.cnt
+#PostBuild_Desc=Copying help files...
+#PostBuild_Cmds=copy help\adfopus.hlp ADFOpus.hlp	copy help\adfopus.cnt ADFOpus.cnt
 # End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "ADFOpus - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir "ADFOpus___Win32_Debug"
-# PROP BASE Intermediate_Dir "ADFOpus___Win32_Debug"
-# PROP BASE Target_Dir ""
+# PROP BASE Output_Dir "..\..\..\build\"
+# PROP BASE Intermediate_Dir "..\..\..\build\ADFOpus_Debug"
+# PROP BASE Target_Dir "..\..\..\build\"
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "Debug"
-# PROP Intermediate_Dir "Debug"
+# PROP Output_Dir "..\..\..\build\"
+# PROP Intermediate_Dir "..\..\..\build\ADFOpus_Debug"
 # PROP Ignore_Export_Lib 0
-# PROP Target_Dir ""
+# PROP Target_Dir "..\..\..\build\"
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /MTd /W3 /Gi /GX /ZI /Od /I "adflib/lib" /I "adflib/lib/win32" /I "xdms" /I "zlib" /I "libhxcfe" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Fr /YX"Pch.h" /FD /GZ /c
+# ADD CPP /nologo /MTd /W3 /Gi /GX /ZI /Od /I "adflib/lib" /I "adflib/lib/win32" /I "xdms" /I "zlib" /I "..\..\..\libhxcfe\trunk\sources" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /Fr /YX"Pch.h" /FD /GZ /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /win32
 # SUBTRACT MTL /mktyplib203
@@ -87,15 +87,15 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 adflibs.lib xdmsdbg.lib zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib imagehlp.lib /nologo /version:1.0 /subsystem:windows /debug /machine:I386 /nodefaultlib:"libcd" /pdbtype:sept /libpath:"ADFLib\Bin\Win32\Debug" /libpath:"xdms\Debug" /libpath:"Zlib\Debug"
+# ADD LINK32 adflibs.lib xdmsdbg.lib zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib imagehlp.lib /nologo /version:1.0 /subsystem:windows /debug /machine:I386 /nodefaultlib:"libcd" /pdbtype:sept /libpath:"..\..\..\build\" /libpath:"xdms\Debug" /libpath:"Zlib\Debug"
 # SUBTRACT LINK32 /verbose /pdb:none /nodefaultlib
 # Begin Special Build Tool
 SOURCE="$(InputPath)"
-PostBuild_Desc=Copying help files...
-PostBuild_Cmds=copy help\adfopus.hlp ADFOpus.hlp	copy help\adfopus.cnt ADFOpus.cnt
+#PostBuild_Desc=Copying help files...
+#PostBuild_Cmds=copy help\adfopus.hlp ADFOpus.hlp	copy help\adfopus.cnt ADFOpus.cnt
 # End Special Build Tool
 
-!ENDIF 
+!ENDIF
 
 # Begin Target
 
@@ -489,7 +489,7 @@ SOURCE=.\Images\uponelev.bmp
 # End Source File
 # Begin Source File
 
-SOURCE=.\libhxcfe\libhxcfe.lib
+SOURCE=.\..\..\..\build\libhxcfe.lib
 # End Source File
 # End Target
 # End Project

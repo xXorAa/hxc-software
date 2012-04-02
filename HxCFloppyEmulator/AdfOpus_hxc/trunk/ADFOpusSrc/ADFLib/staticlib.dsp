@@ -7,19 +7,19 @@
 CFG=staticlib - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "staticlib.mak".
-!MESSAGE 
+!MESSAGE
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
-!MESSAGE 
+!MESSAGE
 !MESSAGE NMAKE /f "staticlib.mak" CFG="staticlib - Win32 Debug"
-!MESSAGE 
+!MESSAGE
 !MESSAGE Possible choices for configuration are:
-!MESSAGE 
+!MESSAGE
 !MESSAGE "staticlib - Win32 Release" (based on "Win32 (x86) Static Library")
 !MESSAGE "staticlib - Win32 Debug" (based on "Win32 (x86) Static Library")
-!MESSAGE 
+!MESSAGE
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
@@ -32,14 +32,14 @@ RSC=rc.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "Release"
-# PROP BASE Intermediate_Dir "Release"
-# PROP BASE Target_Dir ""
+# PROP BASE Output_Dir "..\..\..\..\build\"
+# PROP BASE Intermediate_Dir "..\..\..\..\build\Release_ADFLib"
+# PROP BASE Target_Dir "..\..\..\..\build\"
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "Release"
-# PROP Intermediate_Dir "Release"
-# PROP Target_Dir ""
+# PROP Output_Dir "..\..\..\..\build\"
+# PROP Intermediate_Dir "..\..\..\..\build\Release_ADFLib"
+# PROP Target_Dir "..\..\..\..\build\"
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /YX /FD /c
 # ADD CPP /nologo /MT /W3 /GX /O2 /I "Lib/Win32" /D "WIN32" /D "NDEBUG" /D "LITT_ENDIAN" /YX /FD /c
 # ADD BASE RSC /l 0xc09
@@ -49,20 +49,20 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo /out:"Bin\Win32\Release\adflibs.lib"
+# ADD LIB32 /nologo /out:"..\..\..\..\build\adflibs.lib"
 
 !ELSEIF  "$(CFG)" == "staticlib - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir "Debug"
-# PROP BASE Intermediate_Dir "Debug"
-# PROP BASE Target_Dir ""
+# PROP BASE Output_Dir "..\..\..\..\build\"
+# PROP BASE Intermediate_Dir "..\..\..\..\build\Debug_ADFLib"
+# PROP BASE Target_Dir "..\..\..\..\build\"
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "Debug"
-# PROP Intermediate_Dir "Debug"
-# PROP Target_Dir ""
+# PROP Output_Dir "..\..\..\..\build\"
+# PROP Intermediate_Dir "..\..\..\..\build\Debug_ADFLib"
+# PROP Target_Dir "..\..\..\..\build\"
 # ADD BASE CPP /nologo /W3 /GX /Z7 /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /YX /FD /c
 # ADD CPP /nologo /MTd /W3 /GX /ZI /Od /I "Lib/Win32" /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "LITT_ENDIAN" /YX /FD /c
 # ADD BASE RSC /l 0xc09
@@ -72,9 +72,9 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo /out:"Bin\Win32\Debug\adflibs.lib"
+# ADD LIB32 /nologo /out:"..\..\..\..\build\adflibs.lib"
 
-!ENDIF 
+!ENDIF
 
 # Begin Target
 
