@@ -16,10 +16,10 @@ CFG=ADFOpus - Win32 Debug
 !MESSAGE NMAKE /f "ADFOpus.mak" CFG="ADFOpus - Win32 Debug"
 !MESSAGE 
 !MESSAGE Possible choices for configuration are:
-!MESSAGE
+!MESSAGE 
 !MESSAGE "ADFOpus - Win32 Release" (based on "Win32 (x86) Application")
 !MESSAGE "ADFOpus - Win32 Debug" (based on "Win32 (x86) Application")
-!MESSAGE
+!MESSAGE 
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
@@ -54,13 +54,8 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 adflibs.lib xdms.lib zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib imagehlp.lib /nologo /version:1.0 /subsystem:windows /machine:I386 /nodefaultlib:"libc" /libpath:"..\..\..\build\" /libpath:"xdms\Release" /libpath:"Zlib\Release"
+# ADD LINK32 adflibs.lib xdms.lib zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib imagehlp.lib /nologo /version:1.0 /subsystem:windows /machine:I386 /nodefaultlib:"libc" /libpath:"..\..\..\build\\" /libpath:"xdms\Release" /libpath:"Zlib\Release"
 # SUBTRACT LINK32 /verbose /nodefaultlib
-# Begin Special Build Tool
-SOURCE="$(InputPath)"
-#PostBuild_Desc=Copying help files...
-#PostBuild_Cmds=copy help\adfopus.hlp ADFOpus.hlp	copy help\adfopus.cnt ADFOpus.cnt
-# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "ADFOpus - Win32 Debug"
 
@@ -87,15 +82,10 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 adflibs.lib xdmsdbg.lib zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib imagehlp.lib /nologo /version:1.0 /subsystem:windows /debug /machine:I386 /nodefaultlib:"libcd" /pdbtype:sept /libpath:"..\..\..\build\" /libpath:"xdms\Debug" /libpath:"Zlib\Debug"
+# ADD LINK32 adflibs.lib xdmsdbg.lib zlib.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib comctl32.lib imagehlp.lib /nologo /version:1.0 /subsystem:windows /debug /machine:I386 /nodefaultlib:"libcd" /pdbtype:sept /libpath:"..\..\..\build\\" /libpath:"xdms\Debug" /libpath:"Zlib\Debug"
 # SUBTRACT LINK32 /verbose /pdb:none /nodefaultlib
-# Begin Special Build Tool
-SOURCE="$(InputPath)"
-#PostBuild_Desc=Copying help files...
-#PostBuild_Cmds=copy help\adfopus.hlp ADFOpus.hlp	copy help\adfopus.cnt ADFOpus.cnt
-# End Special Build Tool
 
-!ENDIF
+!ENDIF 
 
 # Begin Target
 

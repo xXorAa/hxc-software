@@ -32,14 +32,14 @@ RSC=rc.exe
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
-# PROP BASE Output_Dir "Release"
-# PROP BASE Intermediate_Dir "Release"
-# PROP BASE Target_Dir ""
+# PROP BASE Output_Dir "..\..\..\..\build\"
+# PROP BASE Intermediate_Dir "..\..\..\..\build\Release_xdms"
+# PROP BASE Target_Dir "..\..\..\..\build\"
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 0
-# PROP Output_Dir "Release"
-# PROP Intermediate_Dir "Release"
-# PROP Target_Dir ""
+# PROP Output_Dir "..\..\..\..\build\"
+# PROP Intermediate_Dir "..\..\..\..\build\Release_xdms"
+# PROP Target_Dir "..\..\..\..\build\"
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
 # ADD CPP /nologo /MT /W3 /Gi /GX /O2 /D "WIN32" /D "NDEBUG" /D "_MBCS" /D "_LIB" /YX /FD /c
 # ADD BASE RSC /l 0x809 /d "NDEBUG"
@@ -55,14 +55,14 @@ LIB32=link.exe -lib
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
-# PROP BASE Output_Dir "Debug"
-# PROP BASE Intermediate_Dir "Debug"
-# PROP BASE Target_Dir ""
+# PROP BASE Output_Dir "..\..\..\..\build\"
+# PROP BASE Intermediate_Dir "..\..\..\..\build\Debug_xdms"
+# PROP BASE Target_Dir "..\..\..\..\build\"
 # PROP Use_MFC 0
 # PROP Use_Debug_Libraries 1
-# PROP Output_Dir "Debug"
-# PROP Intermediate_Dir "Debug"
-# PROP Target_Dir ""
+# PROP Output_Dir "..\..\..\..\build\"
+# PROP Intermediate_Dir "..\..\..\..\build\Debug_xdms"
+# PROP Target_Dir "..\..\..\..\build\"
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD CPP /nologo /MTd /W3 /Gi /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_MBCS" /D "_LIB" /YX /FD /GZ /c
 # ADD BASE RSC /l 0x809 /d "_DEBUG"
@@ -72,7 +72,7 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LIB32=link.exe -lib
 # ADD BASE LIB32 /nologo
-# ADD LIB32 /nologo /out:"Debug\xDMSdbg.lib"
+# ADD LIB32 /nologo /out:"..\..\..\..\build\xDMSdbg.lib"
 
 !ENDIF 
 
