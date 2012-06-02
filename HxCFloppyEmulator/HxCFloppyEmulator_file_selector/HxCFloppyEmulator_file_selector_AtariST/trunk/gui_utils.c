@@ -65,14 +65,24 @@ unsigned short SCREEN_YRESOL;
 	#define DEPTH    2 /* 1 BitPlanes should be used, gives eight colours. */
 	#define COLOURS  2 /* 2^1 = 2                                          */
 
-
 	#define BLACK 0x002           /*  RGB values for the four colors used.   */
 	#define RED   0xFFF
 	#define GREEN 0x0f0
 	#define BLUE  0x00f
 
+/*
+-------+-----+-----------------------------------------------------+----------
+       |     |                                BIT 11111198 76543210|
+       |     |                                    543210           |
+       |     |                     ST color value .....RRr .GGr.BBb|
+       |     |                    STe color value ....rRRR gGGGbBBB|
+$FF8240|word |Video palette register 0              Lowercase = LSB|R/W
+    :  |  :  |  :      :       :     :                             | :
+$FF825E|word |Video palette register 15                            |R/W
+-------+-----+-----------------------------------------------------+----------
+*/
 
-  static unsigned long colortable[] = {
+static unsigned long colortable[] = {
 								0x002, 0xFFF, 0x0f0, 0x00f,
 								0x000, 0xFFF, 0x0f0, 0x00f,
 								0xFFF, 0x000, 0x0f0, 0x00f,
@@ -84,88 +94,102 @@ unsigned short SCREEN_YRESOL;
 								0xF33, 0xFFF, 0x0f0, 0x00f,
 								0xF0F, 0xFFF, 0x0f0, 0x00f,
 								0xFFF, 0x0F0, 0x0f0, 0x00f,
-								0xFF0, 0xFFF, 0x0f0, 0x00f,
+								0x330, 0xFFF, 0x0f0, 0x00f,
 								0x000, 0xF00, 0x0f0, 0x00f,
 								0x000, 0x0F0, 0x0f0, 0x00f,
 								0x000, 0x00F, 0x0f0, 0x00f,
 								0x004, 0xFFF, 0x0f0, 0x00f,
 
+								0x036, 0xFFF, 0x0f0, 0x00f,
+								0x444, 0x037, 0x0f0, 0x00f,
+								0x000, 0xFF0, 0x0f0, 0x00f,
+								0x404, 0x743, 0x0f0, 0x00f,
+								0xFFF, 0x700, 0x0f0, 0x00f,
+								0x000, 0x222, 0x0f0, 0x00f,
+								0x000, 0x333, 0x0f0, 0x00f,
+								0x000, 0x444, 0x0f0, 0x00f,
+								0x000, 0x555, 0x0f0, 0x00f,
+								0x000, 0x666, 0x0f0, 0x00f,
+								0x000, 0x777, 0x0f0, 0x00f,
+								0x222, 0x000, 0x0f0, 0x00f,
+								0x333, 0x000, 0x0f0, 0x00f,
+								0x444, 0x000, 0x0f0, 0x00f,
+								0x555, 0x000, 0x0f0, 0x00f,
+								0x666, 0x000, 0x0f0, 0x00f,
+								
 };
-
-
-
 
 
 void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short x, unsigned short y)
 {
-  unsigned short i,j,k,l,x_offset,base_offset;
-  unsigned short *ptr_src;
-  unsigned short *ptr_dst;
+	unsigned short i,j,k,l,x_offset,base_offset;
+	unsigned short *ptr_src;
+	unsigned short *ptr_dst;
 
-  ptr_dst=(unsigned short*)membuffer;
-  ptr_src=(unsigned short*)&sprite->data[0];
+	ptr_dst=(unsigned short*)membuffer;
+	ptr_src=(unsigned short*)&sprite->data[0];
 
-   k=0;
-   l=0;
-   base_offset=((y*160)+ (((x>>2)&(~0x3))))/2;
-   for(j=0;j<(sprite->Ysize);j++)
-   {
-     l=base_offset +(80*j);
-     for(i=0;i<(sprite->Xsize/16);i++)
-     {
-       ptr_dst[l]=ptr_src[k];
-       l++;
-       ptr_dst[l]=ptr_src[k];
-       l++;
-       k++;
-     }
-   }
+	k=0;
+	l=0;
+	base_offset=((y*160)+ (((x>>2)&(~0x3))))/2;
+	for(j=0;j<(sprite->Ysize);j++)
+	{
+		l=base_offset +(80*j);
+		for(i=0;i<(sprite->Xsize/16);i++)
+		{
+			ptr_dst[l]=ptr_src[k];
+			l++;
+			ptr_dst[l]=ptr_src[k];
+			l++;
+			k++;
+		}
+	}
 
 }
 
 void print_char(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
 {
-  unsigned short j,k,l,c1;
-  unsigned short *ptr_src;
-  unsigned short *ptr_dst;
+	unsigned short j,k,l,c1;
+	unsigned short *ptr_src;
+	unsigned short *ptr_dst;
 
-  ptr_dst=(unsigned short*)membuffer;
-  ptr_src=(unsigned short*)&font->data[0];
-   x=(x>>3) & (~0x1);
-  // x=((x&(~0x1))<<1)+(x&1);//  0 1   2 3
+	ptr_dst=(unsigned short*)membuffer;
+	ptr_src=(unsigned short*)&font->data[0];
+	x=(x>>3) & (~0x1);
+	// x=((x&(~0x1))<<1)+(x&1);//  0 1   2 3
 
-   l=(y*80)+ x;
-   k=((c>>4)*(16*16))+(c&0xF);
-   for(j=0;j<16;j++)
-   {
-    ptr_dst[l]  =ptr_src[k];
-    ptr_dst[l+1]=ptr_src[k];
-    k=k+(16);
-    l=l+(80);
-   }
+	l=(y*80)+ x;
+	k=((c>>4)*(16*16))+(c&0xF);
+	for(j=0;j<16;j++)
+	{
+		ptr_dst[l]  =ptr_src[k];
+		ptr_dst[l+1]=ptr_src[k];
+		k=k+(16);
+		l=l+(80);
+	}
 
 }
 
 void print_char8x8(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
 {
-  unsigned short j,k,l,c1;
-  unsigned char *ptr_src;
-  unsigned char *ptr_dst;
+	unsigned short j,k,l,c1;
+	unsigned char *ptr_src;
+	unsigned char *ptr_dst;
 
-  ptr_dst=(unsigned char*)membuffer;
-  ptr_src=(unsigned char*)&font->data[0];
+	ptr_dst=(unsigned char*)membuffer;
+	ptr_src=(unsigned char*)&font->data[0];
 
-  x=x>>3;
-  x=((x&(~0x1))<<1)+(x&1);//  0 1   2 3
-  l=(y*160)+ (x);
-  k=((c>>4)*(8*8*2))+(c&0xF);
-  for(j=0;j<8;j++)
-  {
-    ptr_dst[l]  =ptr_src[k];
-    ptr_dst[l+2]=ptr_src[k];
-    k=k+(16);
-    l=l+(160);
-  }
+	x=x>>3;
+	x=((x&(~0x1))<<1)+(x&1);//  0 1   2 3
+	l=(y*160)+ (x);
+	k=((c>>4)*(8*8*2))+(c&0xF);
+	for(j=0;j<8;j++)
+	{
+		ptr_dst[l]  =ptr_src[k];
+		ptr_dst[l+2]=ptr_src[k];
+		k=k+(16);
+		l=l+(160);
+	}
 
 }
 /*void print_char8x8(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
@@ -226,53 +250,54 @@ void print_str(unsigned char * membuffer,char * buf,unsigned short x_pos,unsigne
 
 int hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,char * chaine, ...)
 {
-      char temp_buffer[1024];
+	char temp_buffer[1024];
 
-      va_list marker;
-      va_start( marker, chaine );
+	va_list marker;
+	va_start( marker, chaine );
 
-      vsnprintf(temp_buffer,1024,chaine,marker);
-      switch(mode)
-      {
-        case 0:
-        print_str(screen_buffer_aligned,temp_buffer,x_pos,y_pos,8);
-        break;
-        case 1:
-        print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8))/2,y_pos,8);
-        break;
-        case 2:
-        print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8)),y_pos,8);
-        break;
-        case 4:
-        print_str(screen_buffer_aligned,temp_buffer,x_pos,y_pos,16);
-        break;
-        case 5:
-        print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*16))/2,y_pos,16);
-        break;
-        case 6:
-        print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*16)),y_pos,16);
-        break;
-      }
+	vsnprintf(temp_buffer,1024,chaine,marker);
+	switch(mode)
+	{
+		case 0:
+			print_str(screen_buffer_aligned,temp_buffer,x_pos,y_pos,8);
+		break;
+		case 1:
+			print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8))/2,y_pos,8);
+		break;
+		case 2:
+			print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8)),y_pos,8);
+		break;
+		case 4:
+			print_str(screen_buffer_aligned,temp_buffer,x_pos,y_pos,16);
+		break;
+		case 5:
+			print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*16))/2,y_pos,16);
+		break;
+		case 6:
+			print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*16)),y_pos,16);
+		break;
+	}
 
-      va_end( marker );
+	va_end( marker );
 
-      return 0;
+	return 0;
 }
 
 void h_line(unsigned short y_pos,unsigned short val)
 {
-  unsigned short *ptr_dst;
-  unsigned short i,ptroffset;
+	unsigned short *ptr_dst;
+	unsigned short i,ptroffset;
 
-  ptr_dst=(unsigned short*)screen_buffer_aligned;
-  ptroffset=80* y_pos;
+	ptr_dst=(unsigned short*)screen_buffer_aligned;
+	ptroffset=80* y_pos;
 
-  for(i=0;i<80;i++)
-  {
-     ptr_dst[ptroffset+i]=val;
-  }
+	for(i=0;i<80;i++)
+	{
+		ptr_dst[ptroffset+i]=val;
+	}
 
 }
+
 void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned short y_p2,unsigned short fillval,unsigned char fill)
 {
 	unsigned short *ptr_dst;
@@ -306,16 +331,16 @@ void invert_line(unsigned short y_pos)
 	unsigned short *ptr_dst;
 	unsigned short ptroffset;
 
- for(j=0;j<8;j++)
- {
-  ptr_dst=(unsigned short*)screen_buffer_aligned;
-  ptroffset=80* (y_pos+j);
+	for(j=0;j<8;j++)
+	{
+		ptr_dst=(unsigned short*)screen_buffer_aligned;
+		ptroffset=80* (y_pos+j);
 
-  for(i=0;i<80;i++)
-  {
-     ptr_dst[ptroffset+i]=ptr_dst[ptroffset+i]^0xFFFF;
-  }
- }
+		for(i=0;i<80;i++)
+		{
+			ptr_dst[ptroffset+i]=ptr_dst[ptroffset+i]^0xFFFF;
+		}
+	}
 }
 
 void restore_box()
@@ -341,14 +366,14 @@ int hxc_printf_box(unsigned char mode,char * chaine, ...)
 
 	for(i=0;i< str_size;i=i+8)
 	{
-        print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80-8,8);
+		print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80-8,8);
 	}
 	print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),80-8,3);
 	print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),80-8,2);
 
 	for(i=0;i< str_size;i=i+8)
 	{
-        print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80,' ');
+		print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80,' ');
 	}
 
 	print_str(screen_buffer_aligned,temp_buffer,((SCREEN_XRESOL-str_size)/2)+(2*8),80,8);
@@ -357,7 +382,7 @@ int hxc_printf_box(unsigned char mode,char * chaine, ...)
 
 	for(i=0;i< str_size;i=i+8)
 	{
-        print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80+8,9);
+		print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80+8,9);
 	}
 	print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),80+8,5);
 	print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),80+8,4);
@@ -402,20 +427,20 @@ void initpal()
 	volatile unsigned short * ptr;
 	
 	ptr=(unsigned short *)0xFF8240;
-	*ptr=colortable[((color&0xF)*4)+0];
+	*ptr=colortable[((color&0x1F)*4)+0];
 	ptr=(unsigned short *)0xFF8242;
-	*ptr=colortable[((color&0xF)*4)+2];
+	*ptr=colortable[((color&0x1F)*4)+2];
 	ptr=(unsigned short *)0xFF8244;
-	*ptr=colortable[((color&0xF)*4)+3];
+	*ptr=colortable[((color&0x1F)*4)+3];
 	ptr=(unsigned short *)0xFF8246;
-	*ptr=colortable[((color&0xF)*4)+1];	
+	*ptr=colortable[((color&0x1F)*4)+1];	
 
 }
 
 void set_color_scheme(unsigned char colorm)
 {
 	color=colorm;
-    Supexec(initpal);
+	Supexec(initpal);
 }
 
 int init_display()
@@ -433,18 +458,16 @@ int init_display()
 	memset(screen_buffer,0,(32*1024) + 256);
 	screen_buffer_aligned = (unsigned char*)(((unsigned long)screen_buffer| 0xff)+1);
 
-        screen_buffer_backup=(unsigned char*)malloc((8*1000) + 256);
+	screen_buffer_backup=(unsigned char*)malloc((8*1000) + 256);
 	memset(screen_buffer_backup,0,(8*1000) + 256);
 	screen_buffer_backup_aligned = (unsigned char*)(((unsigned long)screen_buffer_backup| 0xff)+1);
 
 	Blitmode(1);
-	
-    Setscreen( -1, screen_buffer_aligned, 1 );
+
+	Setscreen( -1, screen_buffer_aligned, 1 );
 	color=0;
-    Supexec(initpal);
+	Supexec(initpal);
 
 	init_buffer();
 }
-
-
 

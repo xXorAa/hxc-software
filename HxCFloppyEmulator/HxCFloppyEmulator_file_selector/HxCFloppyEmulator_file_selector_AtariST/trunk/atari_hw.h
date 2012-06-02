@@ -32,6 +32,7 @@ unsigned char Keyboard();
 unsigned char wait_function_key();
 void jumptotrack(unsigned char t);
 void reboot();
+void initsound();
 
 unsigned short get_vid_mode();
 

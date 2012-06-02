@@ -24,6 +24,7 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 */
+
 typedef struct cfgfile_
 {
 	char signature[16]; //"HXCFECFGV1.0"
@@ -38,9 +39,15 @@ typedef struct cfgfile_
 	unsigned short update_cnt;
 	unsigned char load_last_floppy;
 	unsigned char buzzer_step_duration;  // 0xD8 <> 0xFF
-    unsigned char lcd_scroll_speed;
-
+	unsigned char lcd_scroll_speed;
+	unsigned char startup_mode;
+	unsigned char enable_drive_b;
 }__attribute__((__packed__)) cfgfile;
+
+
+//unsigned char get_device_parameters(struct DirectoryEntry *pDirEnt);
+//void update_cfgfile_parameters(struct DirectoryEntry *pDirEnt,unsigned char slot_index);
+
 
 
 struct ShortDirectoryEntry {

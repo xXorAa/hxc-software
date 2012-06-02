@@ -41,62 +41,75 @@ static unsigned char floppydrive;
 static unsigned char datacache[512*9];
 static unsigned char valid_cache;
 
+#define CONTERM *((unsigned char *) 0x484)
+
+static void keysound_off()
+{
+	CONTERM &= 0xFE;
+	CONTERM &= 0xFB;
+}
+
+void initsound()
+{
+	Supexec(keysound_off);
+}
 void jumptotrack(unsigned char t)
 {
 	unsigned short i,j;
 	unsigned char data[512];
-	
+
 	Floprd( &data, 0, floppydrive, 1, t, 0, 1 );
 
 };
 
 unsigned char writesector(unsigned char sectornum,unsigned char * data)
 {
-  int ret,retry;
-  valid_cache =0;
-  retry=3;
+	int ret,retry;
+	valid_cache =0;
+	retry=3;
 
-  ret=1;
-  while(retry && ret)
-  {	
-    ret=Flopwr( data, 0, floppydrive, sectornum, 255, 0, 1 );
-	retry--;		
-  }
-  if(!ret)
-	return 1;
-  else
-	return 0;
+	ret=1;
+	while(retry && ret)
+	{	
+		ret=Flopwr( data, 0, floppydrive, sectornum, 255, 0, 1 );
+	retry--;
+	}
+
+	if(!ret)
+		return 1;
+	else
+		return 0;
 }
 
 unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned char invalidate_cache)
 {
-  int ret,retry;
-  
-  retry=3;
-  ret=0;
-  if(!valid_cache || invalidate_cache)
-  {
-	if(sectornum<10)
+	int ret,retry;
+
+	retry=3;
+	ret=0;
+	if(!valid_cache || invalidate_cache)
 	{
-		ret=1;
-		while(retry && ret)
+		if(sectornum<10)
 		{
-			ret=Floprd( datacache, 0, floppydrive, 0, 255, 0, 9 );
-			retry--;
+			ret=1;
+			while(retry && ret)
+			{
+				ret=Floprd( datacache, 0, floppydrive, 0, 255, 0, 9 );
+				retry--;
+			}
+			memcpy((void*)data,&datacache[sectornum*512],512);
+			valid_cache=0xFF;
 		}
-		memcpy((void*)data,&datacache[sectornum*512],512);
-		valid_cache=0xFF;
 	}
-  }
-  else
-  {
+	else
+	{
 		memcpy((void*)data,&datacache[sectornum*512],512);
-  }
-  if(!ret)
-	return 1;
-  else
-	return 0;
-  
+	}
+	if(!ret)
+		return 1;
+	else
+		return 0;
+
 }
 
 
@@ -109,8 +122,6 @@ void init_atari_fdc(unsigned char drive)
 	Floprate( floppydrive, 2);
 	ret=Floprd( &datacache, 0, floppydrive, 0, 255, 0, 1 );
 }
-
-
 
 unsigned char Keyboard()
 {
@@ -187,13 +198,14 @@ unsigned short get_vid_mode()
 
 void su_reboot()
 {
-    asm("move.l #4,A6");
-    asm("move.l (A6),A0");
-    asm("move.l A0,-(SP)");
-    asm("rts");
+	asm("move.l #4,A6");
+	asm("move.l (A6),A0");
+	asm("move.l A0,-(SP)");
+	asm("rts");
 }
 
 void reboot()
 {
-       Supexec(su_reboot);
+	Supexec(su_reboot);
 }
+

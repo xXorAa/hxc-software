@@ -1,6 +1,6 @@
 /*
 //
-// Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011, 2012 Jean-François DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -57,7 +57,7 @@ static unsigned long cluster;
 static unsigned char sector[512];
 static unsigned char cfgfile_header[512];
 
-static unsigned char currentPath[256] = {"\\"};
+static unsigned char currentPath[4*256] = {"\\"};
 
 static unsigned char sdfecfg_file[2048];
 static unsigned char filename[4097];
@@ -452,9 +452,13 @@ void next_slot()
 
 void displayFolder()
 {
+	int i;
 	hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS,"Current directory:");
-	if(strlen(currentPath)<32)
-	hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS+8,"%s              ",currentPath);
+	
+	for(i=SCREEN_XRESOL/2;i<SCREEN_XRESOL;i=i+8) hxc_printf(0,i,CURDIR_Y_POS+8," ");
+
+	if(strlen(currentPath)<32)	
+		hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS+8,"%s",currentPath);
 	else
         hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS+8,"...%s    ",&currentPath[strlen(currentPath)-32]);
 }
@@ -463,10 +467,13 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 {
 	unsigned long first_cluster;
 	int currentPathLength;
-	unsigned char folder[17];
+	unsigned char folder[128+1];
 	unsigned char c;
 	int i;
+	int old_index;
 
+	old_index=strlen( currentPath );
+	
 	if ( (disk_ptr->DirEnt.longName[0] == (unsigned char)'.') && (disk_ptr->DirEnt.longName[1] == (unsigned char)'.') )
 	{
 		currentPathLength = strlen( currentPath ) - 1;
@@ -476,36 +483,46 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 			currentPathLength--;
 		}
 		while ( currentPath[ currentPathLength ] != (unsigned char)'/' );
+
+		/*if ( currentPath[ currentPathLength-1 ] != (unsigned char)':' )
+		{
+			currentPath[ currentPathLength ] = 0;
+		}*/
 	}
 	else
 	{
 		if((disk_ptr->DirEnt.longName[0] == (unsigned char)'.'))
 		{
-
 		}
 		else
 		{
-  			for (i=0; i < 16; i++ )
-  			{
-  				c = disk_ptr->DirEnt.longName[i];
-  				if ( ( c >= (32+1) ) && (c <= 127) )
-  				{
-  					folder[i] = c;
-  				}
-  				else
-  				{
-  					folder[i] = 0;
-  					i = 16;
-  				}
-  		}
+			for (i=0; i < 128; i++ )
+			{
+				c = disk_ptr->DirEnt.longName[i];
+				if ( ( c >= (32+0) ) && (c <= 127) )
+				{
+					folder[i] = c;
+				}
+				else
+				{
+					folder[i] = 0;
+					i = 128;
+				}
+			}
 
-  		currentPathLength = strlen( currentPath );
+			currentPathLength = strlen( currentPath );
+			/*if ( currentPath[ currentPathLength-1-1 ] != (unsigned char)':' )
+			{
+				strcat( currentPath, "/" );
+			}*/
 
-  		if( currentPath[ currentPathLength-1] != '/')
-  		strcat( currentPath, "/" );
-  		strcat( currentPath, folder );
-        }
+			if( currentPath[ currentPathLength-1] != '/')
+			strcat( currentPath, "/" );
 
+			strcat( currentPath, folder );
+		}
+
+		//strcat( currentPath, "/" );
 	}
 
 	displayFolder();
@@ -513,7 +530,12 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 	selectorpos=0;
 
 
-	fl_list_opendir(currentPath, &file_list_status);
+	if(!fl_list_opendir(currentPath, &file_list_status))
+	{
+		currentPath[old_index]=0;
+		fl_list_opendir(currentPath, &file_list_status);
+		displayFolder();
+	}
 	for(i=0;i<512;i++)
 	{
 		memcpy(&file_list_status_tab[i],&file_list_status ,sizeof(struct fs_dir_list_status));
@@ -567,9 +589,10 @@ int main(int argc, char* argv[])
 	unsigned char colormode;
 
 	FILE *f;
-
+	
+	initsound();
 	init_display();
-
+	
 	bootdev=0;//argv[1][0]-'0';
 
 	switch(bootdev)
@@ -600,6 +623,9 @@ int main(int argc, char* argv[])
 		hxc_printf_box(0,"Reading HXCSDFE.CFG ...");
 
 		read_cfg_file(sdfecfg_file);
+		
+		if(cfgfile_header[256+128]!=0xFF)
+			set_color_scheme(cfgfile_header[256+128]);
 
 		strcpy( currentPath, "/" );
 		displayFolder();
@@ -617,8 +643,8 @@ int main(int argc, char* argv[])
 		fl_list_opendir(currentPath, &file_list_status);
 		for(i=0;i<512;i++)
 		{
-                  memcpy(&file_list_status_tab[i],&file_list_status ,sizeof(struct fs_dir_list_status));
-        }
+			memcpy(&file_list_status_tab[i],&file_list_status ,sizeof(struct fs_dir_list_status));
+		}
 		clear_list(0);
 		
 		for(;;)
@@ -666,7 +692,7 @@ int main(int argc, char* argv[])
 							hxc_printf(0,0,y_pos," %c%s",entrytype,dir_entry.filename);
 
 							y_pos=y_pos+8;
-							dir_entry.filename[16]=0;
+							dir_entry.filename[127]=0;
 							sprintf(DirectoryEntry_tab[i].longName,"%s",dir_entry.filename);
 							dir_entry.filename[11]=0;
 							sprintf(DirectoryEntry_tab[i].name,"%s",dir_entry.filename);
@@ -878,9 +904,6 @@ int main(int argc, char* argv[])
 
 							}while(wait_function_key()!=FCT_OK);
 
-
-
-
 							clear_list(5);
 
 							i=0;
@@ -918,14 +941,13 @@ int main(int argc, char* argv[])
 							hxc_printf(1,0,HELP_Y_POS+(i*8), "Email : hxc2001@free.fr");
 							i++;
 							hxc_printf(1,0,HELP_Y_POS+(i*8), "V%s - %s",VERSIONCODE,DATECODE);
-
 							
 							do
 							{
 
 							}while(wait_function_key()!=FCT_OK);
 
-       						        clear_list(5);
+							clear_list(5);
 							init_buffer();
 							printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 							displayFolder();
@@ -1091,6 +1113,7 @@ int main(int argc, char* argv[])
 						case FCT_CHGCOLOR:
 							colormode++;
 							set_color_scheme(colormode);
+							cfgfile_header[256+128]=colormode;
 						break;	
 						case FCT_TOP:
 							page_number=0;
