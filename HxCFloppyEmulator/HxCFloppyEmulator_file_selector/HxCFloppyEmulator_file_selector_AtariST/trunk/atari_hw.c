@@ -53,13 +53,61 @@ void initsound()
 {
 	Supexec(keysound_off);
 }
+
+void delay(void)
+{
+	unsigned short delay = 90;
+	while (--delay)
+	{
+	}
+}
+
+void set_fdc_reg(unsigned short reg, unsigned short value)
+{
+	DMA->control = reg;
+	delay();
+	DMA->data = value;
+	delay();
+}
+
+unsigned short set_track(unsigned short track)
+{
+	MFP *mfp = MFP_BASE;
+	
+	if(track == 0) {
+		set_fdc_reg(FDC_CS, FDC_RESTORE | 0x2);
+	} else {
+		set_fdc_reg(FDC_DR, track);
+		set_fdc_reg(FDC_CS, FDC_SEEK | 0x2);
+	}
+
+	while(1) {
+		if((mfp->gpip & 0x20) == 0) 
+		{
+			return 0;
+		}
+	}	
+
+	return 0;
+}
+
+void su_headinit(void)
+{
+	set_track(0);
+	set_track(255);
+}
+
+void headinit(void)
+{
+	Supexec(su_headinit);
+}
+
 void jumptotrack(unsigned char t)
 {
 	unsigned short i,j;
 	unsigned char data[512];
 
 	Floprd( &data, 0, floppydrive, 1, t, 0, 1 );
-
 };
 
 unsigned char writesector(unsigned char sectornum,unsigned char * data)
@@ -85,7 +133,7 @@ unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned c
 {
 	int ret,retry;
 
-	retry=3;
+	retry=5;
 	ret=0;
 	if(!valid_cache || invalidate_cache)
 	{
@@ -120,6 +168,7 @@ void init_atari_fdc(unsigned char drive)
 	valid_cache=0;
 	floppydrive=drive;
 	Floprate( floppydrive, 2);
+	headinit();
 	ret=Floprd( &datacache, 0, floppydrive, 0, 255, 0, 1 );
 }
 
@@ -191,9 +240,17 @@ unsigned char wait_function_key()
 
 
 
-unsigned short get_vid_mode()
+unsigned long su_get_vid_mode()
 {
-	return 0;
+	if( *((unsigned char *) 0xFFFA01 ) & 0x80 )
+		return 0;
+	else
+		return 1;
+}
+
+unsigned long get_vid_mode()
+{
+	return Supexec(su_get_vid_mode);
 }
 
 void su_reboot()

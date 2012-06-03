@@ -34,7 +34,120 @@ void jumptotrack(unsigned char t);
 void reboot();
 void initsound();
 
-unsigned short get_vid_mode();
+unsigned long get_vid_mode();
 
 #define L_INDIAN(var) (((var&0x000000FF)<<24) |((var&0x0000FF00)<<8) |((var&0x00FF0000)>>8) |((var&0xFF000000)>>24))
 
+#define UWORD unsigned short
+#define UBYTE unsigned char
+#define ULONG unsigned long
+#define  WORD short
+
+struct dma {
+    UWORD   pad0[2];   
+     WORD   data;       /* sector count, data register */
+     WORD   control;    /* status/control register */
+    UBYTE   pad1;
+    UBYTE   addr_high;  
+    UBYTE   pad2;
+    UBYTE   addr_med;
+    UBYTE   pad3;
+    UBYTE   addr_low;
+};
+
+#define DMA     ((volatile struct dma *) 0xFFFF8600)
+
+// Control register bits
+#define DMA_A0      0x0002
+#define DMA_A1      0x0004
+#define DMA_HDC     0x0008
+#define DMA_SCREG   0x0010
+#define DMA_NODMA   0x0040
+#define DMA_FDC     0x0080
+#define DMA_WRBIT   0x0100
+
+// Status register bits
+#define DMA_OK      0x0001
+#define DMA_SCNOT0  0x0002
+#define DMA_DATREQ  0x0004
+
+#define FDC_CS  (DMA_FDC              )
+#define FDC_TR  (DMA_FDC|       DMA_A0)
+#define FDC_SR  (DMA_FDC|DMA_A1       )
+#define FDC_DR  (DMA_FDC|DMA_A1|DMA_A0)
+
+#define FDC_RESTORE 0x00
+#define FDC_SEEK    0x10
+#define FDC_STEP    0x20
+#define FDC_STEPI   0x40
+#define FDC_STEPO   0x60
+#define FDC_READ    0x80
+#define FDC_WRITE   0xA0
+#define FDC_READID  0xC0
+#define FDC_READTR  0xE0
+#define FDC_WRITETR 0xF0
+#define FDC_IRUPT   0xD0
+
+#define FDC_BUSY    0x01
+#define FDC_DRQ     0x02
+#define FDC_LOSTDAT 0x04
+#define FDC_TRACK0  0x04
+#define FDC_CRCERR  0x08
+#define FDC_RNF     0x10
+#define FDC_RT_SU   0x20
+#define FDC_WRI_PRO 0x40
+#define FDC_MOTORON 0x80
+ 
+typedef struct
+{
+        UBYTE   dum1;
+        volatile UBYTE  gpip;
+        UBYTE   dum2;
+        volatile UBYTE  aer; 
+        UBYTE   dum3;
+        volatile UBYTE  ddr; 
+        UBYTE   dum4;
+        volatile UBYTE  iera;
+        UBYTE   dum5;
+        volatile UBYTE  ierb;
+        UBYTE   dum6;
+        volatile UBYTE  ipra;
+        UBYTE   dum7;
+        volatile UBYTE  iprb;
+        UBYTE   dum8;
+        volatile UBYTE  isra;
+        UBYTE   dum9;
+        volatile UBYTE  isrb;
+        UBYTE   dum10;
+        volatile UBYTE  imra;
+        UBYTE   dum11;
+        volatile UBYTE  imrb;
+        UBYTE   dum12;
+        volatile UBYTE  vr;  
+        UBYTE   dum13;
+        volatile UBYTE  tacr;
+        UBYTE   dum14;
+        volatile UBYTE  tbcr;
+        UBYTE   dum15;
+        volatile UBYTE  tcdcr;
+        UBYTE   dum16;
+        volatile UBYTE  tadr; 
+        UBYTE   dum17;
+        volatile UBYTE  tbdr; 
+        UBYTE   dum18;
+        volatile UBYTE  tcdr; 
+        UBYTE   dum19;
+        volatile UBYTE  tddr; 
+        UBYTE   dum20;
+        volatile UBYTE  scr;  
+        UBYTE   dum21;
+        volatile UBYTE  ucr;  
+        UBYTE   dum22;
+        volatile UBYTE  rsr;  
+        UBYTE   dum23;
+        volatile UBYTE  tsr;  
+        UBYTE   dum24;
+        volatile UBYTE  udr;  
+} MFP;
+
+#define MFP_BASE        ((MFP *)(0xfffffa00L))

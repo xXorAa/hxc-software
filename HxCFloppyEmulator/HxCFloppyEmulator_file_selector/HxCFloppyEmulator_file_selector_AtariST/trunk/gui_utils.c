@@ -49,6 +49,7 @@ unsigned char * screen_buffer_backup;
 unsigned char * screen_buffer_backup_aligned;
 unsigned char color;
 unsigned long old_physical_adr;
+unsigned long highresmode;
 
 unsigned char NUMBER_OF_FILE_ON_DISPLAY;// 19-5 //19 -240
 unsigned short SCREEN_YRESOL;
@@ -131,18 +132,36 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 
 	k=0;
 	l=0;
-	base_offset=((y*160)+ (((x>>2)&(~0x3))))/2;
-	for(j=0;j<(sprite->Ysize);j++)
+	
+	if(highresmode)
 	{
-		l=base_offset +(80*j);
-		for(i=0;i<(sprite->Xsize/16);i++)
+		base_offset=((y*80)+ (((x>>3)&(~0x1))))/2;
+		for(j=0;j<(sprite->Ysize);j++)
 		{
-			ptr_dst[l]=ptr_src[k];
-			l++;
-			ptr_dst[l]=ptr_src[k];
-			l++;
-			k++;
-		}
+			l=base_offset +(40*j);
+			for(i=0;i<(sprite->Xsize/16);i++)
+			{
+				ptr_dst[l]=ptr_src[k];
+				l++;
+				k++;
+			}
+		}	
+	}
+	else
+	{
+		base_offset=((y*160)+ (((x>>2)&(~0x3))))/2;
+		for(j=0;j<(sprite->Ysize);j++)
+		{
+			l=base_offset +(80*j);
+			for(i=0;i<(sprite->Xsize/16);i++)
+			{
+				ptr_dst[l]=ptr_src[k];
+				l++;
+				ptr_dst[l]=ptr_src[k];
+				l++;
+				k++;
+			}
+		}	
 	}
 
 }
@@ -155,22 +174,39 @@ void print_char(unsigned char * membuffer, bmaptype * font,unsigned short x, uns
 
 	ptr_dst=(unsigned short*)membuffer;
 	ptr_src=(unsigned short*)&font->data[0];
-	x=(x>>3) & (~0x1);
-	// x=((x&(~0x1))<<1)+(x&1);//  0 1   2 3
-
-	l=(y*80)+ x;
-	k=((c>>4)*(16*16))+(c&0xF);
-	for(j=0;j<16;j++)
+	
+	if(highresmode)
 	{
-		ptr_dst[l]  =ptr_src[k];
-		ptr_dst[l+1]=ptr_src[k];
-		k=k+(16);
-		l=l+(80);
+		x=(x>>3) & (~0x1);
+
+		l=(y*40)+ x;
+		k=((c>>4)*(16*16))+(c&0xF);
+		for(j=0;j<16;j++)
+		{
+			ptr_dst[l]  =ptr_src[k];
+			k=k+(16);
+			l=l+(40);
+		}
+
+	}
+	else
+	{
+		x=(x>>3) & (~0x1);
+
+		l=(y*80)+ x;
+		k=((c>>4)*(16*16))+(c&0xF);
+		for(j=0;j<16;j++)
+		{
+			ptr_dst[l]  =ptr_src[k];
+			ptr_dst[l+1]=ptr_src[k];
+			k=k+(16);
+			l=l+(80);
+		}
 	}
 
 }
 
-void print_char8x8(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
+void print_char8x8_mr(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
 {
 	unsigned short j,k,l,c1;
 	unsigned char *ptr_src;
@@ -192,7 +228,8 @@ void print_char8x8(unsigned char * membuffer, bmaptype * font,unsigned short x, 
 	}
 
 }
-/*void print_char8x8(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
+
+void print_char8x8_hr(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
 {
 	unsigned short j,k,l,c1;
 	unsigned char *ptr_src;
@@ -202,19 +239,24 @@ void print_char8x8(unsigned char * membuffer, bmaptype * font,unsigned short x, 
 	ptr_src=(unsigned char*)&font->data[0];
 
 	x=x>>3;
-	//x=((x&(~0x1))<<1)+(x&1);//  0 1   2 3
-	ptr_dst=ptr_dst + ((y*80)+ x);
-	ptr_src=ptr_src + (((c>>4)*(8*8*2))+(c&0xF));
+	x=((x&(~0x1))<<0)+(x&1);//  0 1   2 3
+	l=(y*80)+ (x);
+	k=((c>>4)*(8*8*2))+(c&0xF);
 	for(j=0;j<8;j++)
 	{
-		*ptr_dst=*ptr_src;
-		ptr_src=ptr_src+16;
-		ptr_dst=ptr_dst+80;
+		ptr_dst[l] = ptr_src[k];
+		k=k+(16);
+		l=l+(80);
 	}
-
 }
-*/
 
+void print_char8x8(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
+{
+	if(highresmode)
+		print_char8x8_hr(membuffer,font,x,y,c);
+	else
+		print_char8x8_mr(membuffer,font,x,y,c);
+}
 
 void print_str(unsigned char * membuffer,char * buf,unsigned short x_pos,unsigned short y_pos,unsigned char font)
 {
@@ -283,15 +325,21 @@ int hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,char
 	return 0;
 }
 
+
 void h_line(unsigned short y_pos,unsigned short val)
 {
 	unsigned short *ptr_dst;
-	unsigned short i,ptroffset;
+	unsigned short i,s,ptroffset;
+	
+	if(highresmode)
+		s=40;
+	else
+		s=80;
 
 	ptr_dst=(unsigned short*)screen_buffer_aligned;
-	ptroffset=80* y_pos;
+	ptroffset=s* y_pos;
 
-	for(i=0;i<80;i++)
+	for(i=0;i<s;i++)
 	{
 		ptr_dst[ptroffset+i]=val;
 	}
@@ -306,15 +354,32 @@ void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned sh
 
 	ptr_dst=(unsigned short*)screen_buffer_aligned;
 
-	x_size=((x_p2-x_p1)/16)*2;
-
-	for(j=0;j<(y_p2-y_p1);j++)
+	if(highresmode)
 	{
-		for(i=0;i<x_size;i++)
+		x_size=((x_p2-x_p1)/16);
+
+		for(j=0;j<(y_p2-y_p1);j++)
 		{
-			ptr_dst[ptroffset+i]=fillval;
+			for(i=0;i<x_size;i++)
+			{
+				ptr_dst[ptroffset+i]=fillval;
+			}
+			ptroffset=40* (y_p1+j);
 		}
-		ptroffset=80* (y_p1+j);
+
+	}
+	else
+	{
+		x_size=((x_p2-x_p1)/16)*2;
+
+		for(j=0;j<(y_p2-y_p1);j++)
+		{
+			for(i=0;i<x_size;i++)
+			{
+				ptr_dst[ptroffset+i]=fillval;
+			}
+			ptroffset=80* (y_p1+j);
+		}	
 	}
 }
 
@@ -331,14 +396,30 @@ void invert_line(unsigned short y_pos)
 	unsigned short *ptr_dst;
 	unsigned short ptroffset;
 
-	for(j=0;j<8;j++)
+	ptr_dst=(unsigned short*)screen_buffer_aligned;
+	
+	if(highresmode)
 	{
-		ptr_dst=(unsigned short*)screen_buffer_aligned;
-		ptroffset=80* (y_pos+j);
-
-		for(i=0;i<80;i++)
+		for(j=0;j<8;j++)
 		{
-			ptr_dst[ptroffset+i]=ptr_dst[ptroffset+i]^0xFFFF;
+			ptroffset=40* (y_pos+j);
+
+			for(i=0;i<40;i++)
+			{
+				ptr_dst[ptroffset+i]=ptr_dst[ptroffset+i]^0xFFFF;
+			}
+		}
+	}
+	else
+	{
+		for(j=0;j<8;j++)
+		{
+			ptroffset=80* (y_pos+j);
+
+			for(i=0;i<80;i++)
+			{
+				ptr_dst[ptroffset+i]=ptr_dst[ptroffset+i]^0xFFFF;
+			}
 		}
 	}
 }
@@ -452,6 +533,8 @@ int init_display()
 
 	SCREEN_YRESOL=200;
 	NUMBER_OF_FILE_ON_DISPLAY=19-5;// 19-5 //19 -240
+	
+	highresmode=get_vid_mode();
 
 	old_physical_adr=(unsigned long)Physbase();
 	screen_buffer=(unsigned char*)malloc((32*1024) + 256);
