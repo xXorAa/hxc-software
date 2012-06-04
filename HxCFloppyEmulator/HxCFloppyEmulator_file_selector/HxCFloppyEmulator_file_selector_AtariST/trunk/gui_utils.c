@@ -545,9 +545,15 @@ int init_display()
 	memset(screen_buffer_backup,0,(8*1000) + 256);
 	screen_buffer_backup_aligned = (unsigned char*)(((unsigned long)screen_buffer_backup| 0xff)+1);
 
-	Blitmode(1);
-
-	Setscreen( -1, screen_buffer_aligned, 1 );
+	//Blitmode(1);
+	if(highresmode)
+	{
+		Setscreen( -1, screen_buffer_aligned, 2 );
+	}
+	else
+	{
+		Setscreen( -1, screen_buffer_aligned, 1 );
+	}
 	color=0;
 	Supexec(initpal);
 

@@ -40,6 +40,7 @@
 static unsigned char floppydrive;
 static unsigned char datacache[512*9];
 static unsigned char valid_cache;
+KEYTAB * kt;
 
 #define CONTERM *((unsigned char *) 0x484)
 
@@ -56,7 +57,7 @@ void initsound()
 
 void delay(void)
 {
-	unsigned short delay = 90;
+	unsigned short delay = 400;
 	while (--delay)
 	{
 	}
@@ -170,10 +171,13 @@ void init_atari_fdc(unsigned char drive)
 	Floprate( floppydrive, 2);
 	headinit();
 	ret=Floprd( &datacache, 0, floppydrive, 0, 255, 0, 1 );
+	
+	kt=Keytbl( -1, -1,-1 );
+	
 }
 
 unsigned char Keyboard()
-{
+{	
 	return 0;
 }
 
@@ -191,27 +195,12 @@ unsigned char get_char()
 	unsigned char key,i,c;
 	unsigned char function_code,key_code;
 
-	function_code=FCT_NO_FUNCTION;	
-	do
-	{
+	key=Cconin()>>16;
+	if(key == 0x1C) return '\n';
+	
+	return kt->unshift[key];
 
-		key=Cconin()>>16;
-
-//		hxc_printf(0,0,0,"%.8X",key);
-
-		i=0;
-		do
-		{
-			function_code=char_keysmap[i].function_code;
-			key_code=char_keysmap[i].keyboard_code;
-			i++;
-		}while((key_code!=key) && (function_code!=FCT_NO_FUNCTION) );
-
-	}while(function_code==FCT_NO_FUNCTION);
-
-	return function_code;		
 }
-
 
 unsigned char wait_function_key()
 {
