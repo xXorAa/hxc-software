@@ -100,6 +100,8 @@ int					fl_list_opendir(const char *path, struct fs_dir_list_status *dirls);
 int					fl_list_readdir(struct fs_dir_list_status *dirls, struct fs_dir_ent *entry);
 int					fl_is_dir(const char *path);
 
+int					fl_fswrite(unsigned char * buffer, int size,int start_sector, void *f);
+
 // Test hooks
 #ifdef FATFS_INC_TEST_HOOKS
 struct fatfs*		fl_get_fs(void);

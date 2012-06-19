@@ -1,51 +1,92 @@
-#CC=i386-pc-linux-gcc
-CC=m68k-atari-mint-gcc
-CFLAGS=-O3 -I . -I ./fat32/
-LDFLAGS=-lc -s   -Wl,-Map,foo.map
-EXEC=HXCFEMNG.PRG
+
+##########################
+# You must fill ARCH
+# and C, CFLAGS, LFLAGS
+# before compiling !
+#########################
+
+# Part 1 : Arch
+# Arch is the system used to build the project.
+# Supplied arch : linux-i386, linux-amd64, cygwin
+ARCH             = linux-i386
+
+
+
+
+GCCBIN           = m68k-atari-mint-gcc
+GCCOPT           = -Os -Ifat32 -I.
+GCLOPT           = -Os -nostdlib -Wl,-Map,symbols.map -Wl,--traditional-format -s -fomit-frame-pointer -m68000
+
+VASMBIN          = ../build-tools/vbcc/bin-$(ARCH)/vasmm68k_mot
+VASMOPT          = -Faout -showopt -m68000 -spaces -quiet
+
+# GCC : PRG size about 44054 bytes
+C                = $(GCCBIN)
+CFLAGS           = $(GCCOPT)
+LFLAGS           = $(GCLOPT)
+
+
+EXEC             = HXCFEMNG.PRG
+
+
+.PHONY: all clean push-mina push-gbo-dsi auto
 
 all: $(EXEC)
-	m68k-atari-mint-strip -s $(EXEC)
+
+clean:
+	rm -rf $(EXEC) *.o *.asm fat32/*.o fat32/*.asm libc/*.o libc/*.asm symbols.map
+
+auto: $(EXEC)
 	./upx  -9 $(EXEC)
 	mv $(EXEC) "G:\testdk.fatst160\AUTO"
 	cmd /c 'startfe.bat' &
 
-HXCFEMNG.PRG:      fectrl.o gui_utils.o atari_hw.o fat_access.o fat_filelib.o fat_misc.o fat_string.o fat_table.o fat_write.o fat_cache.o
-	$(CC) -o $@    $^ $(LDFLAGS)
 
-fectrl.o: fectrl.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+push-mina: $(EXEC)
+	rsync --perms $< Gilles@mina.openvpn:/cygdrive/c/data/dropbox/emul/atari/hd/c/tmp/
 
-gui_utils.o: gui_utils.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+push-gbo-dsi: $(EXEC)
+	rsync --perms $< gbouthen@gbo-dsi.openvpn:/cygdrive/c/data/dropbox/emul/atari/hd/c/tmp/
 
 
-fat_access.o: ./fat32/fat_access.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+$(EXEC):          libc/mStartupAsmC.o libc/mStartup.o fectrl.o gui_utils.o atari_hw.o fat32/fat_access.o fat32/fat_filelib.o fat32/fat_misc.o fat32/fat_string.o fat32/fat_table.o fat32/fat_write.o fat32/fat_cache.o libc/snprintf/snprintf.o
+	$(C)          $(LFLAGS)           $^ -o $@ 
 
-fat_filelib.o: ./fat32/fat_filelib.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+atari_hw.o:       atari_hw.c       atari_hw.h keysfunc_defs.h keys_defs.h
+	$(C)          $(CFLAGS)        -c $< -o $@
 
-fat_misc.o: ./fat32/fat_misc.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+gui_utils.o:      gui_utils.c      gui_utils.h atari_hw.h conf.h libc/snprintf/snprintf.h graphx/data_bmp_hxc2001logo_bmp.h graphx/data_bmp_font_bmp.h graphx/data_bmp_font8x8_bmp.h graphx/data_bmp_sdhxcfelogo_bmp.h
+	$(C)          $(CFLAGS)        -c $< -o $@
 
-fat_string.o: ./fat32/fat_string.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+fectrl.o:         fectrl.c         keysfunc_defs.h gui_utils.h conf.h cfg_file.h hxcfeda.h atari_hw.h fat32/fat_opts.h fat32/fat_misc.h fat32/fat_types.h fat32/fat_defs.h fat32/fat_filelib.h fat32/fat_access.h compiler_helper.h
+	$(C)          $(CFLAGS)        -c $< -o $@
 
-fat_table.o: ./fat32/fat_table.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+fat32/fat_misc.o: fat32/fat_misc.c fat32/fat_misc.h fat32/fat_defs.h compiler_helper.h
+	$(C)          $(CFLAGS)        -c $< -o $@
 
-fat_write.o: ./fat32/fat_write.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+fat32/fat_filelib.o: fat32/fat_filelib.c fat32/fat_filelib.h fat32/fat_access.h fat32/fat_defs.h compiler_helper.h fat32/fat_types.h fat32/fat_opts.h fat32/fat_table.h fat32/fat_misc.h fat32/fat_write.h fat32/fat_string.h fat32/fat_cache.h
+	$(C)          $(CFLAGS)        -c $< -o $@
 
-fat_cache.o: ./fat32/fat_cache.c
-	$(CC) -o $@ -c $< $(CFLAGS)
+fat32/fat_access.o: fat32/fat_access.c   fat32/fat_access.h fat32/fat_defs.h compiler_helper.h fat32/fat_types.h fat32/fat_opts.h fat32/fat_table.h fat32/fat_write.h fat32/fat_misc.h fat32/fat_string.h fat32/fat_cache.h fat32/fat_filelib.h
+	$(C)          $(CFLAGS)        -c $< -o $@
 
-clean:
-	rm -rf *.o
+fat32/fat_string.o: fat32/fat_string.c   fat32/fat_string.h
+	$(C)          $(CFLAGS)        -c $< -o $@
 
+fat32/fat_table.o: fat32/fat_table.c     fat32/fat_opts.h fat32/fat_misc.h fat32/fat_defs.h compiler_helper.h fat32/fat_types.h
+	$(C)          $(CFLAGS)        -c $< -o $@
 
-mrproper: clean
-	rm -rf $(EXEC)
+fat32/fat_write.o: fat32/fat_write.c     fat32/fat_write.h fat32/fat_access.h fat32/fat_defs.h compiler_helper.h fat32/fat_types.h fat32/fat_opts.h fat32/fat_table.h fat32/fat_misc.h fat32/fat_string.h
+	$(C)          $(CFLAGS)        -c $< -o $@
 
-.PHONY: clean mrproper
+fat32/fat_cache.o: fat32/fat_cache.c     fat32/fat_cache.h
+	$(C)          $(CFLAGS)        -c $< -o $@
+
+libc/mStartup.o: libc/mStartup.c
+	$(C)          $(CFLAGS)        -c $< -o $@
+
+libc/snprintf/snprintf.o: libc/snprintf/snprintf.c libc/snprintf/snprintf.h
+	$(C)          $(CFLAGS)        -c $< -o $@
+
+libc/mStartupAsmC.o: libc/mStartupAsmC.s
+	$(VASMBIN)    $(VASMOPT)          $< -o $@

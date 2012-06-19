@@ -31,12 +31,4 @@
 	#define NULL 0
 #endif
 
-//-------------------------------------------------------------
-// Structure Packing Compile Options
-//-------------------------------------------------------------
-#define STRUCT_PACK	
-#define STRUCT_PACK_BEGIN	
-#define STRUCT_PACK_END		
-#define STRUCT_PACK_PREEND	__attribute__((__packed__))	
-
 #endif

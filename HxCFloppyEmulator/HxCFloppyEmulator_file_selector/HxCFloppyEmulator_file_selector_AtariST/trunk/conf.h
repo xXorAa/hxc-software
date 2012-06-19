@@ -25,11 +25,11 @@
 //
 */
 
-//#define NUMBER_OF_FILE_ON_DISPLAY 19-5 //19 -240
+/* //#define NUMBER_OF_FILE_ON_DISPLAY 19-5 //19 -240 */
 #define NUMBER_OF_SLOT 16
 
 #define SCREEN_XRESOL 640
-//#define SCREEN_YRESOL 200
+/* #define SCREEN_YRESOL 200 */
 
 #define FILELIST_Y_POS 12
 #define HELP_Y_POS 12

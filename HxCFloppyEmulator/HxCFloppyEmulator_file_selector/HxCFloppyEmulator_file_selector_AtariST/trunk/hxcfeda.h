@@ -25,7 +25,8 @@
 //
 */
 
-typedef struct direct_access_status_sector_
+STRUCT_PACK_BEGIN
+typedef struct STRUCT_PACK direct_access_status_sector_
 {
 	char DAHEADERSIGNATURE[8];
 	char FIRMWAREVERSION[12];
@@ -34,10 +35,12 @@ typedef struct direct_access_status_sector_
 	unsigned char read_cnt;
 	unsigned char write_cnt;
 	unsigned char last_cmd_status;
-}__attribute__((__packed__)) direct_access_status_sector ;
+} STRUCT_PACK_PREEND direct_access_status_sector;
+STRUCT_PACK_END
 
 
-typedef struct direct_access_cmd_sector_
+STRUCT_PACK_BEGIN
+typedef struct STRUCT_PACK direct_access_cmd_sector_
 {
 	char DAHEADERSIGNATURE[8];
 	unsigned char cmd_code;
@@ -50,14 +53,25 @@ typedef struct direct_access_cmd_sector_
 	unsigned char parameter_6;
 	unsigned char parameter_7;
 	unsigned char cmd_checksum;
-}__attribute__((__packed__)) direct_access_cmd_sector  ;
+} STRUCT_PACK_PREEND direct_access_cmd_sector;
+STRUCT_PACK_END
 
 #define LFN_MAX_SIZE 128
 
-typedef struct DirectoryEntry_ {
+STRUCT_PACK_BEGIN
+typedef struct STRUCT_PACK DirectoryEntry_ {
 	unsigned char name[12];
 	unsigned char attributes;
-	unsigned long firstCluster;
-	unsigned long size;
-	unsigned char longName[LFN_MAX_SIZE];	// boolean
-}__attribute__((__packed__)) DirectoryEntry;
+/*	unsigned long firstCluster;*/
+	unsigned char firstCluster_b1;
+	unsigned char firstCluster_b2;
+	unsigned char firstCluster_b3;
+	unsigned char firstCluster_b4;
+/*	unsigned long size;*/
+	unsigned char size_b1;
+	unsigned char size_b2;
+	unsigned char size_b3;
+	unsigned char size_b4;
+	unsigned char longName[LFN_MAX_SIZE];	/* boolean */
+} STRUCT_PACK_PREEND DirectoryEntry;
+STRUCT_PACK_END

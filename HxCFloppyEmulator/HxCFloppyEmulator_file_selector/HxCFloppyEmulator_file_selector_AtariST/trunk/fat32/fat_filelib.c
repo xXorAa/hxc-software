@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "fat_defs.h"
 #include "fat_access.h"
 #include "fat_table.h"
@@ -40,6 +41,7 @@
 #include "fat_string.h"
 #include "fat_filelib.h"
 #include "fat_cache.h"
+#include "fat_opts.h"
 
 //-----------------------------------------------------------------------------
 // Locals

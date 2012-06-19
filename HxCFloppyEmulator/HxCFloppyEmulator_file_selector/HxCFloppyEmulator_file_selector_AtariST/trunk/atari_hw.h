@@ -29,19 +29,43 @@ void init_atari_fdc(unsigned char drive);
 unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned char invalidate_cache);
 unsigned char writesector(unsigned char sectornum,unsigned char * data);
 unsigned char Keyboard();
+void flush_char();
+unsigned char get_char();
 unsigned char wait_function_key();
-void jumptotrack(unsigned char t);
+void jumptotrack0();
 void reboot();
-void initsound();
+unsigned long read_long_odd(unsigned char * adr);
+void write_long_odd(unsigned char * adr, unsigned long value);
 
 unsigned long get_vid_mode();
 
 #define L_INDIAN(var) (((var&0x000000FF)<<24) |((var&0x0000FF00)<<8) |((var&0x00FF0000)>>8) |((var&0xFF000000)>>24))
 
+#ifndef UWORD
 #define UWORD unsigned short
+#endif
+#ifndef UBYTE
 #define UBYTE unsigned char
+#endif
+#ifndef ULONG
 #define ULONG unsigned long
+#endif
+#ifndef LONG
+#define LONG long
+#endif
+#ifndef WORD
 #define  WORD short
+#endif
+
+
+#ifndef KEYTAB
+typedef struct {
+    unsigned char   *unshift;
+    unsigned char   *shift;
+    unsigned char   *capslock;
+} KEYTAB;
+#endif
+
 
 struct dma {
     UWORD   pad0[2];   
@@ -57,7 +81,7 @@ struct dma {
 
 #define DMA     ((volatile struct dma *) 0xFFFF8600)
 
-// Control register bits
+/* Control register bits */
 #define DMA_A0      0x0002
 #define DMA_A1      0x0004
 #define DMA_HDC     0x0008
@@ -66,7 +90,7 @@ struct dma {
 #define DMA_FDC     0x0080
 #define DMA_WRBIT   0x0100
 
-// Status register bits
+/* Status register bits */
 #define DMA_OK      0x0001
 #define DMA_SCNOT0  0x0002
 #define DMA_DATREQ  0x0004
@@ -97,7 +121,17 @@ struct dma {
 #define FDC_RT_SU   0x20
 #define FDC_WRI_PRO 0x40
 #define FDC_MOTORON 0x80
- 
+
+struct psg {
+    UBYTE   regdata;
+    UBYTE   pad1;
+    UBYTE   write;
+    UBYTE   pad2;
+};
+
+#define PSG        ((volatile struct psg *) 0xffff8800)
+
+
 typedef struct
 {
         UBYTE   dum1;
@@ -151,3 +185,14 @@ typedef struct
 } MFP;
 
 #define MFP_BASE        ((MFP *)(0xfffffa00L))
+
+#ifdef __VBCC__
+// This one comes from TOS.H, but the prototype was LONG Supexec(__reg("a0")LONG(*)())
+__regsused("d0/d1/d2/a0/a1/a2") LONG my_Supexec(__reg("a0")LONG * function) =
+  "\tpea\t(a0)\n"
+  "\tmove.w\t#38,-(sp)\n"
+  "\ttrap\t#14\n"
+  "\taddq.l\t#6,sp";
+#else
+#    define my_Supexec Supexec
+#endif

@@ -28,152 +28,259 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mint/osbind.h>
+
+#ifdef __VBCC__
+# include <tos.h>
+#else
+# include <mint/osbind.h>
+#endif
+
 #include <time.h>
-#include <vt52.h>
+/* #include <vt52.h> */
 
 #include "keysfunc_defs.h"
 #include "keys_defs.h"
 #include "atari_hw.h"
-#include "atari_regs.h"
+/* #include "atari_regs.h" */
 
 static unsigned char floppydrive;
 static unsigned char datacache[512*9];
 static unsigned char valid_cache;
+
 KEYTAB * kt;
+
+WORD fdcDmaMode = 0;
 
 #define CONTERM *((unsigned char *) 0x484)
 
-static void keysound_off()
-{
-	CONTERM &= 0xFE;
-	CONTERM &= 0xFB;
-}
 
-void initsound()
-{
-	Supexec(keysound_off);
-}
+#ifdef __VBCC__
+void asm_nop(void) = "\tnop\n";
+#else
+#define asm_nop(void) __asm("nop");
+#endif
 
-void delay(void)
-{
-	unsigned short delay = 400;
-	while (--delay)
-	{
-	}
-}
 
-void set_fdc_reg(unsigned short reg, unsigned short value)
+void su_fdcRegSet(WORD reg, WORD data)
 {
-	DMA->control = reg;
-	delay();
-	DMA->data = value;
-	delay();
+	DMA->control = reg | fdcDmaMode;
+	
+	asm_nop();
+	asm_nop();
+	DMA->data    = data;
+	asm_nop();
+	asm_nop();
 }
-
-unsigned short set_track(unsigned short track)
+void su_fdcSendCommandWait(WORD command)
 {
 	MFP *mfp = MFP_BASE;
-	
-	if(track == 0) {
-		set_fdc_reg(FDC_CS, FDC_RESTORE | 0x2);
+	su_fdcRegSet(0x80, command);
+
+	while (0x20 == (mfp->gpip & 0x20));       /* wait till the next interrupt */
+}
+WORD su_fdcRegGet(WORD reg)
+{
+	DMA->control = reg | fdcDmaMode;
+	asm_nop();
+	asm_nop();
+	return DMA->data;
+}
+
+void su_fdcWait(void)
+{
+	DMA->control = 0x80 | fdcDmaMode;
+
+	while (FDC_BUSY == (DMA->data & FDC_BUSY));
+}
+
+void su_fdcSelectDriveASide0()
+{
+	UBYTE data;
+#ifdef __VBCC__
+	__asm("\tmove.w sr,-(a7)\n");
+	__asm("\tor.w #$700,sr\n");
+#else
+	__asm("\tmove.w sr,-(a7)\n"
+		  "\tor.w #0x700,sr\n"
+		   :::"%sp"
+		 );
+#endif
+
+	PSG->regdata = 14;      /* select register 14 */
+	data = PSG->regdata;
+	data = data & 0xf8;     /* clear bits */
+	if (0 == floppydrive)
+	{
+		data = data | 5;        /* select drive A, side 0 */
 	} else {
-		set_fdc_reg(FDC_DR, track);
-		set_fdc_reg(FDC_CS, FDC_SEEK | 0x2);
+		data = data | 3;        /* select drive B, side 0 */
 	}
 
-	while(1) {
-		if((mfp->gpip & 0x20) == 0) 
-		{
-			return 0;
-		}
-	}	
+	PSG->write = data;
 
-	return 0;
+#ifdef __VBCC__
+	__asm("\tmove.w (a7)+,sr\n");
+#else
+	__asm("\tmove.w (a7)+,sr\n" ::: "%sp");
+#endif
+
 }
+
+
+
+
+void su_fdcLock(void)
+{
+/*
+Set floppy lock, so the system VBL won't interfere
+inhibit MFP interrupt
+set the bit 5 of fffa01 as input (0)
+enable changing of bit 5 of fffa01 (gpip) to poll the interrupt bit of the WDC
+see the steem source at
+https://github.com/btuduri/Steem-Engine/blob/629d8b98df7245c8645b0ad41f90ed395d427531/steem/code/iow.cpp
+*/
+
+#ifdef __VBCC__
+	__asm("\tst $43e.w\n");
+	__asm("\tbclr #7,$fffffa09.w\n");
+	__asm("\tbclr #5, $fffffa05.w\n");
+#else
+	__asm("\tst 0x43e.w\n");
+	__asm("\tbclr #7,0xfffffa09.w\n");
+	__asm("\tbclr #5, 0xfffffa05.w\n");
+#endif
+
+	su_fdcWait();
+}
+void su_fdcUnlock(void)
+{
+	su_fdcWait();
+
+#ifdef __VBCC__
+	__asm("\tsf $43e.w\n");
+#else
+	__asm("\tsf 0x43e.w\n");
+#endif
+}
+
 
 void su_headinit(void)
 {
-	set_track(0);
-	set_track(255);
+	CONTERM &= 0xFA;                /* disable key sound and bell */
+	su_fdcLock();
+	su_fdcSelectDriveASide0();
+	su_fdcRegSet(0x86, 255);        /* data : track number */
+	su_fdcSendCommandWait(0x13);    /* SEEK, no verify, 3ms */
+/*    su_fdcUnlock(); */
+/*    Crawcin(); */
 }
 
-void headinit(void)
+
+
+
+
+
+void su_jumptotrack0(void)
 {
-	Supexec(su_headinit);
+	su_fdcLock();
+	su_fdcRegSet(0x86, 0);          /* data : track number */
+	su_fdcSendCommandWait(0x13);    /* SEEK, no verify, 3ms */
+	su_fdcUnlock();
 }
 
-void jumptotrack(unsigned char t)
+void jumptotrack0()
 {
-	unsigned short i,j;
-	unsigned char data[512];
+	my_Supexec((LONG *) su_jumptotrack0);
+}
 
-	Floprd( &data, 0, floppydrive, 1, t, 0, 1 );
-};
+
+void su_fdcDmaAdrSet(unsigned char *adr)
+{
+	DMA->addr_low  = ((unsigned long) adr) & 0xff;
+	DMA->addr_med  = ((unsigned long) adr>>8) & 0xff;
+	DMA->addr_high = ((unsigned long) adr>>16) & 0xff;
+}
+void su_fdcDmaReadMode(void)
+{
+	DMA->control = 0x90;
+	DMA->control = 0x190;
+	DMA->control = 0x90;
+	fdcDmaMode = 0x0;
+}
+void su_fdcDmaWriteMode(void)
+{
+	DMA->control = 0x190;
+	DMA->control = 0x90;
+	DMA->control = 0x190;
+	fdcDmaMode = 0x100;
+}
+
+void read9sectors(unsigned char *adr)
+{
+	void * old_ssp;
+	WORD sectorNumber;
+
+	old_ssp = (void *) Super(0L);
+
+	su_fdcDmaReadMode();
+	su_fdcDmaAdrSet(adr);
+	su_fdcRegSet(0x90, 9);                   /* sector count : 9 sectors */
+
+	for (sectorNumber = 0; sectorNumber<=8; sectorNumber++)
+	{
+		su_fdcRegSet(0x84, sectorNumber);
+		su_fdcSendCommandWait(0x88);         /* READ SECTOR, no spinup */
+	}
+
+	Super(old_ssp);
+}
+
+void write1sector(WORD sectorNumber, unsigned char *adr)
+{
+	void *old_ssp;
+
+	old_ssp = (void *) Super(0L);
+
+	su_fdcDmaWriteMode();
+	su_fdcDmaAdrSet(adr);
+	su_fdcRegSet(0x90, 1);              /* sector count : 1 sector */
+
+	su_fdcRegSet(0x84, sectorNumber);
+	su_fdcSendCommandWait(0xa8);        /* WRITE SECTOR, no spinup */
+
+	Super(old_ssp);
+}
 
 unsigned char writesector(unsigned char sectornum,unsigned char * data)
 {
-	int ret,retry;
-	valid_cache =0;
-	retry=3;
+	valid_cache=0;
 
-	ret=1;
-	while(retry && ret)
-	{	
-		ret=Flopwr( data, 0, floppydrive, sectornum, 255, 0, 1 );
-	retry--;
-	}
+	write1sector(sectornum, data);
 
-	if(!ret)
-		return 1;
-	else
-		return 0;
+	return 1;
 }
 
 unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned char invalidate_cache)
 {
-	int ret,retry;
-
-	retry=5;
-	ret=0;
 	if(!valid_cache || invalidate_cache)
 	{
-		if(sectornum<10)
-		{
-			ret=1;
-			while(retry && ret)
-			{
-				ret=Floprd( datacache, 0, floppydrive, 0, 255, 0, 9 );
-				retry--;
-			}
-			memcpy((void*)data,&datacache[sectornum*512],512);
-			valid_cache=0xFF;
-		}
+		read9sectors(datacache);
+		valid_cache=0xFF;
 	}
-	else
-	{
-		memcpy((void*)data,&datacache[sectornum*512],512);
-	}
-	if(!ret)
-		return 1;
-	else
-		return 0;
+
+	memcpy((void*)data,&datacache[sectornum*512],512);
+	return 1;
 
 }
 
 
 void init_atari_fdc(unsigned char drive)
 {
-	unsigned short i,ret;
-
 	valid_cache=0;
 	floppydrive=drive;
-	Floprate( floppydrive, 2);
-	headinit();
-	ret=Floprd( &datacache, 0, floppydrive, 0, 255, 0, 1 );
+	my_Supexec((LONG *) su_headinit);
 	
-	kt=Keytbl( -1, -1,-1 );
-	
+	kt=(KEYTAB *) Keytbl( (unsigned char *) -1, (unsigned char *) -1, (unsigned char *) -1 );
 }
 
 unsigned char Keyboard()
@@ -183,6 +290,7 @@ unsigned char Keyboard()
 
 int kbhit()
 {
+	return 0;
 }
 
 void flush_char()
@@ -191,9 +299,7 @@ void flush_char()
 
 unsigned char get_char()
 {
-	unsigned char buffer;
-	unsigned char key,i,c;
-	unsigned char function_code,key_code;
+	unsigned char key;
 
 	key=Cconin()>>16;
 	if(key == 0x1C) return '\n';
@@ -204,15 +310,14 @@ unsigned char get_char()
 
 unsigned char wait_function_key()
 {
-	unsigned char key,i,c;
+	unsigned char key,i;
 	unsigned char function_code,key_code;
 
 	function_code=FCT_NO_FUNCTION;
 	do
 	{
-		
 		key=Cconin()>>16;
-		//		hxc_printf(0,0,0,"%.8X",key);
+		/* 	hxc_printf(0,0,0,"%.8X",key); */
 
 		i=0;
 		do
@@ -239,19 +344,33 @@ unsigned long su_get_vid_mode()
 
 unsigned long get_vid_mode()
 {
-	return Supexec(su_get_vid_mode);
+	return (unsigned long) my_Supexec((LONG *) su_get_vid_mode);
 }
 
 void su_reboot()
 {
-	asm("move.l #4,A6");
-	asm("move.l (A6),A0");
-	asm("move.l A0,-(SP)");
-	asm("rts");
+	__asm("\tmove.l 4.w,a0");
+	__asm("\tjmp (a0)");
 }
 
 void reboot()
 {
-	Supexec(su_reboot);
+	my_Supexec((LONG *)su_reboot);
 }
 
+unsigned long read_long_odd(unsigned char * adr)
+{
+	unsigned long ret = 0;
+	ret |= (unsigned long) (*(adr)<<24);
+	ret |= (unsigned long) (*(adr+1)<<16);
+	ret |= (unsigned long) (*(adr+2)<<8);
+	ret |= (unsigned long) (*(adr+3));
+	return ret;
+}
+void write_long_odd(unsigned char * adr, unsigned long value)
+{
+	*(adr)   = (value >> 24) & 0xff;
+	*(adr+1) = (value >> 16) & 0xff;
+	*(adr+2) = (value >>  8) & 0xff;
+	*(adr+3) = (value      ) & 0xff;
+}

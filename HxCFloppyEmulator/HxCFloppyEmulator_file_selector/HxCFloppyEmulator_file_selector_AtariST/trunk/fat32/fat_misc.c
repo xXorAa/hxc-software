@@ -32,6 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "fat_misc.h"
 
 //-----------------------------------------------------------------------------
@@ -166,7 +167,7 @@ int fatfs_entry_sfn_only(struct fat_dir_entry *entry)
 	else 
 		return 0;
 }
-// TODO: FILE_ATTR_SYSHID ?!?!??!
+// TODO: FILE_ATTR_SYSHID ?!!!!!
 //-----------------------------------------------------------------------------
 // fatfs_entry_is_dir: Returns 1 if a directory
 //-----------------------------------------------------------------------------
@@ -348,9 +349,10 @@ static void fatfs_itoa(UINT32 num, char *s)
     cp = outbuf;
     do 
 	{
-        *cp++ = digits[(int)(num % 10)];
+		*cp++ = digits[(int)(num % 10)];
+		num /= 10;
     } 
-	while ((num /= 10) > 0);
+	while (num > 0);
     
 	*cp-- = 0;
 

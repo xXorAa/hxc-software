@@ -25,43 +25,59 @@
 //
 */
 
-typedef struct cfgfile_
+
+#include "compiler_helper.h"
+
+STRUCT_PACK_BEGIN
+typedef struct STRUCT_PACK cfgfile_
 {
-	char signature[16]; //"HXCFECFGV1.0"
-	unsigned char step_sound;     //0x00 -> off 0xFF->on
-	unsigned char ihm_sound;     //0x00 -> off 0xFF->on
-	unsigned char back_light_tmr; //0x00 always off, 0xFF always on, other -> on x second
-	unsigned char standby_tmr;    //0xFF disable, other -> on x second
+	char signature[16]; /* "HXCFECFGV1.0" */
+	unsigned char step_sound;         /* 0x00 -> off 0xFF->on */
+	unsigned char ihm_sound;          /* 0x00 -> off 0xFF->on */
+	unsigned char back_light_tmr;     /* 0x00 always off, 0xFF always on, other -> on x second */
+	unsigned char standby_tmr;        /* 0xFF disable, other -> on x second */
 	unsigned char disable_drive_select;
-	unsigned char buzzer_duty_cycle; // 0x00 <> 0x80
-	unsigned char number_of_slot;     
+	unsigned char buzzer_duty_cycle; /* 0x00 <> 0x80 */
+	unsigned char number_of_slot;
 	unsigned char slot_index;
 	unsigned short update_cnt;
 	unsigned char load_last_floppy;
-	unsigned char buzzer_step_duration;  // 0xD8 <> 0xFF
+	unsigned char buzzer_step_duration;  /* 0xD8 <> 0xFF */
 	unsigned char lcd_scroll_speed;
 	unsigned char startup_mode;
 	unsigned char enable_drive_b;
-}__attribute__((__packed__)) cfgfile;
+} STRUCT_PACK_PREEND cfgfile;
+STRUCT_PACK_END
 
 
-//unsigned char get_device_parameters(struct DirectoryEntry *pDirEnt);
-//void update_cfgfile_parameters(struct DirectoryEntry *pDirEnt,unsigned char slot_index);
+/* unsigned char get_device_parameters(struct DirectoryEntry *pDirEnt); */
+/*void update_cfgfile_parameters(struct DirectoryEntry *pDirEnt,unsigned char slot_index); */
 
 
 
-struct ShortDirectoryEntry {
+STRUCT_PACK_BEGIN
+struct STRUCT_PACK ShortDirectoryEntry {
 	unsigned char name[12];
 	unsigned char attributes;
-	unsigned long firstCluster;
-	unsigned long size;
-	unsigned char longName[17];	// boolean
-}__attribute__((__packed__));
+/*	unsigned long firstCluster;*/
+	unsigned char firstCluster_b1;
+	unsigned char firstCluster_b2;
+	unsigned char firstCluster_b3;
+	unsigned char firstCluster_b4;
+/*	unsigned long size;*/
+	unsigned char size_b1;
+	unsigned char size_b2;
+	unsigned char size_b3;
+	unsigned char size_b4;
+	unsigned char longName[17];	/* boolean */
+} STRUCT_PACK_PREEND;
+STRUCT_PACK_END
 
 extern struct DirectoryEntry directoryEntry;
 
 
-typedef struct disk_in_drive_
+STRUCT_PACK_BEGIN
+typedef struct STRUCT_PACK disk_in_drive_
 {
 	struct ShortDirectoryEntry DirEnt;
 	unsigned char numberoftrack;
@@ -69,5 +85,5 @@ typedef struct disk_in_drive_
 	unsigned short rpm;
 	unsigned short bitrate;
 	unsigned short tracklistoffset;
-}__attribute__((__packed__)) disk_in_drive;
-
+} STRUCT_PACK_PREEND disk_in_drive;
+STRUCT_PACK_END
