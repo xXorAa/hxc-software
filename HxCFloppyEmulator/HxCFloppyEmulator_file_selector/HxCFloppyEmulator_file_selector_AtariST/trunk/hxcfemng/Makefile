@@ -8,7 +8,7 @@
 # Part 1 : Arch
 # Arch is the system used to build the project.
 # Supplied arch : linux-i386, linux-amd64, cygwin
-ARCH             = linux-i386
+ARCH             = cygwin
 
 
 

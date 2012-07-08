@@ -952,16 +952,18 @@ int main(int argc, char* argv[])
 						i=i+2;
 
 						hxc_printf(1,0,HELP_Y_POS+(i*8), "---Press Space to exit---");
-						i=i+2;
+						i=i+1;
 						hxc_printf(1,0,HELP_Y_POS+(i*8), "SDCard HxC Floppy Emulator file selector for Atari ST");
 						i++;
-						hxc_printf(1,0,HELP_Y_POS+(i*8), "(c) 2006-2011 HxC2001 / Jean-Francois DEL NERO");
+						hxc_printf(1,0,HELP_Y_POS+(i*8), "(c) 2006-2012 HxC2001 / Jean-Francois DEL NERO");
+						i++;
+						hxc_printf(1,0,HELP_Y_POS+(i*8), "Fast Loader by Gilles Bouthenot");
 						i++;
 						hxc_printf(1,0,HELP_Y_POS+(i*8), "Check for updates on :");
 						i++;
-						hxc_printf(1,0,HELP_Y_POS+(i*8), "http://hxc2001.free.fr/floppy_drive_emulator/");
+						hxc_printf(1,0,HELP_Y_POS+(i*8), "http://www.hxc2001.com/");
 						i++;
-						hxc_printf(1,0,HELP_Y_POS+(i*8), "Email : hxc2001@free.fr");
+						hxc_printf(1,0,HELP_Y_POS+(i*8), "Email : hxc2001@hxc2001.com");
 						i++;
 						hxc_printf(1,0,HELP_Y_POS+(i*8), "V%s - %s",VERSIONCODE,DATECODE);
 						

@@ -1,5 +1,5 @@
 
-ARCH=linux-i386
+ARCH=cygwin
 
 VASM=../build-tools/vbcc/bin-$(ARCH)/vasmm68k_mot
 VASMOPT=-Fbin -showopt -quiet
