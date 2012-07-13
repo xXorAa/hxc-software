@@ -54,7 +54,6 @@
 unsigned char * screen_buffer;
 unsigned char * screen_buffer_aligned;
 unsigned char * screen_buffer_backup;
-unsigned char * screen_buffer_backup_aligned;
 unsigned char color;
 unsigned long old_physical_adr;
 unsigned long highresmode;
@@ -432,7 +431,7 @@ void invert_line(unsigned short y_pos)
 
 void restore_box()
 {
-	memcpy(&screen_buffer_aligned[160*70],screen_buffer_backup_aligned, (8*1000L) + 256);
+	memcpy(&screen_buffer_aligned[160*70],screen_buffer_backup, 8000L);
 }
 
 void hxc_printf_box(unsigned char mode,char * chaine, ...)
@@ -441,7 +440,7 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 	int str_size;
 	unsigned short i;
 
-	memcpy(screen_buffer_backup_aligned,&screen_buffer_aligned[160*70], (8*1000L) + 256);
+	memcpy(screen_buffer_backup,&screen_buffer_aligned[160*70], 8000L);
 
 	va_list marker;
 	va_start( marker, chaine );
@@ -535,21 +534,17 @@ void init_display()
 	unsigned short loop,yr;
 	unsigned short k,i;
 
-	screen_buffer_backup_aligned=(unsigned char*)malloc(16*1024L);
-
 	SCREEN_YRESOL=200;
 	NUMBER_OF_FILE_ON_DISPLAY=19-5;/* 19-5 //19 -240 */
 	
 	highresmode=get_vid_mode();
 
 	old_physical_adr=(unsigned long)Physbase();
-	screen_buffer=(unsigned char*)malloc((32*1024L) + 256);
-	memset(screen_buffer,0,(32*1024L) + 256);
+	screen_buffer=(unsigned char*)malloc(32256L);
 	screen_buffer_aligned = (unsigned char*)(((unsigned long)screen_buffer| 0xff)+1);
+	memset(screen_buffer_aligned,0,32000);
 
-	screen_buffer_backup=(unsigned char*)malloc((8*1000L) + 256);
-	memset(screen_buffer_backup,0,(8*1000L) + 256);
-	screen_buffer_backup_aligned = (unsigned char*)(((unsigned long)screen_buffer_backup| 0xff)+1);
+	screen_buffer_backup=(unsigned char*)malloc(8000L);
 
 	/*Blitmode(1) */;
 	if(highresmode)

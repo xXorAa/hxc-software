@@ -12,7 +12,8 @@ REDIRECT_OUTPUT_TO_SERIAL   equ 0   ;0-output to console,1-output to serial port
         xdef    _strcpy
         
 BASEPAGE_SIZE   equ $100
-STACK_SIZE      equ $10000
+STACK_SIZE      equ $1000
+;reduced stack size from 64 KiB to 4 kiB
         
 ; --------------------------------------------------------------
 start:
