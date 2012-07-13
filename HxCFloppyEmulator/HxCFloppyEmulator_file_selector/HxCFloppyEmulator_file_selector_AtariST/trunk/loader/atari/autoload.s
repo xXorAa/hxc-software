@@ -49,7 +49,7 @@ alLength:       rs.l    0
 
 fdcAutoloader:
         IF    DONTSAVEREGS=0
-                movem.l d0-d7/a0-a6,-(a7)
+                movem.l d0-d3/a0-a2,-(a7)
         ENDIF
         IF    DONTINITA0=0
                 lea     alStruct(pc),a0
@@ -128,7 +128,7 @@ fdcAutoloader:
                 ;at the end of the operation the FDC IRQ will be raised, and FdcIrq80 will be called
 
         IF    DONTSAVEREGS=0
-                        movem.l (a7)+,d0-d7/a0-a6
+                        movem.l (a7)+,d0-d3/a0-a2
         ENDIF
         IF SHOWCOLORS
                         move.w  #$777,$ffff8240.w
@@ -215,7 +215,7 @@ fdcIrq80:
                 move.w  (a7)+,sr
 
 .nextSector:    ;continue reading to the next sector
-                ;a0=s+8/12 ou a0=s+9/13 (reseté immédiatement)
+                ;a0=s+8/12 ou a0=s+9/13 (instantly reseted)
                 
                 lea     alStruct(pc),a0                     ;a0=s+0
                 moveq   #0,d0
@@ -224,7 +224,7 @@ fdcIrq80:
                 addq.l  #4,a0                               ;a0=s+4
                 move.b  -(a0),$ffff860d.w                   ;load address low,  a0=s+3
                 move.b  -(a0),$ffff860b.w                   ;load address mid,  a0=s+2
-                move.b  -(a0),$ffff8609.w                   ;load address high, a0=s+1 (plus utilisé)
+                move.b  -(a0),$ffff8609.w                   ;load address high, a0=s+1 (no more used)
                 
                 lea     $ffff8606.w,a1                      ;a1=$FF8606
                 lea     $ffff8604.w,a2                      ;a2=$FF8604

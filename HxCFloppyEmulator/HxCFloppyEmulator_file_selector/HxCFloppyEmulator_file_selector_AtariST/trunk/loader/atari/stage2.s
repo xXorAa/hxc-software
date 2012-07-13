@@ -1,19 +1,21 @@
-;exécuté dès que le loader a fini de lire X octets (ou Y secteurs)
+;exÃ©cutÃ© dÃ¨s que le loader a fini de lire X octets (ou Y secteurs)
 
-;mapping mémoire:
+;mapping mÃ©moire:
 ; $4c6.l (_dskbuf):        pointeur vers secteur de boot
 ;  _dskbufp:               boot loader
 
 
-;mapping mémoire fin du decrunch:
-;STAGE2
+;mapping mÃ©moire fin du decrunch:
 ;BASEPAGE
 ;TEXT
 ;DATA
 ;BSS
-;RELOC/STACK
+;.
+;.
+;STACK
+;END OF MEMORY
 
-;à la fin du décrunch, reloger le programme, remplir la BASEPAGE, clearer la BSS+STACK, (non:positionner la STACK)
+;Ã  la fin du dÃ©crunch, reloger le programme, remplir la BASEPAGE, clearer la BSS
 
 ;    OPT L0              ; executable TOS
 ;    OPT P=68000
@@ -27,11 +29,9 @@
 
                 include "const.s"
 
-;a6:alStruct
-;a5:début du bloc malloc
-;a4:adresse de chargement
-
-; FIRST, COPY STAGE2 TO THE START OF THE MALLOC'ED BLOCK. THEN JUMP IN IT.
+;a6: alStruct
+;d4: load address (end of the block) (not used)
+;a5: start of the malloced block
 
 STAGE2START     = *
 
@@ -41,25 +41,20 @@ STAGE2START     = *
                 trap    #1
                 addq.l  #6,a7
                 
-;copie le reste de stage2 vers le début du bloc:
-                lea     PACKEDFILE(pc),a0
-                move.l  a0,pPACKEDFILE-STAGE2START(a4)
-                lea     .copyend-STAGE2START(a4),a4                     ;skip the copy rout
-                move.w  #(PACKEDFILE-.copyend+3)/4-1,d0
-.copystage2:    move.l  (a4)+,(a5)+
-                dbra    d0,.copystage2
-                jmp      -(PACKEDFILE-.copyend+3)/4*4(a5)
-.copyend
-                
-; WE ARE NOW IN THE START OF THE MALLOC'ED BLOCk !
-                                                            ;a0:Packed File source address
-                lea     PACKEDFILE(pc),a1                   ;a1:Destination
-                lea.l   4(a6),a4                            ;a4:offseted address
+                                                            
+                lea     PACKEDFILE(pc),a0                   ;a0:Packed File (address to depack from)
+                move.l  a5,a1                               ;a1:Destination (address to depack to)
+                move.l  a0,pPACKEDFILE-PACKEDFILE(a0)       ;move.l a0,pPACKEDFILE(pc)
+
+                lea.l   4(a6),a4                            ;a4:alAddress2 (for async depack) (offseted address)
                 move.l  a1,a6                               ;a6:Destination
                 
                 bra.s   decrunch
+
 pPACKEDFILE:    ds.l    1                                   ;start adress of packed data
                 dc.w    -1                                  ;last number of dots
+
+;this subroutine is called from depack
 wait_sync:      movem.l d0-d3/a0-a3,-(a7)
 ;a0: current address in the packed file
                 move.l  a0,d3
@@ -113,9 +108,9 @@ decrunch:
                 ;include "..\unpack\RELOCA4.S"
 RELOC_PRG
             movem.l d6-d7/a4-a6,-(a7)                       ;save registers
-            lea     256(a6),a6                              ; a6 ==> début du programme (TEXT)
-            move.l  a6,d7                                   ; d7 ==> valeur à additionner
-            move.l  a6,a4                                   ; a4 ==> Début du programme
+            lea     256(a6),a6                              ; a6 ==> dÃ©but du programme (TEXT)
+            move.l  a6,d7                                   ; d7 ==> valeur Ã  additionner
+            move.l  a6,a4                                   ; a4 ==> DÃ©but du programme
             add.l   #TEXTlen+DATAlen,a4                     ; a4 ==> segment BSS = table de relocation
             move.l  (a4)+,d6
             beq.s   FIN2071
@@ -134,12 +129,11 @@ FIN2071:    movem.l (a7)+,d6-d7/a4-a6
 ;************************************************** END RELOCA
 
                                                             ;a6=basepage
-            lea     256(a6),a5                              ;a5=TEXT (début du programme)
+            lea     256(a6),a5                              ;a5=TEXT (dÃ©but du programme)
             move.l  a6,a4                                   ;a4=basepage
             move.l  a5,a3                                   ;a3=TEXT
             sub.l   a0,a0                                   ;a0=0 (important)
 
-            lea     STAGE2START(pc),a1                      ;not used
             move.l  a6,(a4)+                                ;p_lowtpa 0x00 faked block start address (the malloc result is lower=a0)
             move.l  $436.w,(a4)+                            ;p_hitpa  0x04 top memory = end of the TIA block
             move.l  a3,(a4)+                                ;p_tbase  0x08 TEXT
@@ -153,8 +147,8 @@ FIN2071:    movem.l (a7)+,d6-d7/a4-a6
             move.l  a3,(a4)+                                ;p_bbase  0x18 BSS
             move.l  #BSSlen,d0
             move.l  d0,(a4)+                                ;p_blen   0x1C BSS length
-            add.l   #STACKlen,d0          ;d0:length to clear (BSS + STACK)
-                                          ;a3:start of BSS+Stack
+            ;d0:length to clear (BSS)
+            ;a3:start of BSS
             
             move.l  a0,(a4)+                                ;p_dta    0x20 DTA
             move.l  a0,(a4)+                                ;p_parent 0x24 parent BP
@@ -164,13 +158,10 @@ FIN2071:    movem.l (a7)+,d6-d7/a4-a6
                                                             ;p_undef  0x30 80 bytes unused reserved
                                                             ;p_cmdlin 0x80 128 bytes command line
 
-;Efface la BSS et la STACK
+;Efface la BSS
             lsr.l   #2,d0
 .clearbss:  move.l  a0,(a3)+
             dbra    d0,.clearbss
-
-;Positionne la pile utilisateur
-            move.l  a3,usp
 
 ;Passe en mode utilisateur
             and     #$dfff,sr
@@ -179,17 +170,12 @@ FIN2071:    movem.l (a7)+,d6-d7/a4-a6
             pea     (a6)
             pea     0.w
             ;sub.l   a0,a0                                  ;a0=0
-            IF MINTSTACKOFFSET!=-1
-                move.l  a5,a4
-                add.l   #MINTSTACKOFFSET-BASEPAGElen-4,a4
-                add.l   #MINTSTACKADD,(a4)
-            ENDIF
 
             jmp     (a5)
 
                 
                 
-                ;le fichier décompacté et relogé se trouvera ici.
+                ;le fichier dÃ©compactÃ© et relogÃ© se trouvera ici.
                 ;inutile de faire un jmp (a6), donc
 
 MSG1:       ;dc.b    27,'e'          ; show cursor

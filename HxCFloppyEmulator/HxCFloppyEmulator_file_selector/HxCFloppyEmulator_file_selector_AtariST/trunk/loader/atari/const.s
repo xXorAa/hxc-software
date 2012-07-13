@@ -2,11 +2,7 @@
                 include "equates.s"
 
 BASEPAGElen     =     $100
-STACKlen        =     $1000
-MINTSTACKADD    =     $3000
-MALLOCsize      =     STAGE2len+BASEPAGElen+TEXTlen+DATAlen+BSSlen+STACKlen   ;stage1
-LOADoffset      =     (MALLOCsize-STAGE2len-PACKlen+1)/2*2                    ;stage1
-;LOADsize        equ     PACKlen+STAGE2len
+LOADsize        =     PACKlen+STAGE2len
 
 
 ; SAMPLE EQUATES.S:

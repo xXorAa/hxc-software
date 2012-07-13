@@ -29,31 +29,42 @@ ASYNCADDR2      =     1                               ;maintain a second, offset
 
         
             
-                move.l  #(MALLOCsize+511)/512*512,-(a7)
-                move.w  #$48,-(a7)                              ;MALLOC
+                pea     -1.w
+                move.w  #$48,-(a7)                          ;MALLOC
                 trap    #1
+                move.l  d0,a4
+
+                move.l  d0,2(a7)
+                trap    #1                                  ;MALLOC
                 addq.l  #6,a7
-            
-                ;d0: address of the malloced block            
+                move.l  d0,a5                               ;a5: start of the malloced block
+                add.l   d0,a4                               ;a4: end address of the malloced block
+                move.l  a4,usp
+
+        
+                sub.l   #LOADsize,a4                        ;a4:load address (end of the block)
+
+;a4: load address (end of the block)
+;a5: start of the malloced block
 
                 lea     alStruct(pc),a6                     ;a6:alStruct
-                move.l  d0,a5                               ;a5:dÈbut du bloc malloc
-                add.l   #LOADoffset,d0                      ;d0:adresse de chargement
-                move.l  d0,a4                               ;a4:adresse de chargement
-                move.l  d0,(a6)+                            ;alAddress
-                add.l   d0,(a6)+                            ;alAddress2
+                move.l  a4,(a6)+                            ;alAddress
+                move.l  a4,d7
+                add.l   d7,(a6)+                            ;alAddress2 (for async depack)
                 move.l  (a6),d7                             ;d7=nb sector to read
                 subq.l  #8,a6                               ;a6:alStruct
 
-                bsr.s   fdcAutoloader                       ;prend ses paramËtres de alStruct. Aucun registre modifiÈ
+                bsr.s   fdcAutoloader                       ;prend ses param√®tres de alStruct. Registres modifi√©s
 
     IFNE STAGE2len/512>0
-    
-                subq.l  #STAGE2len/512,d7                   ;nombre de secteur supplÈmentaire ‡ attendre avant
+                subq.l  #STAGE2len/512,d7                   ;nombre de secteur suppl√©mentaire √† attendre avant
                                                             ;de lancer stage2 (0 signifie, attend un secteur)
+                                                            ;en effet, on ne veut pas lancer STAGE2 avant que tout soit lu.
     ENDC
-.wait1sector:   cmp.l   8(a6),d7
-                bls.s   .wait1sector
+
+                ;attend que tout stage2 ait √©t√© charg√©
+.waitstage2:    cmp.l   8(a6),d7
+                bls.s   .waitstage2
 
                 jmp     (a4)
 
@@ -61,12 +72,12 @@ ASYNCADDR2      =     1                               ;maintain a second, offset
 
 
 
-alStruct:       dc.l    0                   ;address to read to
-                dc.l    -256               ;offset for address2
-                dc.l    (STAGE2len+PACKlen+511)/512   ;number of sectors to read
-                dc.b    2                   ;sector to start to read from    ; sector 2
-                dc.b    0                   ;side to start to read from      ; side 0
-;                dc.b    0                   ;motoron                         ; can be saved to save 2 bytes
+alStruct:       dc.l    0                       ;address to read to
+                dc.l    -256                    ;offset for address2
+                dc.l    (LOADsize+511)/512      ;number of sectors to read
+                dc.b    2                       ;sector to start to read from    ; sector 2
+                dc.b    0                       ;side to start to read from      ; side 0
+;                dc.b    0                      ;motoron                         ; can be saved to save 2 bytes
 ;                EVEN
 
 SUPER:          include "autoload.s"
