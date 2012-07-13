@@ -29,18 +29,12 @@ LFLAGS           = $(GCLOPT)
 EXEC             = HXCFEMNG.PRG
 
 
-.PHONY: all clean push-mina push-gbo-dsi auto
+.PHONY: all clean push-mina push-gbo-dsi
 
 all: $(EXEC)
 
 clean:
-	rm -rf $(EXEC) *.o *.asm fat32/*.o fat32/*.asm libc/*.o libc/*.asm symbols.map
-
-auto: $(EXEC)
-	./upx  -9 $(EXEC)
-	mv $(EXEC) "G:\testdk.fatst160\AUTO"
-	cmd /c 'startfe.bat' &
-
+	rm -rf $(EXEC) *.o *.asm fat32/*.o fat32/*.asm libc/*.o libc/*.asm libc/snprintf/*.o symbols.map
 
 push-mina: $(EXEC)
 	rsync --perms $< Gilles@mina.openvpn:/cygdrive/c/data/dropbox/emul/atari/hd/c/tmp/
