@@ -42,7 +42,8 @@ ASYNCADDR2      =     1                               ;maintain a second, offset
                 move.l  a4,usp
 
         
-                sub.l   #LOADsize,a4                        ;a4:load address (end of the block)
+                sub.l   #(LOADsize+511)/512*512,a4          ;a4:load address (end of the block)
+                ;DMA can only read a multiple of 512 bytes, so align it
 
 ;a4: load address (end of the block)
 ;a5: start of the malloced block
