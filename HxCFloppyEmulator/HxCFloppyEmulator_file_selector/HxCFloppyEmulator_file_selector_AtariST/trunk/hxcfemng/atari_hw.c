@@ -317,7 +317,7 @@ unsigned char wait_function_key()
 	do
 	{
 		key=Cconin()>>16;
-		/* 	hxc_printf(0,0,0,"%.8X",key); */
+		/* 	hxc_printf(0,0,0,"%08X",key); */
 
 		i=0;
 		do

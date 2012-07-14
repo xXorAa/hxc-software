@@ -110,7 +110,7 @@ void print_hex(unsigned char * buffer, int size)
 	for(i=0;i<size;i++)
 	{
 		x=((c & 0xF)*24);
-		hxc_printf(0,x,y,"%.2X ", buffer[i]);
+		hxc_printf(0,x,y,"%02X ", buffer[i]);
 		c++;
 		if(!(c&0xF))
 		{
@@ -248,7 +248,7 @@ int media_read(unsigned long sector, unsigned char *buffer)
 		}
 		last_setlbabase=L_INDIAN(dass->lba_base);
 
-		/* hxc_printf(0,0,0,"BA: %.8X %.8X" ,L_INDIAN(dass->lba_base),sector);*/
+		/* hxc_printf(0,0,0,"BA: %08X %08X" ,L_INDIAN(dass->lba_base),sector);*/
 	}while((sector-L_INDIAN(dass->lba_base))>=8);
 	
 	if(!readsector((sector-last_setlbabase)+1,buffer,0))
@@ -580,7 +580,7 @@ void show_all_slots(void)
 		{
 			memcpy(tmp_str,&disks_slot_a[i].DirEnt.longName,16);
 			tmp_str[16]=0;
-			hxc_printf(0,0,ALLSLOTS_Y_POS + (i*8),"Slot %.2d - A : %s", i, tmp_str);
+			hxc_printf(0,0,ALLSLOTS_Y_POS + (i*8),"Slot %02d - A : %s", i, tmp_str);
 
 			memcpy(tmp_str,&disks_slot_b[i].DirEnt.longName,16);
 			tmp_str[16]=0;
@@ -589,7 +589,7 @@ void show_all_slots(void)
 		}
 		else
 		{
-			hxc_printf(0,0,ALLSLOTS_Y_POS + (i*8),"Slot %.2d - A :", i);
+			hxc_printf(0,0,ALLSLOTS_Y_POS + (i*8),"Slot %02d - A :", i);
 			hxc_printf(0,40*8,ALLSLOTS_Y_POS + (i*8),"B :", i);
 		}
 	}
