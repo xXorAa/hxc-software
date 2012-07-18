@@ -93,9 +93,14 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 
 
 
-int dir_paginate()
+/**
+ * Filter the files and fill an array with the first file index
+ * for each page.
+ * @returns integer number of pages
+ */
+UWORD dir_paginate()
 {
-	int i;
+	UWORD i;
 	UWORD currentPage;
 	UWORD currentFile;
 	UBYTE currentFileInPage;
@@ -133,7 +138,11 @@ int dir_paginate()
 
 void dir_setFilter(char *filter)
 {
-	_filter = filter;
+	if (filter != 0 && strlen(filter)) {
+		_filter = filter;
+	} else {
+		_filter = 0;
+	}
 }
 
 

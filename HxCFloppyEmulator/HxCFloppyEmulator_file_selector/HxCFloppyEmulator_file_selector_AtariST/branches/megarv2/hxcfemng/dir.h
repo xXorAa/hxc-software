@@ -5,7 +5,7 @@
 #include "fat_access.h"
 
 void mystrlwr(char *string);
-int dir_paginate();
+UWORD dir_paginate();
 UWORD dir_getFirstFileForPage(UWORD page);
 int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab);
 void dir_setFilter(char *filter);
