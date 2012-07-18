@@ -55,6 +55,11 @@ void mystrlwr(char *string)
 }
 
 
+UWORD dir_getFirstFileForPage(UWORD page)
+{
+	return FilelistPages_tab[page];
+}
+
 int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 {
 	UWORD i, currentFile;

@@ -1,6 +1,6 @@
 /*
 //
-// Copyright (C) 2009, 2010, 2011, 2012 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011, 2012 Jean-FranÃ§ois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -70,7 +70,7 @@ static char filter[17];
 
 static unsigned char slotnumber;
 static char selectorpos;
-static unsigned char read_entry;
+static unsigned char fRedraw_files;
 static UWORD page_number;
 
 static disk_in_drive disks_slot_a[NUMBER_OF_SLOT];
@@ -85,54 +85,6 @@ extern  struct fatfs _fs;
 extern unsigned short SCREEN_YRESOL;
 extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
 
-
-void print_hex(unsigned char * buffer, int size)
-{
-	int c,i;
-	int x,y;
-
-	c=0;
-	
-	x=0;
-	y=0;
-	for(i=0;i<size;i++)
-	{
-		x=((c & 0xF)*24);
-		hxc_printf(0,x,y,"%02X ", buffer[i]);
-		c++;
-		if(!(c&0xF))
-		{
-			y=y+9;
-		}
-	}
-
-	c=0;
-	
-	x=0;
-	y=0;
-	
-	for(i=0;i<size;i++)
-	{
-		x=((c & 0xF)*8)+384+8;
-		if(
-			(buffer[i]>='a' && buffer[i]<='z') ||
-			(buffer[i]>='A' && buffer[i]<='Z') ||
-			(buffer[i]>='0' && buffer[i]<='9')
-			)
-		{
-			hxc_printf(0,x,y,"%c", buffer[i]);
-		}
-		else
-		{
-			hxc_printf(0,x,y,".");
-		}
-		c++;
-		if(!(c&0xF))
-		{
-			y=y+9;
-		}
-	}
-}
 
 void lockup()
 {
@@ -443,6 +395,11 @@ char save_cfg_file(unsigned char * sdfecfg_file)
 	return ret;
 }
 
+
+/**
+ * Clear the screen
+ * @param integer add number of additional lines to clear. Allow to clear the status bar
+ */
 void clear_list(unsigned char add)
 {
 	unsigned char y_pos,i;
@@ -455,6 +412,7 @@ void clear_list(unsigned char add)
 	}
 }
 
+
 void next_slot()
 {
 	slotnumber++;
@@ -462,6 +420,11 @@ void next_slot()
 	printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 }
 
+
+
+/**
+ * Display the current folder
+ */
 void displayFolder()
 {
 	int i;
@@ -474,6 +437,8 @@ void displayFolder()
 	else
 		hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS+8,"...%s    ",&currentPath[strlen(currentPath)-32]);
 }
+
+
 
 void enter_sub_dir(disk_in_drive *disk_ptr)
 {
@@ -546,11 +511,11 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 	dir_scan(currentPath);
 	dir_paginate();
 
-	clear_list(0);
-	read_entry  = 1;
+	fRedraw_files  = 1;
 	page_number = 0;
 	selectorpos = 0;
 }
+
 
 
 void show_all_slots(void)
@@ -583,8 +548,12 @@ void show_all_slots(void)
 	do
 	{
 
-	}while(wait_function_key()!=FCT_OK);
+	} while(wait_function_key()!=FCT_OK);
 }
+
+
+
+
 
 
 
@@ -592,7 +561,7 @@ int main(int argc, char* argv[])
 {
 	unsigned short i;
 	unsigned char key, entrytype,bootdev,j;
-	unsigned char last_file,filtermode,c;
+	unsigned char isLastPage,filtermode,c;
 	disk_in_drive diskInDrive;
 	disk_in_drive * disk_ptr = &diskInDrive;
 	cfgfile * cfgfile_ptr;
@@ -653,10 +622,10 @@ int main(int argc, char* argv[])
 	printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 	
 	colormode=0;
-	read_entry=0;
+	fRedraw_files=0;
 	selectorpos=0;
 	page_number=0;
-	last_file=0;
+	isLastPage=0;
 	filtermode=0;
 
 	clear_list(0);
@@ -676,10 +645,11 @@ int main(int argc, char* argv[])
 		{
 			// start at the first file of the directory
 			dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
+			clear_list(0);
 
 			i=0;
 			y_pos=FILELIST_Y_POS;
-			last_file=0x00;
+			isLastPage=0x00;
 			do
 			{
 				UWORD curFile;
@@ -703,7 +673,7 @@ int main(int argc, char* argv[])
 				}
 				else
 				{
-					last_file=0xFF;
+					isLastPage=0xFF;
 					i=NUMBER_OF_FILE_ON_DISPLAY;
 				}
 
@@ -714,17 +684,33 @@ int main(int argc, char* argv[])
 			hxc_printf(0,0,FILELIST_Y_POS+(selectorpos*8),">");
 			invert_line(FILELIST_Y_POS+(selectorpos*8));
 
-			read_entry=0;
+			fRedraw_files=0;
 
 			do
 			{
-
+hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d", page_number, isLastPage, selectorpos);
 				key=wait_function_key();
 				if(1)
 				{
 					switch(key)
 					{
 					case FCT_UP_KEY: /* UP */
+						if (0==selectorpos && 0==page_number) {
+							// stuck at top
+							UWORD i, nextOffset;
+							for (i=0; ; i++) {
+								nextOffset = dir_getFirstFileForPage(i);
+								if (0xffff == nextOffset) {
+									break;
+								}
+							}
+							if (i>1) {
+								page_number = i-1;
+								fRedraw_files = 1;
+								selectorpos = 0;
+							}
+							break;
+						}
 						invert_line(FILELIST_Y_POS+(selectorpos*8));
 						hxc_printf(0,0,FILELIST_Y_POS+(selectorpos*8)," ");
 
@@ -732,10 +718,8 @@ int main(int argc, char* argv[])
 						if(selectorpos<0)
 						{
 							selectorpos=NUMBER_OF_FILE_ON_DISPLAY-1;
-							if(page_number) page_number--;
-							clear_list(0);
-							read_entry=1;
-							dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
+							page_number--;
+							fRedraw_files=1;
 						}
 						else
 						{
@@ -745,39 +729,52 @@ int main(int argc, char* argv[])
 						break;
 
 					case FCT_DOWN_KEY: /* Down */
+						if ( (selectorpos+1)==NUMBER_OF_FILE_ON_DISPLAY ) {
+							// last line of display
+							if (isLastPage) {
+								// go to first page
+								page_number = 0;
+							} else {
+								page_number++;
+							}
+							fRedraw_files = 1;
+							selectorpos = 0;
+							break;
+						} else if (0xffff == FilelistCurrentPage_tab[selectorpos+1]) {
+							// next file doesn"t exist : go to first page
+							if (0 == page_number) {
+								// but there is only one page : stuck
+								break;
+							}
+							page_number = 0;
+							fRedraw_files = 1;
+							selectorpos = 0;
+							break;
+						}
+
 						invert_line(FILELIST_Y_POS+(selectorpos*8));
 						hxc_printf(0,0,FILELIST_Y_POS+(selectorpos*8)," ");
-
 						selectorpos++;
-						if(selectorpos>=NUMBER_OF_FILE_ON_DISPLAY)
-						{
-							selectorpos=0;
-							clear_list(0);
-							read_entry=1;
-							if(!last_file)page_number++;
-							dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
-						}
-						else
-						{
-							hxc_printf(0,0,FILELIST_Y_POS+(selectorpos*8),">");
-							invert_line(FILELIST_Y_POS+(selectorpos*8));
-						}
-
+						hxc_printf(0,0,FILELIST_Y_POS+(selectorpos*8),">");
+						invert_line(FILELIST_Y_POS+(selectorpos*8));
 						break;
 
 					case FCT_RIGHT_KEY: /* Right */
-						clear_list(0);
-						read_entry=1;
-						if(!last_file)page_number++;
-						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
-
+						if (isLastPage) {
+							break;
+						}
+						fRedraw_files=1;
+						selectorpos=0;
+						page_number++;
 						break;
 
 					case FCT_LEFT_KEY:
-						if(page_number) page_number--;
-						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
-						clear_list(0);
-						read_entry=1;
+						if(0 == page_number) {
+							break;
+						}
+						page_number--;
+						selectorpos=0;
+						fRedraw_files=1;
 						break;
 
 					case FCT_NEXTSLOT:
@@ -788,10 +785,6 @@ int main(int argc, char* argv[])
 						hxc_printf_box(0,"Saving selection...");
 						save_cfg_file(sdfecfg_file);
 						restore_box();
-						// todo : remove
-						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
-						clear_list(0);
-						read_entry=1;
 						break;
 
 					case FCT_SELECT_FILE_DRIVEA:
@@ -901,7 +894,7 @@ int main(int argc, char* argv[])
 						do
 						{
 
-						}while(wait_function_key()!=FCT_OK);
+						} while (wait_function_key()!=FCT_OK);
 
 						clear_list(5);
 
@@ -943,19 +936,13 @@ int main(int argc, char* argv[])
 						i++;
 						hxc_printf(1,0,HELP_Y_POS+(i*8), "V%s - %s",VERSIONCODE,DATECODE);
 						
-						do
-						{
-
-						}while(wait_function_key()!=FCT_OK);
+						wait_function_key();
 
 						clear_list(5);
-						init_buffer();
+						display_status();
 						printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 						displayFolder();
-
-						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
-						clear_list(0);
-						read_entry=1;
+						fRedraw_files=1;
 
 						break;
 
@@ -983,13 +970,13 @@ int main(int argc, char* argv[])
 						hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s",cfgfile_ptr->standby_tmr);
 
 						i=i+2;
-						hxc_printf(1,0,HELP_Y_POS+(i*8), "---Press Space to exit---");
+						hxc_printf(1,0,HELP_Y_POS+(i*8), "---Press Esc to exit---");
 					
 						i=2;
 						invert_line(HELP_Y_POS+(i*8));
 						do
 						{
-						c=wait_function_key();
+							c=wait_function_key();
 							switch(c)
 							{
 								case FCT_UP_KEY:
@@ -1055,31 +1042,24 @@ int main(int argc, char* argv[])
 								break;
 								
 							}
-						}while(c!=FCT_OK);
+						}while(c!=FCT_ESC);
 
 						clear_list(5);
-						init_buffer();
+						display_status();
 						printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 						displayFolder();
-
-						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
-						clear_list(0);
-						read_entry=1;
-					
-					break;
+						fRedraw_files=1;
+						break;
 
 					case FCT_SHOWSLOTS:
 						clear_list(5);
 						show_all_slots();
-						clear_list(5);
 
-						init_buffer();
+						clear_list(5);
+						display_status();
 						printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 						displayFolder();
-
-						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
-						clear_list(0);
-						read_entry=1;
+						fRedraw_files=1;
 						break;
 
 					case FCT_CLEARSLOT:
@@ -1119,9 +1099,8 @@ int main(int argc, char* argv[])
 
 					case FCT_TOP:
 						page_number=0;
-						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
-						clear_list(0);
-						read_entry=1;
+						selectorpos=0;
+						fRedraw_files=1;
 						break;
 						
 					case FCT_SEARCH:
@@ -1152,10 +1131,8 @@ int main(int argc, char* argv[])
 
 						selectorpos=0;
 						page_number=0;
-						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 
-						clear_list(0);
-						read_entry=1;
+						fRedraw_files=1;
 						break;
 
 					default:
@@ -1163,7 +1140,7 @@ int main(int argc, char* argv[])
 						break;
 					}
 				}
-			}while(!read_entry);
+			}while(!fRedraw_files);
 		}
 	}
 

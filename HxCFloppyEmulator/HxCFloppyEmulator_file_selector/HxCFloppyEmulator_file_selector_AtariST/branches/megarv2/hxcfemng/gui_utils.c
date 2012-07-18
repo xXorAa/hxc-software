@@ -476,21 +476,13 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 	va_end( marker );
 }
 
-void init_buffer()
+
+void display_welcome()
 {
 	int i;
-	display_sprite(screen_buffer_aligned, bitmap_hxc2001logo_bmp,(SCREEN_XRESOL-bitmap_hxc2001logo_bmp->Xsize), (SCREEN_YRESOL-bitmap_hxc2001logo_bmp->Ysize));
-	display_sprite(screen_buffer_aligned, bitmap_sdhxcfelogo_bmp,(SCREEN_XRESOL-bitmap_sdhxcfelogo_bmp->Xsize)/2, (SCREEN_YRESOL-bitmap_sdhxcfelogo_bmp->Ysize));
-
-	h_line(SCREEN_YRESOL-34,0xFFFF) ;
-	h_line(SCREEN_YRESOL-((48+(3*8))+2),0xFFFF) ;
-	h_line(8,0xFFFF) ;
-
-	hxc_printf(0,0,SCREEN_YRESOL-(8*1),"Ver %s",VERSIONCODE);
 
 	hxc_printf(1,0,0,"SDCard HxC Floppy Emulator Manager for Atari ST");
-	h_line(SCREEN_YRESOL-(48+20)+24-2,0xFFFF) ;
-	hxc_printf(1,0,SCREEN_YRESOL-(48+20)+24,">>>Press HELP key for the function key list<<<");
+	h_line(8,0xFFFF) ;
 
 	i=0;
 	hxc_printf(1,0,HELP_Y_POS+(i*8), "SDCard HxC Floppy Emulator file selector for Atari ST");
@@ -506,6 +498,27 @@ void init_buffer()
 	hxc_printf(1,0,HELP_Y_POS+(i*8), "Email : hxc2001@hxc2001.com");
 	i++;
 	hxc_printf(1,0,HELP_Y_POS+(i*8), "V%s - %s",VERSIONCODE,DATECODE);
+
+	display_status();
+
+	// line just above the logos
+	h_line(SCREEN_YRESOL-34,0xFFFF) ;
+
+	hxc_printf(0,0,SCREEN_YRESOL-(8*1),"Ver %s",VERSIONCODE);
+	display_sprite(screen_buffer_aligned, bitmap_sdhxcfelogo_bmp,(SCREEN_XRESOL-bitmap_sdhxcfelogo_bmp->Xsize)/2, (SCREEN_YRESOL-bitmap_sdhxcfelogo_bmp->Ysize));
+	display_sprite(screen_buffer_aligned, bitmap_hxc2001logo_bmp,(SCREEN_XRESOL-bitmap_hxc2001logo_bmp->Xsize), (SCREEN_YRESOL-bitmap_hxc2001logo_bmp->Ysize));
+
+}
+
+void display_status()
+{
+	// line just above thestatusbar
+	h_line(SCREEN_YRESOL-(48+20)+24-2,0xFFFF) ;
+
+	// line just under the statusbar
+	h_line(SCREEN_YRESOL-((48+(3*8))+2),0xFFFF) ;
+
+	hxc_printf(1,0,SCREEN_YRESOL-(48+20)+24,">>>Press HELP key for the function key list<<<");
 }
 
 void initpal()
@@ -519,7 +532,7 @@ void initpal()
 	ptr=(unsigned short *)0xFF8244;
 	*ptr=colortable[((color&0x1F)*4)+3];
 	ptr=(unsigned short *)0xFF8246;
-	*ptr=colortable[((color&0x1F)*4)+1];	
+	*ptr=colortable[((color&0x1F)*4)+1];
 
 }
 
@@ -528,6 +541,7 @@ void set_color_scheme(unsigned char colorm)
 	color=colorm;
 	my_Supexec((LONG *) initpal);
 }
+
 
 void init_display()
 {
@@ -558,6 +572,6 @@ void init_display()
 	color=0;
 	my_Supexec((LONG *) initpal);
 
-	init_buffer();
+	display_welcome();
 }
 

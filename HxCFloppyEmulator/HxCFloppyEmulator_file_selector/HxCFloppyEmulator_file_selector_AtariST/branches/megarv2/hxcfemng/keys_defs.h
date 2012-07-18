@@ -31,14 +31,18 @@ typedef struct keyboard_funct_mapper_
 	unsigned char keyboard_code;
 }keyboard_funct_mapper;
 
+/*
+ * source: compendium "IKBD Scan Codes - F3.3"
+ */
 keyboard_funct_mapper keysmap[]=
 {
+	{FCT_ESC,1},
 	{FCT_UP_KEY,72},
 	{FCT_DOWN_KEY,80},
 	{FCT_LEFT_KEY,75},
 	{FCT_RIGHT_KEY,77},
 	{FCT_SELECT_FILE_DRIVEA,82},
-	{FCT_SELECT_FILE_DRIVEA,28},	
+	{FCT_SELECT_FILE_DRIVEA,28},
 	{FCT_SELECT_FILE_DRIVEB,71},
 	{FCT_SELECT_FILE_DRIVEA_AND_NEXTSLOT,43},
 	{FCT_NEXTSLOT,97},
