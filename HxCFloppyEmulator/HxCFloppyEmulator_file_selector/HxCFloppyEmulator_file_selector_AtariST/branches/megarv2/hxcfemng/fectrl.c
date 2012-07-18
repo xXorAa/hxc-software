@@ -616,7 +616,16 @@ int main(int argc, char* argv[])
 
 	FILE *f;
 	
+	UBYTE * bigmem_adr;
+	int     bigmem_len;
+
 	init_display();
+
+//
+	bigmem_len = (long)    malloc(-1L);
+	bigmem_adr = (UBYTE *) malloc(bigmem_len);
+	fli_init(bigmem_adr, bigmem_len);
+//
 	
 	bootdev=0;/* argv[1][0]-'0'; */
 
@@ -672,12 +681,26 @@ int main(int argc, char* argv[])
 		memcpy(&file_list_status_tab[i],&file_list_status ,sizeof(struct fs_dir_list_status));
 	}
 	clear_list(0);
+
+
+	int nbFiles, curFile;
+//
+	while( fl_list_readdir(&file_list_status, &dir_entry) ) {
+		fli_push(&dir_entry);
+		nbFiles++;
+	}
+//
+
+
 	
 	for(;;)
 	{
 		y_pos=FILELIST_Y_POS;
 		for(;;)
 		{
+//
+			curFile = 0;
+//
 			i=0;
 			do
 			{
@@ -691,8 +714,11 @@ int main(int argc, char* argv[])
 			do
 			{
 				displayentry=0xFF;
-				if(fl_list_readdir(&file_list_status, &dir_entry))
+				if(curFile < nbFiles)
 				{
+					fli_get(curFile, &dir_entry);
+					curFile++;
+
 					if(filtermode)
 					{
 						mystrlwr(dir_entry.filename);
@@ -1027,7 +1053,7 @@ int main(int argc, char* argv[])
 									invert_line(HELP_Y_POS+(i*8));
 									if(i<5) i++;
 									invert_line(HELP_Y_POS+(i*8));
-								break;									
+								break;
 								case FCT_LEFT_KEY:
 									invert_line(HELP_Y_POS+(i*8));
 									switch(i)
@@ -1053,7 +1079,7 @@ int main(int argc, char* argv[])
 									}
 									invert_line(HELP_Y_POS+(i*8));
 									
-								break;									
+								break;
 								case FCT_RIGHT_KEY:
 									invert_line(HELP_Y_POS+(i*8));
 									switch(i)
@@ -1073,12 +1099,12 @@ int main(int argc, char* argv[])
 										
 									break;
 									case 5:
-										if(cfgfile_ptr->standby_tmr<0xFF) cfgfile_ptr->standby_tmr++;										
-										hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->standby_tmr);											
+										if(cfgfile_ptr->standby_tmr<0xFF) cfgfile_ptr->standby_tmr++;
+										hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->standby_tmr);
 									break;
 									}
 									invert_line(HELP_Y_POS+(i*8));
-								break;									
+								break;
 								
 							}
 						}while(c!=FCT_OK);

@@ -34,17 +34,17 @@ int fli_init(void * base, LONG length)
     _base   = base;
     _length = length;
 
-    fl_clear();
+    fli_clear();
     return TRUE;
 }
 
-int fli_push(struct fs_dir_ent dir_entry) {
+int fli_push(struct fs_dir_ent * dir_entry) {
     UWORD len;
     UWORD totalLen;
     UBYTE *newAdr;
 
     // compute lenght of filename
-    len = (UWORD) strlen(dir_entry.filename);
+    len = (UWORD) strlen(dir_entry->filename);
     if (len > (UWORD) 127) {
         // 127 char max + 0x00 = 128 chars
         len = 127;
@@ -63,35 +63,32 @@ int fli_push(struct fs_dir_ent dir_entry) {
     }
 
     // copy data into new allocated block
-    memcpy(newAdr, &dir_entry.cluster, 8);  // copy cluster, size
-    *(newAdr+8) = dir_entry.is_dir;         // copy is_dir
-    memcpy(newAdr+9, &dir_entry.filename, len);
+    memcpy(newAdr, &dir_entry->cluster, 8);  // copy cluster, size
+    *(newAdr+8) = dir_entry->is_dir;         // copy is_dir
+    memcpy(newAdr+9, &dir_entry->filename, len);
     *(newAdr+9 + len) = (unsigned char) 0;
 
     // add pointer to the block
-//    *(_base + _nbEntries*4) = newAdr;
-//    UBYTE *a;
-//    a = _base + _nbEntries*4;
-//    *a = (UBYTE *) newAdr;
-//    *a = (UBYTE) 1;
-
-    UBYTE **b;
-    b = (UBYTE **)_base + _nbEntries*4;
-    *b = newAdr;
+    UBYTE **ptr;
+    ptr = (UBYTE **) (_base + _nbEntries*4);
+    *ptr = newAdr;
 
     _nbEntries++;
     return TRUE;
 }
 
 
-int fli_get(UWORD number, struct fs_dir_ent dir_entry)
+int fli_get(UWORD number, struct fs_dir_ent * dir_entry)
 {
-    UBYTE *adr;
+    UBYTE **ptr;
+    UBYTE *newAdr;
 
-    adr = _base + number*4;
-    memcpy(&dir_entry.cluster, adr, 8);       // copy cluster, size
-    dir_entry.is_dir = *(adr+8);              // copy is_dir
-    strcpy(dir_entry.filename, adr+9);        // copy filename
+    ptr = (UBYTE **) (_base + number*4);
+    newAdr = *ptr;
+
+    memcpy(&dir_entry->cluster, newAdr, 8);       // copy cluster, size
+    dir_entry->is_dir = *(newAdr+8);              // copy is_dir
+    strcpy(dir_entry->filename, newAdr+9);        // copy filename
 
     return TRUE;
 }
