@@ -1,5 +1,6 @@
 #include "fat_access.h"
 #include "atari_hw.h"
+#include "cfg_file.h"
 #include <string.h>
 
 UBYTE * _base;
@@ -78,11 +79,14 @@ int fli_push(struct fs_dir_ent * dir_entry) {
 }
 
 
-int fli_get(UWORD number, struct fs_dir_ent * dir_entry)
+int fli_getDirEntry(UWORD number, struct fs_dir_ent * dir_entry)
 {
     UBYTE **ptr;
     UBYTE *newAdr;
 
+    if (number >= _nbEntries) {
+        return FALSE;
+    }
     ptr = (UBYTE **) (_base + number*4);
     newAdr = *ptr;
 
@@ -93,3 +97,27 @@ int fli_get(UWORD number, struct fs_dir_ent * dir_entry)
     return TRUE;
 }
 
+int fli_getDiskInDrive(UWORD number, disk_in_drive * disk_ptr)
+{
+    UBYTE **ptr;
+    UBYTE *newAdr;
+
+    if (number >= _nbEntries) {
+        return FALSE;
+    }
+    ptr = (UBYTE **) (_base + number*4);
+    newAdr = *ptr;
+
+    memcpy(&disk_ptr->DirEnt.firstCluster_b1, newAdr, 8);   // copy cluster, size
+    UBYTE attr = 0;
+    if (*(newAdr+8)) {
+        attr = 0x10;
+    }
+    disk_ptr->DirEnt.attributes = attr;                     // copy attribute
+    memcpy(&disk_ptr->DirEnt.name, newAdr+9, 12);           // copy name
+    disk_ptr->DirEnt.name[11] = 0;
+    memcpy(&disk_ptr->DirEnt.longName, newAdr+9, 17);       // copy "longname"
+    disk_ptr->DirEnt.longName[16] = 0;
+
+    return TRUE;
+}

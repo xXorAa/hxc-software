@@ -76,10 +76,10 @@ static unsigned char read_entry;
 
 static disk_in_drive disks_slot_a[NUMBER_OF_SLOT];
 static disk_in_drive disks_slot_b[NUMBER_OF_SLOT];
-static DirectoryEntry DirectoryEntry_tab[32];
+static UWORD FilelistCurrentPage_tab[32];
 
 static struct fs_dir_list_status file_list_status;
-static struct fs_dir_list_status file_list_status_tab[512];
+static UWORD FilelistPages_tab[512];
 static struct fat_dir_entry sfEntry;
 static struct fs_dir_ent dir_entry;
 extern  struct fatfs _fs;
@@ -564,7 +564,7 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 	}
 	for(i=0;i<512;i++)
 	{
-		memcpy(&file_list_status_tab[i],&file_list_status ,sizeof(struct fs_dir_list_status));
+		FilelistPages_tab[i] = 0xffff;
 	}
 	clear_list(0);
 	read_entry=1;
@@ -610,7 +610,8 @@ int main(int argc, char* argv[])
 	unsigned short i,page_number;
 	unsigned char key, entrytype,bootdev,j;
 	unsigned char last_file,filtermode,displayentry,c;
-	disk_in_drive * disk_ptr;
+	disk_in_drive diskInDrive;
+	disk_in_drive * disk_ptr = &diskInDrive;
 	cfgfile * cfgfile_ptr;
 	unsigned char colormode;
 
@@ -675,38 +676,38 @@ int main(int argc, char* argv[])
 	page_number=0;
 	last_file=0;
 	filtermode=0;
-	fl_list_opendir(currentPath, &file_list_status);
+
+	// erase all pages
 	for(i=0;i<512;i++)
 	{
-		memcpy(&file_list_status_tab[i],&file_list_status ,sizeof(struct fs_dir_list_status));
+		FilelistPages_tab[i] = 0xffff;
 	}
 	clear_list(0);
 
+	int nbFiles=0, curFile=0;
 
-	int nbFiles, curFile;
-//
+	// get all the files in the dir
+	fl_list_opendir(currentPath, &file_list_status);
 	while( fl_list_readdir(&file_list_status, &dir_entry) ) {
 		fli_push(&dir_entry);
 		nbFiles++;
 	}
-//
 
 
 	
 	for(;;)
 	{
 		y_pos=FILELIST_Y_POS;
+
+		// start at the first file of the directory
+		curFile = 0;
+
 		for(;;)
 		{
-//
-			curFile = 0;
-//
-			i=0;
-			do
-			{
-				memset(&DirectoryEntry_tab[i],0,sizeof(DirectoryEntry));
-				i++;
-			}while((i<NUMBER_OF_FILE_ON_DISPLAY));
+			// clear current page
+			for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; i++) {
+				FilelistCurrentPage_tab[i] = 0xffff;
+			}
 
 			i=0;
 			y_pos=FILELIST_Y_POS;
@@ -716,8 +717,7 @@ int main(int argc, char* argv[])
 				displayentry=0xFF;
 				if(curFile < nbFiles)
 				{
-					fli_get(curFile, &dir_entry);
-					curFile++;
+					fli_getDirEntry(curFile, &dir_entry);
 
 					if(filtermode)
 					{
@@ -731,29 +731,23 @@ int main(int argc, char* argv[])
 
 					if(displayentry)
 					{
+						FilelistCurrentPage_tab[i] = curFile;
 						if(dir_entry.is_dir)
 						{
 							entrytype=10;
-							DirectoryEntry_tab[i].attributes=0x10;
 						}
 						else
 						{
 							entrytype=12;
-							DirectoryEntry_tab[i].attributes=0x00;
 						}
 						hxc_printf(0,0,y_pos," %c%s",entrytype,dir_entry.filename);
 
 						y_pos=y_pos+8;
-						dir_entry.filename[127]=0;
-						sprintf(DirectoryEntry_tab[i].longName,"%s",dir_entry.filename);
-						dir_entry.filename[11]=0;
-						sprintf(DirectoryEntry_tab[i].name,"%s",dir_entry.filename);
 
-						write_long_odd(&(DirectoryEntry_tab[i].firstCluster_b1), ENDIAN_32BIT(dir_entry.cluster));
-						write_long_odd(&(DirectoryEntry_tab[i].size_b1), ENDIAN_32BIT(dir_entry.size));
 						i++;
 					}
 
+					curFile++;
 				}
 				else
 				{
@@ -765,7 +759,8 @@ int main(int argc, char* argv[])
 
 			filtermode=0;
 
-			memcpy(&file_list_status_tab[(page_number+1)&0x1FF],&file_list_status ,sizeof(struct fs_dir_list_status));
+			// store the index of the first file of the page
+			FilelistPages_tab[(page_number+1)&0x1FF] = FilelistCurrentPage_tab[0];
 
 			hxc_printf(0,0,FILELIST_Y_POS+(selectorpos*8),">");
 			invert_line(FILELIST_Y_POS+(selectorpos*8));
@@ -791,7 +786,7 @@ int main(int argc, char* argv[])
 							if(page_number) page_number--;
 							clear_list(0);
 							read_entry=1;
-							memcpy(&file_list_status ,&file_list_status_tab[page_number&0x1FF],sizeof(struct fs_dir_list_status));
+							curFile = FilelistPages_tab[page_number&0x1FF];
 						}
 						else
 						{
@@ -811,7 +806,7 @@ int main(int argc, char* argv[])
 							clear_list(0);
 							read_entry=1;
 							if(!last_file)page_number++;
-							memcpy(&file_list_status ,&file_list_status_tab[page_number&0x1FF],sizeof(struct fs_dir_list_status));
+							curFile = FilelistPages_tab[page_number&0x1FF];
 						}
 						else
 						{
@@ -825,13 +820,13 @@ int main(int argc, char* argv[])
 						clear_list(0);
 						read_entry=1;
 						if(!last_file)page_number++;
-						memcpy(&file_list_status ,&file_list_status_tab[page_number&0x1FF],sizeof(struct fs_dir_list_status));
+						curFile = FilelistPages_tab[page_number&0x1FF];
 
 						break;
 
 					case FCT_LEFT_KEY:
 						if(page_number) page_number--;
-						memcpy(&file_list_status ,&file_list_status_tab[page_number&0x1FF],sizeof(struct fs_dir_list_status));
+						curFile = FilelistPages_tab[page_number&0x1FF];
 						clear_list(0);
 						read_entry=1;
 						break;
@@ -844,71 +839,75 @@ int main(int argc, char* argv[])
 						hxc_printf_box(0,"Saving selection...");
 						save_cfg_file(sdfecfg_file);
 						restore_box();
-						memcpy(&file_list_status ,&file_list_status_tab[page_number&0x1FF],sizeof(struct fs_dir_list_status));
+						// todo : remove
+						curFile = FilelistPages_tab[page_number&0x1FF];
 						clear_list(0);
 						read_entry=1;
 						break;
 
 					case FCT_SELECT_FILE_DRIVEA:
-						disk_ptr=(disk_in_drive * )&DirectoryEntry_tab[selectorpos];
-
-						if(disk_ptr->DirEnt.attributes&0x10)
+						if (fli_getDiskInDrive(FilelistCurrentPage_tab[selectorpos], disk_ptr))
 						{
-							enter_sub_dir(disk_ptr);
-						}
-						else
-						{
-							memcpy((void*)&disks_slot_a[slotnumber],(void*)&DirectoryEntry_tab[selectorpos],sizeof(disk_in_drive));
-							printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
+							if(disk_ptr->DirEnt.attributes&0x10)
+							{
+								enter_sub_dir(disk_ptr);
+							}
+							else
+							{
+								memcpy((void*)&disks_slot_a[slotnumber], disk_ptr,sizeof(disk_in_drive));
+								printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
+							}
 						}
 						break;
 
 					case FCT_SELECT_FILE_DRIVEB:
-						disk_ptr=(disk_in_drive * )&DirectoryEntry_tab[selectorpos];
-
-						if(disk_ptr->DirEnt.attributes&0x10)
+						if (fli_getDiskInDrive(FilelistCurrentPage_tab[selectorpos], disk_ptr))
 						{
-							enter_sub_dir(disk_ptr);
-						}
-						else
-						{
-							memcpy((void*)&disks_slot_b[slotnumber],(void*)&DirectoryEntry_tab[selectorpos],sizeof(disk_in_drive));
-							printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
+							if(disk_ptr->DirEnt.attributes&0x10)
+							{
+								enter_sub_dir(disk_ptr);
+							}
+							else
+							{
+								memcpy((void*)&disks_slot_b[slotnumber], disk_ptr,sizeof(disk_in_drive));
+								printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
+							}
 						}
 						break;
 
 					case FCT_SELECT_FILE_DRIVEA_AND_NEXTSLOT:
-						disk_ptr=(disk_in_drive * )&DirectoryEntry_tab[selectorpos];
-
-						if(disk_ptr->DirEnt.attributes&0x10)
+						if (fli_getDiskInDrive(FilelistCurrentPage_tab[selectorpos], disk_ptr))
 						{
-							enter_sub_dir(disk_ptr);
+							if(disk_ptr->DirEnt.attributes&0x10)
+							{
+								enter_sub_dir(disk_ptr);
+							}
+							else
+							{
+								memcpy((void*)&disks_slot_a[slotnumber], disk_ptr,sizeof(disk_in_drive));
+								next_slot();
+							}
 						}
-						else
-						{
-							memcpy((void*)&disks_slot_a[slotnumber],(void*)&DirectoryEntry_tab[selectorpos],sizeof(disk_in_drive));
-							next_slot();
-						}
-					break;
+						break;
 
 					case FCT_SELECTSAVEREBOOT:
-						disk_ptr=(disk_in_drive * )&DirectoryEntry_tab[selectorpos];
-
-						if(disk_ptr->DirEnt.attributes&0x10)
+						if (fli_getDiskInDrive(FilelistCurrentPage_tab[selectorpos], disk_ptr))
 						{
-							enter_sub_dir(disk_ptr);
-						}
-						else
-						{
-							memcpy((void*)&disks_slot_a[1],(void*)&DirectoryEntry_tab[selectorpos],sizeof(disk_in_drive));
-							hxc_printf_box(0,"Saving selection and restart...");
-							save_cfg_file(sdfecfg_file);
-							restore_box();
-							hxc_printf_box(0,">>>>>Rebooting...<<<<<");
-							/* sleep(1); */
-							jumptotrack0();
-							reboot();
-
+							if(disk_ptr->DirEnt.attributes&0x10)
+							{
+								enter_sub_dir(disk_ptr);
+							}
+							else
+							{
+								memcpy((void*)&disks_slot_a[1], disk_ptr,sizeof(disk_in_drive));
+								hxc_printf_box(0,"Saving selection and restart...");
+								save_cfg_file(sdfecfg_file);
+								restore_box();
+								hxc_printf_box(0,">>>>>Rebooting...<<<<<");
+								/* sleep(1); */
+								jumptotrack0();
+								reboot();
+							}
 						}
 						break;
 
@@ -1005,7 +1004,7 @@ int main(int argc, char* argv[])
 						printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 						displayFolder();
 
-						memcpy(&file_list_status ,&file_list_status_tab[page_number&0x1FF],sizeof(struct fs_dir_list_status));
+						curFile = FilelistPages_tab[page_number&0x1FF];
 						clear_list(0);
 						read_entry=1;
 
@@ -1114,7 +1113,7 @@ int main(int argc, char* argv[])
 						printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 						displayFolder();
 
-						memcpy(&file_list_status ,&file_list_status_tab[page_number&0x1FF],sizeof(struct fs_dir_list_status));
+						curFile = FilelistPages_tab[page_number&0x1FF];
 						clear_list(0);
 						read_entry=1;
 					
@@ -1129,7 +1128,7 @@ int main(int argc, char* argv[])
 						printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 						displayFolder();
 
-						memcpy(&file_list_status ,&file_list_status_tab[page_number&0x1FF],sizeof(struct fs_dir_list_status));
+						curFile = FilelistPages_tab[page_number&0x1FF];
 						clear_list(0);
 						read_entry=1;
 						break;
@@ -1167,11 +1166,11 @@ int main(int argc, char* argv[])
 						colormode++;
 						set_color_scheme(colormode);
 						cfgfile_header[256+128]=colormode;
-					break;	
+						break;
 
 					case FCT_TOP:
 						page_number=0;
-						memcpy(&file_list_status ,&file_list_status_tab[page_number&0x1FF],sizeof(struct fs_dir_list_status));
+						curFile = FilelistPages_tab[page_number&0x1FF];
 						clear_list(0);
 						read_entry=1;
 						break;
@@ -1200,11 +1199,11 @@ int main(int argc, char* argv[])
 						hxc_printf(0,SCREEN_XRESOL/2+(8*8),CURDIR_Y_POS+16,"[%s]",filter);
 						selectorpos=0;
 						page_number=0;
-						memcpy(&file_list_status ,&file_list_status_tab[0],sizeof(struct fs_dir_list_status));
+						curFile = FilelistPages_tab[page_number&0x1FF];
 
 						clear_list(0);
 						read_entry=1;
-					break;
+						break;
 
 					default:
 						/* printf("err %d!\n",key); */
