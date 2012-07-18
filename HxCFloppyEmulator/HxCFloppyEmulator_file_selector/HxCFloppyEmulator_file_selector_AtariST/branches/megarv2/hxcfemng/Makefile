@@ -43,16 +43,19 @@ push-gbo-dsi: $(EXEC)
 	rsync --perms $< gbouthen@gbo-dsi.openvpn:/cygdrive/c/data/dropbox/emul/atari/hd/c/tmp/
 
 
-$(EXEC):          libc/mStartupAsmC.o libc/mStartup.o fectrl.o filelist.o gui_utils.o atari_hw.o fat32/fat_access.o fat32/fat_filelib.o fat32/fat_misc.o fat32/fat_string.o fat32/fat_table.o fat32/fat_write.o fat32/fat_cache.o libc/snprintf/snprintf.o
+$(EXEC):          libc/mStartupAsmC.o libc/mStartup.o fectrl.o filelist.o dir.o gui_utils.o atari_hw.o fat32/fat_access.o fat32/fat_filelib.o fat32/fat_misc.o fat32/fat_string.o fat32/fat_table.o fat32/fat_write.o fat32/fat_cache.o libc/snprintf/snprintf.o
 	$(C)          $(LFLAGS)           $^ -o $@ 
 
 atari_hw.o:       atari_hw.c       atari_hw.h keysfunc_defs.h keys_defs.h
 	$(C)          $(CFLAGS)        -c $< -o $@
 
+dir.o:            dir.c            filelist.h fat32/fat_access.h cfg_file.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h atari_hw.h fat32/fat_opts.h conf.h
+	$(C)          $(CFLAGS)        -c $< -o $@
+
 gui_utils.o:      gui_utils.c      gui_utils.h atari_hw.h conf.h libc/snprintf/snprintf.h graphx/data_bmp_hxc2001logo_bmp.h graphx/data_bmp_font_bmp.h graphx/data_bmp_font8x8_bmp.h graphx/data_bmp_sdhxcfelogo_bmp.h
 	$(C)          $(CFLAGS)        -c $< -o $@
 
-fectrl.o:         fectrl.c         keysfunc_defs.h gui_utils.h conf.h cfg_file.h hxcfeda.h atari_hw.h fat32/fat_opts.h fat32/fat_misc.h fat32/fat_types.h fat32/fat_defs.h fat32/fat_filelib.h fat32/fat_access.h compiler_helper.h
+fectrl.o:         fectrl.c         keysfunc_defs.h gui_utils.h conf.h cfg_file.h hxcfeda.h atari_hw.h fat32/fat_opts.h fat32/fat_misc.h fat32/fat_types.h fat32/fat_defs.h fat32/fat_filelib.h fat32/fat_access.h compiler_helper.h filelist.h dir.h
 	$(C)          $(CFLAGS)        -c $< -o $@
 
 filelist.o:       filelist.c       fat32/fat_access.h atari_hw.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h cfg_file.h

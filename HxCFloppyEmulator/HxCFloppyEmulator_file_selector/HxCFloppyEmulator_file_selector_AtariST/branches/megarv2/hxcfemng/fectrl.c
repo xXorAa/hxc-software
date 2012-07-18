@@ -41,7 +41,7 @@
 #include "gui_utils.h"
 #include "cfg_file.h"
 #include "hxcfeda.h"
-
+#include "dir.h"
 #include "filelist.h"
 
 
@@ -59,14 +59,12 @@
 static unsigned long indexptr;
 static unsigned short y_pos;
 static unsigned long last_setlbabase;
-static unsigned long cluster;
 static unsigned char sector[512];
 static unsigned char cfgfile_header[512];
 
 static unsigned char currentPath[4*256] = {"\\"};
 
 static unsigned char sdfecfg_file[2048];
-static unsigned char filename[4097];
 static char filter[17];
 
 
@@ -87,18 +85,6 @@ extern  struct fatfs _fs;
 extern unsigned short SCREEN_YRESOL;
 extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
 
-
-void mystrlwr(char *string)
-{
-	while(*string)
-	{
-		if ( *string >= 'A' && *string <= 'Z' )
-		{
-			 *string = *string + 32;
-		}
-		 string++;
-	}
-}
 
 void print_hex(unsigned char * buffer, int size)
 {
@@ -491,7 +477,6 @@ void displayFolder()
 
 void enter_sub_dir(disk_in_drive *disk_ptr)
 {
-	unsigned long first_cluster;
 	int currentPathLength;
 	unsigned char folder[128+1];
 	unsigned char c;
@@ -672,7 +657,6 @@ int main(int argc, char* argv[])
 	colormode=0;
 	read_entry=0;
 	selectorpos=0;
-	cluster=fatfs_get_root_cluster(&_fs);
 	page_number=0;
 	last_file=0;
 	filtermode=0;
@@ -731,6 +715,7 @@ int main(int argc, char* argv[])
 
 					if(displayentry)
 					{
+						// store the file index in the current page files
 						FilelistCurrentPage_tab[i] = curFile;
 						if(dir_entry.is_dir)
 						{
