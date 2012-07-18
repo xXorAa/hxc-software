@@ -77,7 +77,6 @@ static disk_in_drive disks_slot_b[NUMBER_OF_SLOT];
 static UWORD FilelistCurrentPage_tab[32];
 
 static struct fs_dir_list_status file_list_status;
-static UWORD FilelistPages_tab[512];
 static struct fat_dir_entry sfEntry;
 static struct fs_dir_ent dir_entry;
 extern  struct fatfs _fs;
@@ -544,13 +543,11 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 	if(!fl_list_opendir(currentPath, &file_list_status))
 	{
 		currentPath[old_index]=0;
-		fl_list_opendir(currentPath, &file_list_status);
 		displayFolder();
 	}
-	for(i=0;i<512;i++)
-	{
-		FilelistPages_tab[i] = 0xffff;
-	}
+	dir_scan(currentPath);
+	dir_paginate();
+
 	clear_list(0);
 	read_entry=1;
 }
@@ -594,7 +591,7 @@ int main(int argc, char* argv[])
 {
 	unsigned short i,page_number;
 	unsigned char key, entrytype,bootdev,j;
-	unsigned char last_file,filtermode,displayentry,c;
+	unsigned char last_file,filtermode,c;
 	disk_in_drive diskInDrive;
 	disk_in_drive * disk_ptr = &diskInDrive;
 	cfgfile * cfgfile_ptr;
@@ -661,21 +658,12 @@ int main(int argc, char* argv[])
 	last_file=0;
 	filtermode=0;
 
-	// erase all pages
-	for(i=0;i<512;i++)
-	{
-		FilelistPages_tab[i] = 0xffff;
-	}
 	clear_list(0);
 
-	int nbFiles=0, curFile=0;
-
 	// get all the files in the dir
-	fl_list_opendir(currentPath, &file_list_status);
-	while( fl_list_readdir(&file_list_status, &dir_entry) ) {
-		fli_push(&dir_entry);
-		nbFiles++;
-	}
+	dir_scan(currentPath);
+	dir_setFilter(0);
+	dir_paginate();
 
 
 	
@@ -684,55 +672,34 @@ int main(int argc, char* argv[])
 		y_pos=FILELIST_Y_POS;
 
 		// start at the first file of the directory
-		curFile = 0;
+		dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 
 		for(;;)
 		{
-			// clear current page
-			for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; i++) {
-				FilelistCurrentPage_tab[i] = 0xffff;
-			}
 
 			i=0;
 			y_pos=FILELIST_Y_POS;
 			last_file=0x00;
 			do
 			{
-				displayentry=0xFF;
-				if(curFile < nbFiles)
+				UWORD curFile;
+
+				curFile = FilelistCurrentPage_tab[i];
+				if (0xffff != curFile && fli_getDirEntry(curFile, &dir_entry))
 				{
-					fli_getDirEntry(curFile, &dir_entry);
-
-					if(filtermode)
+					if(dir_entry.is_dir)
 					{
-						mystrlwr(dir_entry.filename);
-
-						if(!strstr(dir_entry.filename,filter))
-						{
-							displayentry=0x00;
-						}
+						entrytype=10;
 					}
-
-					if(displayentry)
+					else
 					{
-						// store the file index in the current page files
-						FilelistCurrentPage_tab[i] = curFile;
-						if(dir_entry.is_dir)
-						{
-							entrytype=10;
-						}
-						else
-						{
-							entrytype=12;
-						}
-						hxc_printf(0,0,y_pos," %c%s",entrytype,dir_entry.filename);
-
-						y_pos=y_pos+8;
-
-						i++;
+						entrytype=12;
 					}
+					hxc_printf(0,0,y_pos," %c%s",entrytype,dir_entry.filename);
 
-					curFile++;
+					y_pos=y_pos+8;
+
+					i++;
 				}
 				else
 				{
@@ -743,9 +710,6 @@ int main(int argc, char* argv[])
 			}while((i<NUMBER_OF_FILE_ON_DISPLAY) && Keyboard()!=0x01);
 
 			filtermode=0;
-
-			// store the index of the first file of the page
-			FilelistPages_tab[(page_number+1)&0x1FF] = FilelistCurrentPage_tab[0];
 
 			hxc_printf(0,0,FILELIST_Y_POS+(selectorpos*8),">");
 			invert_line(FILELIST_Y_POS+(selectorpos*8));
@@ -771,7 +735,7 @@ int main(int argc, char* argv[])
 							if(page_number) page_number--;
 							clear_list(0);
 							read_entry=1;
-							curFile = FilelistPages_tab[page_number&0x1FF];
+							dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 						}
 						else
 						{
@@ -791,7 +755,7 @@ int main(int argc, char* argv[])
 							clear_list(0);
 							read_entry=1;
 							if(!last_file)page_number++;
-							curFile = FilelistPages_tab[page_number&0x1FF];
+							dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 						}
 						else
 						{
@@ -805,13 +769,13 @@ int main(int argc, char* argv[])
 						clear_list(0);
 						read_entry=1;
 						if(!last_file)page_number++;
-						curFile = FilelistPages_tab[page_number&0x1FF];
+						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 
 						break;
 
 					case FCT_LEFT_KEY:
 						if(page_number) page_number--;
-						curFile = FilelistPages_tab[page_number&0x1FF];
+						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 						clear_list(0);
 						read_entry=1;
 						break;
@@ -825,7 +789,7 @@ int main(int argc, char* argv[])
 						save_cfg_file(sdfecfg_file);
 						restore_box();
 						// todo : remove
-						curFile = FilelistPages_tab[page_number&0x1FF];
+						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 						clear_list(0);
 						read_entry=1;
 						break;
@@ -989,7 +953,7 @@ int main(int argc, char* argv[])
 						printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 						displayFolder();
 
-						curFile = FilelistPages_tab[page_number&0x1FF];
+						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 						clear_list(0);
 						read_entry=1;
 
@@ -1098,7 +1062,7 @@ int main(int argc, char* argv[])
 						printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 						displayFolder();
 
-						curFile = FilelistPages_tab[page_number&0x1FF];
+						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 						clear_list(0);
 						read_entry=1;
 					
@@ -1113,7 +1077,7 @@ int main(int argc, char* argv[])
 						printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 						displayFolder();
 
-						curFile = FilelistPages_tab[page_number&0x1FF];
+						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 						clear_list(0);
 						read_entry=1;
 						break;
@@ -1155,7 +1119,7 @@ int main(int argc, char* argv[])
 
 					case FCT_TOP:
 						page_number=0;
-						curFile = FilelistPages_tab[page_number&0x1FF];
+						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 						clear_list(0);
 						read_entry=1;
 						break;
@@ -1182,9 +1146,13 @@ int main(int argc, char* argv[])
 						/* get_str(&filter); */
 						mystrlwr(filter);
 						hxc_printf(0,SCREEN_XRESOL/2+(8*8),CURDIR_Y_POS+16,"[%s]",filter);
+
+						dir_setFilter(filter);
+						dir_paginate();
+
 						selectorpos=0;
 						page_number=0;
-						curFile = FilelistPages_tab[page_number&0x1FF];
+						dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 
 						clear_list(0);
 						read_entry=1;

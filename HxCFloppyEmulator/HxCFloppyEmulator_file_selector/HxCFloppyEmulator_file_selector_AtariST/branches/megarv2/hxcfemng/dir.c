@@ -68,7 +68,7 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 		}
 	}
 
-
+	return TRUE;
 }
 
 void mystrlwr(char *string)
