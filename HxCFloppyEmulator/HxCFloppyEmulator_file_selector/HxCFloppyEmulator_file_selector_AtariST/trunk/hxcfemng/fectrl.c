@@ -42,8 +42,6 @@
 #include "cfg_file.h"
 #include "hxcfeda.h"
 
-#include "filelist.h"
-
 
 #include "atari_hw.h"
 /* #include "atari_regs.h" */

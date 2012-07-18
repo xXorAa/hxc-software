@@ -1,6 +1,3 @@
-#ifndef __ATARI_HW_H__
-#define __ATARI_HW_H__
-
 /*
 //
 // Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
@@ -198,6 +195,4 @@ __regsused("d0/d1/d2/a0/a1/a2") LONG my_Supexec(__reg("a0")LONG * function) =
   "\taddq.l\t#6,sp";
 #else
 #    define my_Supexec Supexec
-#endif
-
 #endif
