@@ -50,31 +50,37 @@ int fli_push(struct fs_dir_ent * dir_entry) {
         // 127 char max + 0x00 = 128 chars
         len = 127;
     }
-
-    // compute total length of the struct
-    totalLen = (len+1 + 4+4+1 + 1) & 0xfffe;  // filename, 0x00 (+1), size(+4), cluster(+4), is_dir(+1). Add one byte and align.
-
-    // reserve space at the end of the block
-    newAdr  = _endAdr - totalLen;
-    _endAdr = newAdr;
-
-    if (newAdr <= (_base + (_nbEntries+1)*4)) {
-        // no more space
-        return FALSE;
+    // remove trailing spaces
+    while(dir_entry->filename[len-1] == ' ') {
+        len--;
     }
+    if (! (1 == len && '.' == dir_entry->filename[0]) )
+    {   // don't push "."
+        // compute total length of the struct
+        totalLen = (len+1 + 4+4+1 + 1) & 0xfffe;  // filename, 0x00 (+1), size(+4), cluster(+4), is_dir(+1). Add one byte and align.
 
-    // copy data into new allocated block
-    memcpy(newAdr, &dir_entry->cluster, 8);  // copy cluster, size
-    *(newAdr+8) = dir_entry->is_dir;         // copy is_dir
-    memcpy(newAdr+9, &dir_entry->filename, len);
-    *(newAdr+9 + len) = (unsigned char) 0;
+        // reserve space at the end of the block
+        newAdr  = _endAdr - totalLen;
+        _endAdr = newAdr;
 
-    // add pointer to the block
-    UBYTE **ptr;
-    ptr = (UBYTE **) (_base + _nbEntries*4);
-    *ptr = newAdr;
+        if (newAdr <= (_base + (_nbEntries+1)*4)) {
+            // no more space
+            return FALSE;
+        }
 
-    _nbEntries++;
+        // copy data into new allocated block
+        memcpy(newAdr, &dir_entry->cluster, 8);  // copy cluster, size
+        *(newAdr+8) = dir_entry->is_dir;         // copy is_dir
+        memcpy(newAdr+9, &dir_entry->filename, len);
+        *(newAdr+9 + len) = (unsigned char) 0;
+
+        // add pointer to the block
+        UBYTE **ptr;
+        ptr = (UBYTE **) (_base + _nbEntries*4);
+        *ptr = newAdr;
+
+        _nbEntries++;
+    }
     return TRUE;
 }
 
@@ -108,7 +114,17 @@ int fli_getDiskInDrive(UWORD number, disk_in_drive * disk_ptr)
     ptr = (UBYTE **) (_base + number*4);
     newAdr = *ptr;
 
-    memcpy(&disk_ptr->DirEnt.firstCluster_b1, newAdr, 8);   // copy cluster, size
+    //copy cluster, and size little endian
+    disk_ptr->DirEnt.firstCluster_b1 = *(newAdr+3);
+    disk_ptr->DirEnt.firstCluster_b2 = *(newAdr+2);
+    disk_ptr->DirEnt.firstCluster_b3 = *(newAdr+1);
+    disk_ptr->DirEnt.firstCluster_b4 = *(newAdr+0);
+    disk_ptr->DirEnt.size_b1 = *(newAdr+7);
+    disk_ptr->DirEnt.size_b2 = *(newAdr+6);
+    disk_ptr->DirEnt.size_b3 = *(newAdr+5);
+    disk_ptr->DirEnt.size_b4 = *(newAdr+4);
+
+    // copy cluster, size
     UBYTE attr = 0;
     if (*(newAdr+8)) {
         attr = 0x10;

@@ -41,6 +41,20 @@ static char * _filter=0;
 extern unsigned short SCREEN_YRESOL;
 extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
 
+
+void mystrlwr(char *string)
+{
+	while(*string)
+	{
+		if ( *string >= 'A' && *string <= 'Z' )
+		{
+			 *string = *string + 32;
+		}
+		string++;
+	}
+}
+
+
 int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 {
 	UWORD i, currentFile;
@@ -61,7 +75,7 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 		if ( TRUE != fli_getDirEntry(currentFile, &dir_entry) ) {
 			break;
 		}
-		if (dir_filter(dir_entry.filename)) {
+		if (dir_filter(&dir_entry)) {
 			// file will be shown
 			FilelistCurrentPage_tab[i] = currentFile;
 			i++;
@@ -71,90 +85,7 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 	return TRUE;
 }
 
-void mystrlwr(char *string)
-{
-	while(*string)
-	{
-		if ( *string >= 'A' && *string <= 'Z' )
-		{
-			 *string = *string + 32;
-		}
-		string++;
-	}
-}
 
-/*
-void enter_sub_dir(disk_in_drive *disk_ptr)
-{
-	int currentPathLength;
-	unsigned char folder[128+1];
-	unsigned char c;
-	int i;
-	int old_index;
-
-	old_index=strlen( currentPath );
-	
-	if ( (disk_ptr->DirEnt.longName[0] == (unsigned char)'.') && (disk_ptr->DirEnt.longName[1] == (unsigned char)'.') )
-	{
-		currentPathLength = strlen( currentPath ) - 1;
-		do
-		{
-			currentPath[ currentPathLength ] = 0;
-			currentPathLength--;
-		}
-		while ( currentPath[ currentPathLength ] != (unsigned char)'/' );
-
-	}
-	else
-	{
-		if((disk_ptr->DirEnt.longName[0] == (unsigned char)'.'))
-		{
-		}
-		else
-		{
-			for (i=0; i < 128; i++ )
-			{
-				c = disk_ptr->DirEnt.longName[i];
-				if ( ( c >= (32+0) ) && (c <= 127) )
-				{
-					folder[i] = c;
-				}
-				else
-				{
-					folder[i] = 0;
-					i = 128;
-				}
-			}
-
-			currentPathLength = strlen( currentPath );
-
-			if( currentPath[ currentPathLength-1] != '/')
-			strcat( currentPath, "/" );
-
-			strcat( currentPath, folder );
-		}
-
-	}
-
-	displayFolder();
-
-	selectorpos=0;
-
-
-	if(!fl_list_opendir(currentPath, &file_list_status))
-	{
-		currentPath[old_index]=0;
-		fl_list_opendir(currentPath, &file_list_status);
-		displayFolder();
-	}
-	for(i=0;i<512;i++)
-	{
-		FilelistPages_tab[i] = 0xffff;
-	}
-	clear_list(0);
-	read_entry=1;
-}
-*/
 
 
 int dir_paginate()
@@ -175,7 +106,7 @@ int dir_paginate()
 	currentFileInPage = NUMBER_OF_FILE_ON_DISPLAY;
 
 	while(fli_getDirEntry(currentFile, &dir_entry)) {
-		if (dir_filter(dir_entry.filename)) {
+		if (dir_filter(&dir_entry)) {
 			// file will be shown
 			if (currentFileInPage >= NUMBER_OF_FILE_ON_DISPLAY) {
 				// add a page
@@ -195,20 +126,22 @@ int dir_paginate()
 
 
 
-void dir_setFilter(unsigned char *filter)
+void dir_setFilter(char *filter)
 {
 	_filter = filter;
 }
 
 
-int dir_filter(char *filename)
+
+int dir_filter(struct fs_dir_ent *dir_entry)
 {
 	unsigned char tmp[FATFS_MAX_LONG_FILENAME];
-	if (0 != _filter) {
-		strcpy(tmp, filename);
+	if (0 != _filter && !(dir_entry->is_dir)) {
+		// only filter when filter is set. Don't filter dirs
+		strcpy(tmp, dir_entry->filename);
 		mystrlwr(tmp);
 
-		if(!strstr(filename, _filter))
+		if(!strstr(tmp, _filter))
 		{
 			return FALSE;
 		}

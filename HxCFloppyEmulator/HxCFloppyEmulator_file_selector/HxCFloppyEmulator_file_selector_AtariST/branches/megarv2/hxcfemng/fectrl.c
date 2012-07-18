@@ -71,6 +71,7 @@ static char filter[17];
 static unsigned char slotnumber;
 static char selectorpos;
 static unsigned char read_entry;
+static UWORD page_number;
 
 static disk_in_drive disks_slot_a[NUMBER_OF_SLOT];
 static disk_in_drive disks_slot_b[NUMBER_OF_SLOT];
@@ -537,9 +538,6 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 
 	displayFolder();
 
-	selectorpos=0;
-
-
 	if(!fl_list_opendir(currentPath, &file_list_status))
 	{
 		currentPath[old_index]=0;
@@ -549,8 +547,11 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 	dir_paginate();
 
 	clear_list(0);
-	read_entry=1;
+	read_entry  = 1;
+	page_number = 0;
+	selectorpos = 0;
 }
+
 
 void show_all_slots(void)
 {
@@ -589,7 +590,7 @@ void show_all_slots(void)
 
 int main(int argc, char* argv[])
 {
-	unsigned short i,page_number;
+	unsigned short i;
 	unsigned char key, entrytype,bootdev,j;
 	unsigned char last_file,filtermode,c;
 	disk_in_drive diskInDrive;
@@ -671,11 +672,10 @@ int main(int argc, char* argv[])
 	{
 		y_pos=FILELIST_Y_POS;
 
-		// start at the first file of the directory
-		dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
-
 		for(;;)
 		{
+			// start at the first file of the directory
+			dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 
 			i=0;
 			y_pos=FILELIST_Y_POS;
@@ -803,7 +803,7 @@ int main(int argc, char* argv[])
 							}
 							else
 							{
-								memcpy((void*)&disks_slot_a[slotnumber], disk_ptr,sizeof(disk_in_drive));
+								memcpy((void*)&disks_slot_a[slotnumber], disk_ptr, sizeof(disk_in_drive));
 								printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 							}
 						}
