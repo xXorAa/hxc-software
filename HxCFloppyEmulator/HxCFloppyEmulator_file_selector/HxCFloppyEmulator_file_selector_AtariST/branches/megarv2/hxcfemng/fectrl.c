@@ -806,7 +806,6 @@ int main(int argc, char* argv[])
 	colormode=0;
 	selectorpos=0;
 	page_number=0;
-	isLastPage=0;
 
 	// get all the files in the dir
 	dir_scan(currentPath);
@@ -850,40 +849,25 @@ int main(int argc, char* argv[])
 				hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS+16,"Search: [] (F1)");
 			}
 
-			i=0;
 			y_pos=FILELIST_Y_POS;
-			isLastPage=0x00;
-			do
+			for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; )
 			{
 				UWORD curFile;
 
 				curFile = FilelistCurrentPage_tab[i];
 				if (0xffff != curFile && fli_getDirEntry(curFile, &dir_entry))
 				{
-					if(dir_entry.is_dir)
-					{
-						entrytype=10;
-					}
-					else
-					{
-						entrytype=12;
-					}
-					hxc_printf(0,0,y_pos," %c%s",entrytype,dir_entry.filename);
-
+					hxc_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(12), dir_entry.filename);
 					y_pos=y_pos+8;
-
 					i++;
+				} else {
+					break;
 				}
-				else
-				{
-					isLastPage=0xFF;
-					i=NUMBER_OF_FILE_ON_DISPLAY;
-				}
-
-			}while((i<NUMBER_OF_FILE_ON_DISPLAY) && Keyboard()!=0x01);
+			}
 
 			fRedraw_files = 0;
 			inverted_line = -1;
+			isLastPage = ((page_number+1) == nbPages);
 		} // if (fRedraw_files)
 
 		// reset the inverted line
@@ -904,75 +888,60 @@ hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d nbPages:%d    ", pa
 		switch(key)
 		{
 		case FCT_UP_KEY: /* UP */
-			if (0==selectorpos && 0==page_number) {
-				// stuck at top
-				UWORD i, nextOffset;
-				for (i=0; ; i++) {
-					nextOffset = dir_getFirstFileForPage(i);
-					if (0xffff == nextOffset) {
-						break;
-					}
-				}
-				if (i>1) {
-					page_number = i-1;
-					fRedraw_files = 1;
-					selectorpos = 0;
-				}
+			if (selectorpos > 0) {
+				selectorpos--;
 				break;
 			}
 
-			selectorpos--;
-			if(selectorpos<0)
-			{
-				selectorpos=NUMBER_OF_FILE_ON_DISPLAY-1;
-				page_number--;
-				fRedraw_files=1;
+			// top line
+			if (0==page_number) {
+				// first page: stuck
+				break;
 			}
+
+			// top line not on the first page
+			selectorpos=NUMBER_OF_FILE_ON_DISPLAY-1;
+			page_number--;
+			fRedraw_files=1;
 			break;
 
 		case FCT_DOWN_KEY: /* Down */
 			if ( (selectorpos+1)==NUMBER_OF_FILE_ON_DISPLAY ) {
 				// last line of display
+				if (!isLastPage) {
+					page_number++;
+					fRedraw_files = 1;
+					selectorpos = 0;
+				}
+				break;
+			} else if (0xffff != FilelistCurrentPage_tab[selectorpos+1]) {
+				// next file exist: allow down
+				selectorpos++;
+			}
+			break;
+
+		case FCT_RIGHT_KEY: /* Right */
+			if (nbPages > 1) {
 				if (isLastPage) {
-					// go to first page
 					page_number = 0;
 				} else {
 					page_number++;
 				}
-				fRedraw_files = 1;
-				selectorpos = 0;
-				break;
-			} else if (0xffff == FilelistCurrentPage_tab[selectorpos+1]) {
-				// next file doesn"t exist : go to first page
-				if (0 == page_number) {
-					// but there is only one page : stuck
-					break;
-				}
-				page_number = 0;
-				fRedraw_files = 1;
-				selectorpos = 0;
-				break;
+				fRedraw_files=1;
+				selectorpos=0;
 			}
-
-			selectorpos++;
-			break;
-
-		case FCT_RIGHT_KEY: /* Right */
-			if (isLastPage) {
-				break;
-			}
-			fRedraw_files=1;
-			selectorpos=0;
-			page_number++;
 			break;
 
 		case FCT_LEFT_KEY:
-			if(0 == page_number) {
-				break;
+			if (nbPages > 1) {
+				if(0 == page_number) {
+					page_number = nbPages - 1;
+				} else {
+					page_number--;
+				}
+				selectorpos=0;
+				fRedraw_files=1;
 			}
-			page_number--;
-			selectorpos=0;
-			fRedraw_files=1;
 			break;
 
 		case FCT_NEXTSLOT:
