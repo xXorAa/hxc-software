@@ -10,11 +10,11 @@ REDIRECT_OUTPUT_TO_SERIAL   equ 0   ;0-output to console,1-output to serial port
         xdef    ___modsi3
         xdef    ___divsi3
         xdef    _strcpy
-        
+
 BASEPAGE_SIZE   equ $100
 STACK_SIZE      equ $1000
 ;reduced stack size from 64 KiB to 4 kiB
-        
+
 ; --------------------------------------------------------------
 start:
         move.l  4(sp),a5                ;address to basepage
@@ -34,9 +34,9 @@ start:
         move.w  #$4a,-(sp)              ;mshrink()
         trap    #1
         lea.l   12(sp),sp
-                
+
 ;########################## redirect output to serial
-        if (REDIRECT_OUTPUT_TO_SERIAL==1)  
+        if (REDIRECT_OUTPUT_TO_SERIAL==1)
         ; redirect to serial
         move.w #2,-(sp)
         move.w #1,-(sp)
@@ -44,17 +44,17 @@ start:
         trap #1
         addq.l #6,sp
         endif
-    
+
         jsr _main
 
-exit:   
+exit:
 ;       move.w #1,-(sp)
 ;       trap #1
 ;       addq.l #2,sp
-        
+
         clr.w -(sp)
         trap #1
-        
+
 ;_basepage: ds.l    1
 ;_len:  ds.l    1
 

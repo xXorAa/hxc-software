@@ -64,7 +64,7 @@ void asm_nop(void) = "\tnop\n";
 void su_fdcRegSet(WORD reg, WORD data)
 {
 	DMA->control = reg | fdcDmaMode;
-	
+
 	asm_nop();
 	asm_nop();
 	DMA->data    = data;
@@ -279,12 +279,12 @@ void init_atari_fdc(unsigned char drive)
 	valid_cache=0;
 	floppydrive=drive;
 	my_Supexec((LONG *) su_headinit);
-	
+
 	kt=(KEYTAB *) Keytbl( (unsigned char *) -1, (unsigned char *) -1, (unsigned char *) -1 );
 }
 
 unsigned char Keyboard()
-{	
+{
 	return 0;
 }
 
@@ -303,7 +303,7 @@ unsigned char get_char()
 
 	key=Cconin()>>16;
 	if(key == 0x1C) return '\n';
-	
+
 	return kt->unshift[key];
 
 }

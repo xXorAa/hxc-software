@@ -37,7 +37,7 @@
 #endif
 
 #include <time.h>
-/* #include <vt52.h> */ 
+/* #include <vt52.h> */
 #include <stdarg.h>
 
 
@@ -124,7 +124,7 @@ static unsigned long colortable[] = {
 								0x444, 0x000, 0x0f0, 0x00f,
 								0x555, 0x000, 0x0f0, 0x00f,
 								0x666, 0x000, 0x0f0, 0x00f,
-								
+
 };
 
 
@@ -139,7 +139,7 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 
 	k=0;
 	l=0;
-	
+
 	if(highresmode)
 	{
 		base_offset=((y*80)+ (((x>>3)&(~0x1))))/2;
@@ -181,7 +181,7 @@ void print_char(unsigned char * membuffer, bmaptype * font,unsigned short x, uns
 
 	ptr_dst=(unsigned short*)membuffer;
 	ptr_src=(unsigned short*)&font->data[0];
-	
+
 	if(highresmode)
 	{
 		x=(x>>3) & (~0x1);
@@ -269,7 +269,7 @@ void print_str(unsigned char * membuffer,char * buf,unsigned short x_pos,unsigne
 {
 	unsigned short i;
 	i=0;
-	
+
 	switch(font)
 	{
 	case 8:
@@ -335,7 +335,7 @@ void h_line(unsigned short y_pos,unsigned short val)
 {
 	unsigned short *ptr_dst;
 	unsigned short i,s,ptroffset;
-	
+
 	if(highresmode)
 		s=40;
 	else
@@ -384,7 +384,7 @@ void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned sh
 				ptr_dst[ptroffset+i]=fillval;
 			}
 			ptroffset=80* (y_p1+j);
-		}	
+		}
 	}
 }
 
@@ -402,7 +402,7 @@ void invert_line(unsigned short y_pos)
 	unsigned short ptroffset;
 
 	ptr_dst=(unsigned short*)screen_buffer_aligned;
-	
+
 	if(highresmode)
 	{
 		for(j=0;j<8;j++)
@@ -532,7 +532,7 @@ void display_status()
 void initpal()
 {
 	volatile unsigned short * ptr;
-	
+
 	ptr=(unsigned short *)0xFF8240;
 	*ptr=colortable[((color&0x1F)*4)+0];
 	ptr=(unsigned short *)0xFF8242;
@@ -558,7 +558,7 @@ void init_display()
 
 	SCREEN_YRESOL=200;
 	NUMBER_OF_FILE_ON_DISPLAY=19-5;/* 19-5 //19 -240 */
-	
+
 	highresmode=get_vid_mode();
 
 	old_physical_adr=(unsigned long)Physbase();

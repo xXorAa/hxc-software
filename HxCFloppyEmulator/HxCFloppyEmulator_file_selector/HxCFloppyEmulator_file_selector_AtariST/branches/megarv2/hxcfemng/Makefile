@@ -44,7 +44,7 @@ push-gbo-dsi: $(EXEC)
 
 
 $(EXEC):          libc/mStartupAsmC.o libc/mStartup.o fectrl.o filelist.o dir.o gui_utils.o atari_hw.o fat32/fat_access.o fat32/fat_filelib.o fat32/fat_misc.o fat32/fat_string.o fat32/fat_table.o fat32/fat_write.o fat32/fat_cache.o libc/snprintf/snprintf.o
-	$(C)          $(LFLAGS)           $^ -o $@ 
+	$(C)          $(LFLAGS)           $^ -o $@
 
 atari_hw.o:       atari_hw.c       atari_hw.h keysfunc_defs.h keys_defs.h
 	$(C)          $(CFLAGS)        -c $< -o $@

@@ -21,7 +21,7 @@ void __main(){}
 
 int puts( const char* pText ){
 	Cconws ( pText );
-	Cconws ( "\r\n" );	
+	Cconws ( "\r\n" );
 	return 0;
 }
 
@@ -30,12 +30,12 @@ int puts( const char* pText ){
 void* memset ( void * ptr, int value, size_t num )
 {
 	unsigned char* pTemp = (unsigned char*) ptr;
-	
+
 	while ( num-- )
 	{
 		*pTemp++=value;
 	}
-	
+
 	return ptr;
 }
 
@@ -44,7 +44,7 @@ inline char *strcpy(char *dest, const char* src)
 	char *ret = dest;
 	while (*dest++ = *src++) {
 	};
-	
+
 	return ret;
 }
 // ----------------------------------------------------------------------------------------
@@ -147,34 +147,34 @@ void* memmove(void *destination, const void *source, size_t n)
 		while (n-- > 0)
 			*dest++ = *src++;
 	}
-	
+
 	return destination;
 }
 
 // ----------------------------------------------------------------------------------------
 
-int atoi( const char* pStr ) 
-{ 
-  int iRetVal = 0; 
+int atoi( const char* pStr )
+{
+  int iRetVal = 0;
   int iTens = 1;
- 
+
   if ( pStr )
   {
-	const char* pCur = pStr; 
-	while (*pCur) 
+	const char* pCur = pStr;
+	while (*pCur)
 	  pCur++;
- 
+
 	pCur--;
- 
-	while ( pCur >= pStr && *pCur <= '9' && *pCur >= '0' ) 
-	{ 
+
+	while ( pCur >= pStr && *pCur <= '9' && *pCur >= '0' )
+	{
 	  iRetVal += ((*pCur - '0') * iTens);
-	  pCur--; 
-	  iTens *= 10; 
+	  pCur--;
+	  iTens *= 10;
 	}
-  } 
-  return iRetVal; 
-} 
+  }
+  return iRetVal;
+}
 
 // ----------------------------------------------------------------------------------------
 

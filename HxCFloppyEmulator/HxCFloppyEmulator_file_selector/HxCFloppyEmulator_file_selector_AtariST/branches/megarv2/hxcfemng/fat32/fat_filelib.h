@@ -91,7 +91,7 @@ int					fl_fseek(void *file , long offset , int origin );
 int					fl_fgetpos(void *file , unsigned long * position);
 long				fl_ftell(void *f);
 int					fl_feof(void *f);
-int					fl_remove( const char * filename );	
+int					fl_remove( const char * filename );
 
 // Extensions
 void				fl_listdirectory(const char *path);

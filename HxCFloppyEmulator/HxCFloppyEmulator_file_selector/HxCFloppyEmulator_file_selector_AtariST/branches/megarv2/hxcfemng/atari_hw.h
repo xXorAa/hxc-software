@@ -71,11 +71,11 @@ typedef struct {
 
 
 struct dma {
-    UWORD   pad0[2];   
+    UWORD   pad0[2];
      WORD   data;       /* sector count, data register */
      WORD   control;    /* status/control register */
     UBYTE   pad1;
-    UBYTE   addr_high;  
+    UBYTE   addr_high;
     UBYTE   pad2;
     UBYTE   addr_med;
     UBYTE   pad3;
@@ -140,9 +140,9 @@ typedef struct
         UBYTE   dum1;
         volatile UBYTE  gpip;
         UBYTE   dum2;
-        volatile UBYTE  aer; 
+        volatile UBYTE  aer;
         UBYTE   dum3;
-        volatile UBYTE  ddr; 
+        volatile UBYTE  ddr;
         UBYTE   dum4;
         volatile UBYTE  iera;
         UBYTE   dum5;
@@ -160,7 +160,7 @@ typedef struct
         UBYTE   dum11;
         volatile UBYTE  imrb;
         UBYTE   dum12;
-        volatile UBYTE  vr;  
+        volatile UBYTE  vr;
         UBYTE   dum13;
         volatile UBYTE  tacr;
         UBYTE   dum14;
@@ -168,23 +168,23 @@ typedef struct
         UBYTE   dum15;
         volatile UBYTE  tcdcr;
         UBYTE   dum16;
-        volatile UBYTE  tadr; 
+        volatile UBYTE  tadr;
         UBYTE   dum17;
-        volatile UBYTE  tbdr; 
+        volatile UBYTE  tbdr;
         UBYTE   dum18;
-        volatile UBYTE  tcdr; 
+        volatile UBYTE  tcdr;
         UBYTE   dum19;
-        volatile UBYTE  tddr; 
+        volatile UBYTE  tddr;
         UBYTE   dum20;
-        volatile UBYTE  scr;  
+        volatile UBYTE  scr;
         UBYTE   dum21;
-        volatile UBYTE  ucr;  
+        volatile UBYTE  ucr;
         UBYTE   dum22;
-        volatile UBYTE  rsr;  
+        volatile UBYTE  rsr;
         UBYTE   dum23;
-        volatile UBYTE  tsr;  
+        volatile UBYTE  tsr;
         UBYTE   dum24;
-        volatile UBYTE  udr;  
+        volatile UBYTE  udr;
 } MFP;
 
 #define MFP_BASE        ((MFP *)(0xfffffa00L))

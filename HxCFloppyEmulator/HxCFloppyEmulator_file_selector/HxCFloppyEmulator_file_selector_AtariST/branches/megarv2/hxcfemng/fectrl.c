@@ -30,7 +30,7 @@
 #include <string.h>
 /* #include <mint/osbind.h> */
 #ifdef __VBCC__
-#include <tos.h> 
+#include <tos.h>
 #endif
 #include <time.h>
 /* #include <vt52.h>
@@ -99,10 +99,10 @@ int setlbabase(unsigned long lba)
 	unsigned long lbatemp;
 	direct_access_cmd_sector * dacs;
 	direct_access_status_sector * dass;
-	
+
 	dass=(direct_access_status_sector *)sector;
 	dacs=(direct_access_cmd_sector  *)sector;
-	
+
 	memset(&sector,0,512);
 
 	sprintf(dacs->DAHEADERSIGNATURE,"HxCFEDA");
@@ -112,7 +112,7 @@ int setlbabase(unsigned long lba)
 	dacs->parameter_2=(lba>>16)&0xFF;
 	dacs->parameter_3=(lba>>24)&0xFF;
 	dacs->parameter_4=0xA5;
-	
+
 	ret=writesector( 0,(unsigned char *)&sector);
 	if(!ret)
 	{
@@ -156,11 +156,11 @@ int media_init()
 		}
 
 		hxc_printf_box(0,"Bad signature - HxC Floppy Emulator not found!");
-		
+
 		return 0;
 	}
 	hxc_printf_box(0,"ERROR: Floppy Access error!  [%d]",ret);
-	
+
 	return 0;
 }
 
@@ -190,7 +190,7 @@ int media_read(unsigned long sector, unsigned char *buffer)
 
 		/* hxc_printf(0,0,0,"BA: %08X %08X" ,L_INDIAN(dass->lba_base),sector);*/
 	}while((sector-L_INDIAN(dass->lba_base))>=8);
-	
+
 	if(!readsector((sector-last_setlbabase)+1,buffer,0))
 	{
 		hxc_printf_box(0,"ERROR: Read ERROR ! fsector %d",(sector-last_setlbabase)+1);
@@ -198,7 +198,7 @@ int media_read(unsigned long sector, unsigned char *buffer)
 	}
 
 	hxc_printf(0,8*79,0," ");
-	
+
 	return 1;
 }
 
@@ -429,10 +429,10 @@ void displayFolder()
 {
 	int i;
 	hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS,"Current directory:");
-	
+
 	for(i=SCREEN_XRESOL/2;i<SCREEN_XRESOL;i=i+8) hxc_printf(0,i,CURDIR_Y_POS+8," ");
 
-	if(strlen(currentPath)<32)	
+	if(strlen(currentPath)<32)
 		hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS+8,"%s",currentPath);
 	else
 		hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS+8,"...%s    ",&currentPath[strlen(currentPath)-32]);
@@ -449,7 +449,7 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 	int old_index;
 
 	old_index=strlen( currentPath );
-	
+
 	if ( (disk_ptr->DirEnt.longName[0] == (unsigned char)'.') && (disk_ptr->DirEnt.longName[1] == (unsigned char)'.') )
 	{
 		currentPathLength = strlen( currentPath ) - 1;
@@ -525,7 +525,7 @@ void handle_show_all_slots(void)
 
 	for ( i = 1; i < NUMBER_OF_SLOT; i++ )
 	{
-		if( read_long_odd(&(disks_slot_a[i].DirEnt.size_b1)) || read_long_odd(&(disks_slot_b[i].DirEnt.size_b1))) 
+		if( read_long_odd(&(disks_slot_a[i].DirEnt.size_b1)) || read_long_odd(&(disks_slot_b[i].DirEnt.size_b1)))
 		{
 			memcpy(tmp_str,&disks_slot_a[i].DirEnt.longName,16);
 			tmp_str[16]=0;
@@ -637,15 +637,15 @@ void handle_emucfg(void)
 	i=2;
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "Track step sound :");
 	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%s ",cfgfile_ptr->step_sound?"on":"off");
-	
+
 	i++;
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "User interface sound:");
 	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d  ",cfgfile_ptr->buzzer_duty_cycle);
-	
+
 	i++;
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "LCD Backlight standby:");
 	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s",cfgfile_ptr->back_light_tmr);
-	
+
 	i++;
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "SDCard Standby:");
 	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s",cfgfile_ptr->standby_tmr);
@@ -687,14 +687,14 @@ void handle_emucfg(void)
 					if(cfgfile_ptr->back_light_tmr) cfgfile_ptr->back_light_tmr--;
 					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->back_light_tmr);
 				break;
-				
+
 				case 5:
 					if(cfgfile_ptr->standby_tmr) cfgfile_ptr->standby_tmr--;
 					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->standby_tmr);
 				break;
 				}
 				invert_line(HELP_Y_POS+(i*8));
-				
+
 			break;
 			case FCT_RIGHT_KEY:
 				invert_line(HELP_Y_POS+(i*8));
@@ -712,7 +712,7 @@ void handle_emucfg(void)
 				case 4:
 					if(cfgfile_ptr->back_light_tmr<0xFF) cfgfile_ptr->back_light_tmr++;
 					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->back_light_tmr);
-					
+
 				break;
 				case 5:
 					if(cfgfile_ptr->standby_tmr<0xFF) cfgfile_ptr->standby_tmr++;
@@ -721,7 +721,7 @@ void handle_emucfg(void)
 				}
 				invert_line(HELP_Y_POS+(i*8));
 			break;
-			
+
 		}
 	}while(c!=FCT_ESC);
 
@@ -750,7 +750,7 @@ int main(int argc, char* argv[])
 	unsigned char colormode;
 
 	FILE *f;
-	
+
 	UBYTE * bigmem_adr;
 	int     bigmem_len;
 
@@ -763,7 +763,7 @@ int main(int argc, char* argv[])
 	bigmem_adr = (UBYTE *) malloc(bigmem_len);
 	fli_init(bigmem_adr, bigmem_len);
 //
-	
+
 	bootdev=0;/* argv[1][0]-'0'; */
 
 	switch(bootdev)
@@ -782,7 +782,7 @@ int main(int argc, char* argv[])
 	{
 		lockup();
 	}
-	
+
 	/* Initialise File IO Library */
 	fl_init();
 
@@ -795,14 +795,14 @@ int main(int argc, char* argv[])
 	hxc_printf_box(0,"Reading HXCSDFE.CFG ...");
 
 	read_cfg_file(sdfecfg_file);
-	
+
 	if(cfgfile_header[256+128]!=0xFF)
 		set_color_scheme(cfgfile_header[256+128]);
 
 	strcpy( currentPath, "/" );
 
 	slotnumber=1;
-	
+
 	colormode=0;
 	selectorpos=0;
 	page_number=0;
@@ -814,7 +814,7 @@ int main(int argc, char* argv[])
 	fRedraw_status = 1;
 
 
-	
+
 	int inverted_line;
 	for(;;)
 	{
@@ -1066,7 +1066,7 @@ hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d nbPages:%d    ", pa
 			jumptotrack0();
 			reboot();
 			break;
-			
+
 		case FCT_CHGCOLOR:
 			colormode++;
 			set_color_scheme(colormode);
@@ -1078,7 +1078,7 @@ hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d nbPages:%d    ", pa
 			selectorpos=0;
 			fRedraw_files=1;
 			break;
-			
+
 		case FCT_SEARCH:
 			hxc_printf(0,SCREEN_XRESOL/2+8*8,CURDIR_Y_POS+16,"                    ");
 			flush_char();

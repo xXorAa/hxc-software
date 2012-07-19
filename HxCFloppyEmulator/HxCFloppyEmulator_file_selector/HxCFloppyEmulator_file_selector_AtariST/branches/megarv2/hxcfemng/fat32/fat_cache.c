@@ -49,14 +49,14 @@ int	fatfs_cache_init(struct fatfs *fs, FL_FILE *file)
 {
 #ifdef FAT_CLUSTER_CACHE_ENTRIES
 	int i;
-	
+
 	for (i=0;i<FAT_CLUSTER_CACHE_ENTRIES;i++)
 	{
 		file->cluster_cache_idx[i] = 0xFFFFFFFF; // Not used
-		file->cluster_cache_data[i] = 0; 
+		file->cluster_cache_data[i] = 0;
 	}
 #endif
-	
+
 	return 1;
 }
 //-----------------------------------------------------------------------------
@@ -73,7 +73,7 @@ int	fatfs_cache_get_next_cluster(struct fatfs *fs, FL_FILE *file, UINT32 cluster
 		return 1;
 	}
 #endif
-	
+
 	return 0;
 }
 //-----------------------------------------------------------------------------
@@ -106,14 +106,14 @@ int	fatfs_browse_cache_init(struct fatfs *fs)
 {
 #ifdef FAT_BROWSE_CLUSTER_CACHE_ENTRIES
 	int i;
-	
+
 	for (i=0;i<FAT_BROWSE_CLUSTER_CACHE_ENTRIES;i++)
 	{
 		browse_cluster_cache_idx[i] = 0xFFFFFFFF; // Not used
-		browse_cluster_cache_data[i] = 0; 
+		browse_cluster_cache_data[i] = 0;
 	}
 #endif
-	
+
 	return 1;
 }
 //-----------------------------------------------------------------------------
@@ -130,7 +130,7 @@ int	fatfs_browse_cache_get_next_cluster(struct fatfs *fs, UINT32 clusterIdx, UIN
 		return 1;
 	}
 #endif
-	
+
 	return 0;
 }
 //-----------------------------------------------------------------------------

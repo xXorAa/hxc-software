@@ -39,7 +39,7 @@ struct sector_buffer;
 struct sector_buffer
 {
 	unsigned char			sector[FAT_SECTOR_SIZE];
-	UINT32					address; 
+	UINT32					address;
 	int						dirty;
 
 	// Next in chain of sector buffers
@@ -79,7 +79,7 @@ struct fatfs
 
 	// Working buffer
 	struct sector_buffer	currentsector;
-	
+
 	// FAT Buffer
 	struct sector_buffer	*fat_buffer_head;
 	struct sector_buffer	fat_buffers[FAT_BUFFERED_SECTORS];

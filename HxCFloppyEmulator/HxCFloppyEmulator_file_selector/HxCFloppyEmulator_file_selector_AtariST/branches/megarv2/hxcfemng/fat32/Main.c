@@ -11,7 +11,7 @@
 //
 // Copyright (c) 2003-2007, Rob Riglar - Robs-Projects.com
 // All rights reserved.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //     * Redistributions of source code must retain the above copyright
@@ -19,7 +19,7 @@
 //     * Redistributions in binary form must reproduce the above copyright
 //       notice, this list of conditions and the following disclaimer in the
 //       documentation and/or other materials provided with the distribution.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY ROBS-PROJECTS.COM ''AS IS'' AND ANY
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -48,7 +48,7 @@ int GetRandom(int max) { return rand() % (max + 1); }
 #define fl_assert(a)	assert(a)
 
 //-----------------------------------------------------------------
-// Main: Test bench file to create 5 files with psuedo random 
+// Main: Test bench file to create 5 files with psuedo random
 // sequences in of varying lengths - read them back and complete
 // then remove them.
 //-----------------------------------------------------------------
@@ -66,7 +66,7 @@ void main()
 	time_t timeStart, timeEnd;
 
 #define TESTFILES 6
-	char *testfile[] = { "X:\\1", "X:\\1.bin", "X:\\12345678.321", 
+	char *testfile[] = { "X:\\1", "X:\\1.bin", "X:\\12345678.321",
 						 "X:\\mylongfilename", "X:\\mylongfilename.bin",
 						 "X:\\the Quick Brown Fox jumped over the lazy dog.elf.binfile.jar"	};
 
@@ -78,7 +78,7 @@ void main()
 	fl_init();
 
 	if (fl_attach_media(FAT_ReadSector, FAT_WriteSector) != FAT_INIT_OK)
-		return; 
+		return;
 
 	// List directory
 	fl_listdirectory("C:\\");
@@ -90,10 +90,10 @@ test_start:
 	memset(filenames, 0x00, 260*5);
 	for (j=0;j<5;j++)
 	{
-		// Length 
+		// Length
 		fileLengths[j] = GetRandom(9999);
-		
-		// Data 
+
+		// Data
 		for (x=0;x<fileLengths[j];x++)
 			fileData[j][x] = (BYTE)GetRandom(255);
 
@@ -215,7 +215,7 @@ test_start:
 					read_length = fileLengths[j] - i;
 
 				if (fl_fread(readBuffer + i, 1, read_length, readFile) != read_length)
-				{	
+				{
 					printf("ERROR: File %s fread error\n", filenames[j]);
 					fl_assert(0);
 					break;
@@ -262,7 +262,7 @@ test_start:
 	// Create folder
 	fl_createdirectory("C:\\folder1");
 
-#if 0	
+#if 0
 
 	// Create massive file
 #define MASSIVE_FILE_LEN (1024 * 1024)
@@ -277,7 +277,7 @@ test_start:
 		return ;
 	}
 
-	// Create random data for file 
+	// Create random data for file
 	for (x=0;x<MASSIVE_FILE_LEN;x++)
 		massiveData[x] = (BYTE)GetRandom(255);
 
@@ -321,7 +321,7 @@ test_start:
 				read_length = MASSIVE_FILE_LEN - i;
 
 			if (fl_fread(readBuffer, 1, read_length, readFile) != read_length)
-			{	
+			{
 				printf("ERROR: File massive file fread error\n");
 				fl_assert(0);
 				break;
@@ -372,7 +372,7 @@ test_start:
 		assert(readFile);
 		fl_fclose(readFile);
 	}
-	
+
 	// List directory
 	fl_listdirectory("C:\\");
 
