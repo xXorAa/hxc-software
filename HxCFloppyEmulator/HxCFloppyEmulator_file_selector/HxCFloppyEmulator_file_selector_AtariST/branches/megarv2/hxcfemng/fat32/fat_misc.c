@@ -192,6 +192,7 @@ int fatfs_entry_is_file(struct fat_dir_entry *entry)
 // fatfs_lfn_entries_required: Calculate number of 13 characters entries
 //-----------------------------------------------------------------------------
 #if FATFS_INC_LFN_SUPPORT
+#if(0)
 int fatfs_lfn_entries_required(char *filename)
 {
 	int length = (int)strlen(filename);
@@ -202,10 +203,12 @@ int fatfs_lfn_entries_required(char *filename)
 		return 0;
 }
 #endif
+#endif
 //-----------------------------------------------------------------------------
 // fatfs_filename_to_lfn:
 //-----------------------------------------------------------------------------
 #if FATFS_INC_LFN_SUPPORT
+#if(0)
 void fatfs_filename_to_lfn(char *filename, unsigned char *buffer, int entry, unsigned char sfnChk)
 {
 	int i;
@@ -244,6 +247,7 @@ void fatfs_filename_to_lfn(char *filename, unsigned char *buffer, int entry, uns
 		}
 	}
 }
+#endif
 #endif
 //-----------------------------------------------------------------------------
 // fatfs_sfn_create_entry: Create the short filename directory entry

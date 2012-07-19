@@ -351,6 +351,7 @@ void h_line(unsigned short y_pos,unsigned short val)
 
 }
 
+#if(0)
 void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned short y_p2,unsigned short fillval,unsigned char fill)
 {
 	unsigned short *ptr_dst;
@@ -387,6 +388,7 @@ void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned sh
 		}
 	}
 }
+#endif
 
 void clear_line(unsigned short y_pos,unsigned short val)
 {

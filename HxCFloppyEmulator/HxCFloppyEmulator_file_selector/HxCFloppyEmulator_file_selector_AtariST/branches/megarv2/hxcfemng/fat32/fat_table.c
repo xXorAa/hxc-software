@@ -145,6 +145,7 @@ static struct sector_buffer	* fatfs_fat_read_sector(struct fatfs *fs, UINT32 sec
 //-----------------------------------------------------------------------------
 int fatfs_fat_purge(struct fatfs *fs)
 {
+#if(0)
 	struct sector_buffer *pcur = fs->fat_buffer_head;
 
 	// Itterate through sector buffer list
@@ -161,6 +162,7 @@ int fatfs_fat_purge(struct fatfs *fs)
 		}
 		pcur = pcur->next;
 	}
+#endif
 
 	return 1;
 }
@@ -228,6 +230,7 @@ UINT32 fatfs_find_next_cluster(struct fatfs *fs, UINT32 current_cluster)
 //-----------------------------------------------------------------------------
 // fatfs_set_fs_info_next_free_cluster: Write the next free cluster to the FSINFO table
 //-----------------------------------------------------------------------------
+#if(0)
 void fatfs_set_fs_info_next_free_cluster(struct fatfs *fs, UINT32 newValue)
 {
 	if (fs->fat_type == FAT_TYPE_16)
@@ -245,6 +248,7 @@ void fatfs_set_fs_info_next_free_cluster(struct fatfs *fs, UINT32 newValue)
 		fs->next_free_cluster = newValue;
 	}
 }
+#endif
 //-----------------------------------------------------------------------------
 // fatfs_find_blank_cluster: Find a free cluster entry by reading the FAT
 //-----------------------------------------------------------------------------
@@ -406,6 +410,7 @@ int fatfs_fat_add_cluster_to_chain(struct fatfs *fs, UINT32 start_cluster, UINT3
 //-----------------------------------------------------------------------------
 // fatfs_count_free_clusters:
 //-----------------------------------------------------------------------------
+#if(0)
 UINT32 fatfs_count_free_clusters(struct fatfs *fs)
 {
 	UINT32 i,j;
@@ -440,3 +445,4 @@ UINT32 fatfs_count_free_clusters(struct fatfs *fs)
 
 	return count;
 }
+#endif

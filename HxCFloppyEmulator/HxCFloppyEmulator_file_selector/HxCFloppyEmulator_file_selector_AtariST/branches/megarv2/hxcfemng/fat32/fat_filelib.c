@@ -956,6 +956,7 @@ void fl_fclose(void *f)
 //-----------------------------------------------------------------------------
 // fl_fgetc: Get a character in the stream
 //-----------------------------------------------------------------------------
+#if(0)
 int fl_fgetc(void *f)
 {
 	int res;
@@ -967,6 +968,7 @@ int fl_fgetc(void *f)
 	else
 		return res;
 }
+#endif
 //-----------------------------------------------------------------------------
 // fl_fread: Read a block of data from the file
 //-----------------------------------------------------------------------------
@@ -1161,6 +1163,7 @@ int fl_fseek( void *f, long offset, int origin )
 //-----------------------------------------------------------------------------
 // fl_fgetpos: Get the current file position
 //-----------------------------------------------------------------------------
+#if(0)
 int fl_fgetpos(void *f , unsigned long * position)
 {
 	FL_FILE *file = (FL_FILE *)f;
@@ -1177,9 +1180,11 @@ int fl_fgetpos(void *f , unsigned long * position)
 
 	return 0;
 }
+#endif
 //-----------------------------------------------------------------------------
 // fl_ftell: Get the current file position
 //-----------------------------------------------------------------------------
+#if(0)
 long fl_ftell(void *f)
 {
 	unsigned long pos = 0;
@@ -1188,9 +1193,11 @@ long fl_ftell(void *f)
 
 	return (long)pos;
 }
+#endif
 //-----------------------------------------------------------------------------
 // fl_feof: Is the file pointer at the end of the stream?
 //-----------------------------------------------------------------------------
+#if(0)
 int fl_feof(void *f)
 {
 	FL_FILE *file = (FL_FILE *)f;
@@ -1210,6 +1217,7 @@ int fl_feof(void *f)
 
 	return res;
 }
+#endif
 //-----------------------------------------------------------------------------
 // fl_fputc: Write a character to the stream
 //-----------------------------------------------------------------------------
@@ -1491,6 +1499,7 @@ int fl_list_readdir(struct fs_dir_list_status *dirls, struct fs_dir_ent *entry)
 //-----------------------------------------------------------------------------
 // fl_is_dir: Is this a directory?
 //-----------------------------------------------------------------------------
+#if(0)
 int fl_is_dir(const char *path)
 {
 	unsigned long cluster = 0;
@@ -1500,6 +1509,7 @@ int fl_is_dir(const char *path)
 	else
 		return 0;
 }
+#endif
 //-----------------------------------------------------------------------------
 // fl_get_fs:
 //-----------------------------------------------------------------------------

@@ -322,6 +322,7 @@ int fatfs_compare_names(char* strA, char* strB)
 //-----------------------------------------------------------------------------
 // fatfs_string_ends_with_slash: Does the string end with a slash (\ or /)
 //-----------------------------------------------------------------------------
+#if(0)
 int fatfs_string_ends_with_slash(char *path)
 {
 	if (path)
@@ -341,6 +342,7 @@ int fatfs_string_ends_with_slash(char *path)
 
 	return 0;
 }
+#endif
 //-----------------------------------------------------------------------------
 // Test Bench
 //-----------------------------------------------------------------------------

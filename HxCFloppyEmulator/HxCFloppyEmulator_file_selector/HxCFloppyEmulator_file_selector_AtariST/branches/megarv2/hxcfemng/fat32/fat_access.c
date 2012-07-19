@@ -211,10 +211,12 @@ int fatfs_sector_read(struct fatfs *fs, UINT32 lba, unsigned char *target)
 //-----------------------------------------------------------------------------
 // fatfs_sector_write:
 //-----------------------------------------------------------------------------
+#if (0)
 int fatfs_sector_write(struct fatfs *fs, UINT32 lba, unsigned char *target)
 {
 	return fs->disk_io.write_sector(lba, target);
 }
+#endif
 //-----------------------------------------------------------------------------
 // fatfs_sector_reader: From the provided startcluster and sector offset
 // Returns True if success, returns False if not (including if read out of range)
@@ -284,6 +286,7 @@ int fatfs_sector_reader(struct fatfs *fs, UINT32 start_cluster, UINT32 offset, u
 // fatfs_read_sector: Read from the provided cluster and sector offset
 // Returns True if success, returns False if not
 //-----------------------------------------------------------------------------
+#if (0)
 int fatfs_read_sector(struct fatfs *fs, UINT32 cluster, UINT32 sector, unsigned char *target)
 {
 	// FAT16 Root directory
@@ -334,6 +337,7 @@ int fatfs_read_sector(struct fatfs *fs, UINT32 cluster, UINT32 sector, unsigned 
 		}
 	}
 }
+#endif
 //-----------------------------------------------------------------------------
 // fatfs_write_sector: Write to the provided cluster and sector offset
 // Returns True if success, returns False if not
@@ -397,6 +401,7 @@ int fatfs_write_sector(struct fatfs *fs, UINT32 cluster, UINT32 sector, unsigned
 //-----------------------------------------------------------------------------
 // fatfs_show_details: Show the details about the filesystem
 //-----------------------------------------------------------------------------
+#if (0)
 void fatfs_show_details(struct fatfs *fs)
 {
 	FAT_PRINTF(("\r\nCurrent Disc FAT details\r\n------------------------\r\nRoot Dir First Cluster = "));
@@ -410,9 +415,11 @@ void fatfs_show_details(struct fatfs *fs)
 	FAT_PRINTF(("\r\n\r\nFormula for conversion from Cluster num to LBA is;"));
 	FAT_PRINTF(("\r\nLBA = (cluster_begin_lba + ((Cluster_Number-2)*sectors_per_cluster)))\r\n"));
 }
+#endif
 //-----------------------------------------------------------------------------
 // fatfs_get_root_cluster: Get the root dir cluster
 //-----------------------------------------------------------------------------
+
 UINT32 fatfs_get_root_cluster(struct fatfs *fs)
 {
 	// NOTE: On FAT16 this will be 0 which has a special meaning...
