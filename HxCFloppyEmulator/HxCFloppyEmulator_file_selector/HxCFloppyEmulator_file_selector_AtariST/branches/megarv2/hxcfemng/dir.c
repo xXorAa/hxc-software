@@ -33,9 +33,9 @@
 #include "fat_access.h"
 #include "conf.h"
 
-static struct fs_dir_list_status file_list_status;
-static UWORD FilelistPages_tab[512];
-static struct fs_dir_ent dir_entry;
+static struct fs_dir_list_status _file_list_status;
+static UWORD _FilelistPages_tab[512];
+static struct fs_dir_ent _dir_entry;
 static char * _filter=0;
 
 extern unsigned short SCREEN_YRESOL;
@@ -57,7 +57,7 @@ void mystrlwr(char *string)
 #if(0)
 UWORD dir_getFirstFileForPage(UWORD page)
 {
-	return FilelistPages_tab[page];
+	return _FilelistPages_tab[page];
 }
 #endif
 
@@ -65,7 +65,7 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 {
 	UWORD i, currentFile;
 
-	currentFile = FilelistPages_tab[page & 0x1ff];
+	currentFile = _FilelistPages_tab[page & 0x1ff];
 	if (0xffff == currentFile) {
 		return FALSE;
 	}
@@ -78,10 +78,10 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 
 	// beginning with currentFile, get the filename, and apply the filter
 	for(i=0; i<NUMBER_OF_FILE_ON_DISPLAY; currentFile++) {
-		if ( TRUE != fli_getDirEntry(currentFile, &dir_entry) ) {
+		if ( TRUE != fli_getDirEntryMSB(currentFile, &_dir_entry) ) {
 			break;
 		}
-		if (dir_filter(&dir_entry)) {
+		if (dir_filter(&_dir_entry)) {
 			// file will be shown
 			FilelistCurrentPage_tab[i] = currentFile;
 			i++;
@@ -109,22 +109,22 @@ UWORD dir_paginate()
 	// erase all pages
 	for(i=0;i<512;i++)
 	{
-		FilelistPages_tab[i] = 0xffff;
+		_FilelistPages_tab[i] = 0xffff;
 	}
 
 	currentPage       = 0xffff;
 	currentFile       = 0;
 	currentFileInPage = NUMBER_OF_FILE_ON_DISPLAY;
 
-	while(fli_getDirEntry(currentFile, &dir_entry)) {
-		if (dir_filter(&dir_entry)) {
+	while(fli_getDirEntryMSB(currentFile, &_dir_entry)) {
+		if (dir_filter(&_dir_entry)) {
 			// file will be shown
 			if (currentFileInPage >= NUMBER_OF_FILE_ON_DISPLAY) {
 				// add a page
 				currentPage++;
 				currentFileInPage = 0;
 				// store the first file of the page
-				FilelistPages_tab[currentPage] = currentFile;
+				_FilelistPages_tab[currentPage] = currentFile;
 			}
 			currentFileInPage++;
 		}
@@ -174,9 +174,9 @@ int dir_scan(char *path)
 
 	// get all the files in the dir
 	nbFiles = 0;
-	fl_list_opendir(path, &file_list_status);
-	while( fl_list_readdir(&file_list_status, &dir_entry) ) {
-		fli_push(&dir_entry);
+	fl_list_opendir(path, &_file_list_status);
+	while( fl_list_readdir(&_file_list_status, &_dir_entry) ) {
+		fli_push(&_dir_entry);
 		nbFiles++;
 	}
 

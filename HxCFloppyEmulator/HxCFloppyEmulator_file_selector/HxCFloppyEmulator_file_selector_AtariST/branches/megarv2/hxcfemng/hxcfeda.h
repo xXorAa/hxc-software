@@ -1,3 +1,5 @@
+#ifndef __HXCFEDA_H__
+#define __HXCFEDA_H__
 /*
 //
 // Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
@@ -75,3 +77,4 @@ typedef struct STRUCT_PACK DirectoryEntry_ {
 	unsigned char longName[LFN_MAX_SIZE];	/* boolean */
 } STRUCT_PACK_PREEND DirectoryEntry;
 STRUCT_PACK_END
+#endif

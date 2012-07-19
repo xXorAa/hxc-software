@@ -226,7 +226,7 @@ int media_write(unsigned long sector, unsigned char *buffer)
 	return 1;
 }
 
-void printslotstatus(unsigned char slotnumber,  disk_in_drive * disks_a,  disk_in_drive * disks_b)
+void _printslotstatus(unsigned char slotnumber,  disk_in_drive * disks_a,  disk_in_drive * disks_b)
 {
 	char tmp_str[17];
 
@@ -321,7 +321,7 @@ char save_cfg_file(unsigned char * sdfecfg_file)
 		slot_index=1;
 		i=1;
 
-		floppyselectorindex=128;                      /* Fisrt slot offset */
+		floppyselectorindex=128;                      /* First slot offset */
 		memset( sdfecfg_file,0,512);                  /* Clear the sector */
 		sect_nb=2;                                    /* Slots Sector offset */
 
@@ -417,7 +417,12 @@ void next_slot()
 {
 	slotnumber++;
 	if(slotnumber>(NUMBER_OF_SLOT-1))  slotnumber=1;
-	printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
+	display_slots();
+}
+
+void display_slots()
+{
+	_printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 }
 
 
@@ -440,17 +445,17 @@ void displayFolder()
 
 
 
-void enter_sub_dir(disk_in_drive *disk_ptr)
+void enter_sub_dir(DirectoryEntry *dirEntLSB_ptr)
 {
 	int currentPathLength;
-	unsigned char folder[128+1];
+	unsigned char folder[LFN_MAX_SIZE];
 	unsigned char c;
 	int i;
 	int old_index;
 
 	old_index=strlen( currentPath );
 
-	if ( (disk_ptr->DirEnt.longName[0] == (unsigned char)'.') && (disk_ptr->DirEnt.longName[1] == (unsigned char)'.') )
+	if ( (dirEntLSB_ptr->longName[0] == (unsigned char)'.') && (dirEntLSB_ptr->longName[1] == (unsigned char)'.') )
 	{
 		currentPathLength = strlen( currentPath ) - 1;
 		do
@@ -467,14 +472,14 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 	}
 	else
 	{
-		if((disk_ptr->DirEnt.longName[0] == (unsigned char)'.'))
+		if((dirEntLSB_ptr->longName[0] == (unsigned char)'.'))
 		{
 		}
 		else
 		{
-			for (i=0; i < 128; i++ )
+			for (i=0; i < LFN_MAX_SIZE; i++ )
 			{
-				c = disk_ptr->DirEnt.longName[i];
+				c = dirEntLSB_ptr->longName[i];
 				if ( ( c >= (32+0) ) && (c <= 127) )
 				{
 					folder[i] = c;
@@ -482,9 +487,10 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 				else
 				{
 					folder[i] = 0;
-					i = 128;
+					i = LFN_MAX_SIZE;
 				}
 			}
+			folder[LFN_MAX_SIZE-1] = 0;
 
 			currentPathLength = strlen( currentPath );
 			/*if ( currentPath[ currentPathLength-1-1 ] != (unsigned char)':' )
@@ -739,14 +745,13 @@ void handle_emucfg(void)
 
 
 
-
 int main(int argc, char* argv[])
 {
 	unsigned short i;
 	unsigned char key, entrytype,bootdev,j;
 	unsigned char isLastPage,c;
-	disk_in_drive diskInDrive;
-	disk_in_drive * disk_ptr = &diskInDrive;
+	DirectoryEntry   dirEntLSB;
+	DirectoryEntry * dirEntLSB_ptr = &dirEntLSB;
 	unsigned char colormode;
 
 	FILE *f;
@@ -831,7 +836,7 @@ int main(int argc, char* argv[])
 		if (fRedraw_status) {
 			clear_list(5);
 			display_status();
-			printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
+			display_slots();
 			displayFolder();
 			fRedraw_files=1;
 			fRedraw_status=0;
@@ -855,7 +860,7 @@ int main(int argc, char* argv[])
 				UWORD curFile;
 
 				curFile = FilelistCurrentPage_tab[i];
-				if (0xffff != curFile && fli_getDirEntry(curFile, &dir_entry))
+				if (0xffff != curFile && fli_getDirEntryMSB(curFile, &dir_entry))
 				{
 					hxc_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(12), dir_entry.filename);
 					y_pos=y_pos+8;
@@ -881,7 +886,8 @@ int main(int argc, char* argv[])
 		hxc_printf(0,0,inverted_line,">");
 		invert_line(inverted_line);
 
-hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d nbPages:%d    ", page_number, isLastPage, selectorpos, nbPages);
+		// debug:
+		//hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d nbPages:%d    ", page_number, isLastPage, selectorpos, nbPages);
 
 
 		key=wait_function_key();
@@ -955,60 +961,64 @@ hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d nbPages:%d    ", pa
 			break;
 
 		case FCT_SELECT_FILE_DRIVEA:
-			if (fli_getDiskInDrive(FilelistCurrentPage_tab[selectorpos], disk_ptr))
+			if (fli_getDirEntryLSB(FilelistCurrentPage_tab[selectorpos], dirEntLSB_ptr))
 			{
-				if(disk_ptr->DirEnt.attributes&0x10)
+				if(dirEntLSB_ptr->attributes&0x10)
 				{
-					enter_sub_dir(disk_ptr);
+					enter_sub_dir(dirEntLSB_ptr);
 				}
 				else
 				{
-					memcpy((void*)&disks_slot_a[slotnumber], disk_ptr, sizeof(disk_in_drive));
-					printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
+					memset((void*)&disks_slot_a[slotnumber], 0, sizeof(disk_in_drive));
+					memcpy((void*)&disks_slot_a[slotnumber], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
+					display_slots();
 				}
 			}
 			break;
 
 		case FCT_SELECT_FILE_DRIVEB:
-			if (fli_getDiskInDrive(FilelistCurrentPage_tab[selectorpos], disk_ptr))
+			if (fli_getDirEntryLSB(FilelistCurrentPage_tab[selectorpos], dirEntLSB_ptr))
 			{
-				if(disk_ptr->DirEnt.attributes&0x10)
+				if(dirEntLSB_ptr->attributes&0x10)
 				{
-					enter_sub_dir(disk_ptr);
+					enter_sub_dir(dirEntLSB_ptr);
 				}
 				else
 				{
-					memcpy((void*)&disks_slot_b[slotnumber], disk_ptr,sizeof(disk_in_drive));
-					printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
+					memset((void*)&disks_slot_b[slotnumber], 0, sizeof(disk_in_drive));
+					memcpy((void*)&disks_slot_b[slotnumber], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
+					display_slots();
 				}
 			}
 			break;
 
 		case FCT_SELECT_FILE_DRIVEA_AND_NEXTSLOT:
-			if (fli_getDiskInDrive(FilelistCurrentPage_tab[selectorpos], disk_ptr))
+			if (fli_getDirEntryLSB(FilelistCurrentPage_tab[selectorpos], dirEntLSB_ptr))
 			{
-				if(disk_ptr->DirEnt.attributes&0x10)
+				if(dirEntLSB_ptr->attributes&0x10)
 				{
-					enter_sub_dir(disk_ptr);
+					enter_sub_dir(dirEntLSB_ptr);
 				}
 				else
 				{
-					memcpy((void*)&disks_slot_a[slotnumber], disk_ptr,sizeof(disk_in_drive));
+					memset((void*)&disks_slot_a[slotnumber], 0, sizeof(disk_in_drive));
+					memcpy((void*)&disks_slot_a[slotnumber], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
 					next_slot();
 				}
 			}
 			break;
 
 		case FCT_SELECTSAVEREBOOT:
-			if (fli_getDiskInDrive(FilelistCurrentPage_tab[selectorpos], disk_ptr))
+			if (fli_getDirEntryLSB(FilelistCurrentPage_tab[selectorpos], dirEntLSB_ptr))
 			{
-				if(disk_ptr->DirEnt.attributes&0x10)
+				if(dirEntLSB_ptr->attributes&0x10)
 				{
-					enter_sub_dir(disk_ptr);
+					enter_sub_dir(dirEntLSB_ptr);
 				}
 				else
 				{
-					memcpy((void*)&disks_slot_a[1], disk_ptr,sizeof(disk_in_drive));
+					memset((void*)&disks_slot_a[1], 0, sizeof(disk_in_drive));
+					memcpy((void*)&disks_slot_a[1], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
 					hxc_printf_box(0,"Saving selection and restart...");
 					save_cfg_file(sdfecfg_file);
 					restore_box();
@@ -1041,7 +1051,7 @@ hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d nbPages:%d    ", pa
 		case FCT_CLEARSLOT:
 			memset((void*)&disks_slot_a[slotnumber],0,sizeof(disk_in_drive));
 			memset((void*)&disks_slot_b[slotnumber],0,sizeof(disk_in_drive));
-			printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
+			display_slots();
 			break;
 
 		case FCT_CLEARSLOT_AND_NEXTSLOT:

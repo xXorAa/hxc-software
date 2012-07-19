@@ -58,7 +58,7 @@ gui_utils.o:      gui_utils.c      gui_utils.h atari_hw.h conf.h libc/snprintf/s
 fectrl.o:         fectrl.c         keysfunc_defs.h gui_utils.h conf.h cfg_file.h hxcfeda.h atari_hw.h fat32/fat_opts.h fat32/fat_misc.h fat32/fat_types.h fat32/fat_defs.h fat32/fat_filelib.h fat32/fat_access.h compiler_helper.h filelist.h dir.h
 	$(C)          $(CFLAGS)        -c $< -o $@
 
-filelist.o:       filelist.c       fat32/fat_access.h atari_hw.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h cfg_file.h
+filelist.o:       filelist.c       fat32/fat_access.h atari_hw.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h hxcfeda.h
 	$(C)          $(CFLAGS)        -c $< -o $@
 
 fat32/fat_misc.o: fat32/fat_misc.c fat32/fat_misc.h fat32/fat_defs.h compiler_helper.h

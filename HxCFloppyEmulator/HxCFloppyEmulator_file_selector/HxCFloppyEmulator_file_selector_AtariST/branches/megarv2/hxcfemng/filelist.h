@@ -3,12 +3,12 @@
 
 #include "atari_hw.h"
 #include "fat_access.h"
-#include "cfg_file.h"
+#include "hxcfeda.h"
 
 void fli_clear(void);
 int fli_init(void * base, LONG length);
 int fli_push(struct fs_dir_ent * dir_entry);
-int fli_getDirEntry(UWORD number, struct fs_dir_ent * dir_entry);
-int fli_getDiskInDrive(UWORD number, disk_in_drive * disk_ptr);
+int fli_getDirEntryMSB(UWORD number, struct fs_dir_ent * dir_entry);
+int fli_getDirEntryLSB(UWORD number, DirectoryEntry * dir_entry);
 
 #endif

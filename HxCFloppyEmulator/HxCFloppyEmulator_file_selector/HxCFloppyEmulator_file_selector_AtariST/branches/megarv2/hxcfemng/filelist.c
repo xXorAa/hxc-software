@@ -1,6 +1,6 @@
 #include "fat_access.h"
 #include "atari_hw.h"
-#include "cfg_file.h"
+#include "hxcfeda.h"
 #include <string.h>
 
 UBYTE * _base;
@@ -85,7 +85,17 @@ int fli_push(struct fs_dir_ent * dir_entry) {
 }
 
 
-int fli_getDirEntry(UWORD number, struct fs_dir_ent * dir_entry)
+/**
+ * Fill the provided fs_dir_ent struct for the specified file index
+ * This is the Big Endian struct defined in fat_access.h:
+ *   char                    filename[FATFS_MAX_LONG_FILENAME];
+ *   unsigned char           is_dir;
+ *   UINT32                  cluster;
+ *   UINT32                  size;
+ *
+ * @returns boolean success
+ */
+int fli_getDirEntryMSB(UWORD number, struct fs_dir_ent * dir_entry)
 {
     UBYTE **ptr;
     UBYTE *newAdr;
@@ -103,7 +113,18 @@ int fli_getDirEntry(UWORD number, struct fs_dir_ent * dir_entry)
     return TRUE;
 }
 
-int fli_getDiskInDrive(UWORD number, disk_in_drive * disk_ptr)
+/**
+ * Fill the provided DirectoryEntry struct for the specified file index
+ * This is the Little Endian struct defined in hxcfeda.h:
+ *   unsigned char name[12];
+ *   unsigned char attributes;
+ *   unsigned long firstCluster;
+ *   unsigned long size;
+ *   unsigned char longName[LFN_MAX_SIZE];
+ *
+ * @returns boolean success
+ */
+int fli_getDirEntryLSB(UWORD number, DirectoryEntry * dir_entry)
 {
     UBYTE **ptr;
     UBYTE *newAdr;
@@ -115,25 +136,23 @@ int fli_getDiskInDrive(UWORD number, disk_in_drive * disk_ptr)
     newAdr = *ptr;
 
     //copy cluster, and size little endian
-    disk_ptr->DirEnt.firstCluster_b1 = *(newAdr+3);
-    disk_ptr->DirEnt.firstCluster_b2 = *(newAdr+2);
-    disk_ptr->DirEnt.firstCluster_b3 = *(newAdr+1);
-    disk_ptr->DirEnt.firstCluster_b4 = *(newAdr+0);
-    disk_ptr->DirEnt.size_b1 = *(newAdr+7);
-    disk_ptr->DirEnt.size_b2 = *(newAdr+6);
-    disk_ptr->DirEnt.size_b3 = *(newAdr+5);
-    disk_ptr->DirEnt.size_b4 = *(newAdr+4);
+    dir_entry->firstCluster_b1 = *(newAdr+3);
+    dir_entry->firstCluster_b2 = *(newAdr+2);
+    dir_entry->firstCluster_b3 = *(newAdr+1);
+    dir_entry->firstCluster_b4 = *(newAdr+0);
+    dir_entry->size_b1 = *(newAdr+7);
+    dir_entry->size_b2 = *(newAdr+6);
+    dir_entry->size_b3 = *(newAdr+5);
+    dir_entry->size_b4 = *(newAdr+4);
 
     // copy cluster, size
     UBYTE attr = 0;
     if (*(newAdr+8)) {
         attr = 0x10;
     }
-    disk_ptr->DirEnt.attributes = attr;                     // copy attribute
-    memcpy(&disk_ptr->DirEnt.name, newAdr+9, 12);           // copy name
-    disk_ptr->DirEnt.name[11] = 0;
-    memcpy(&disk_ptr->DirEnt.longName, newAdr+9, 17);       // copy "longname"
-    disk_ptr->DirEnt.longName[16] = 0;
-
+    dir_entry->attributes = attr;                           // copy attribute
+    memcpy(dir_entry->name,     newAdr+9, 12);              // copy name
+    memcpy(dir_entry->longName, newAdr+9, LFN_MAX_SIZE);    // copy longname
+    dir_entry->longName[LFN_MAX_SIZE-1] = 0;
     return TRUE;
 }
