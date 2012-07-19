@@ -70,7 +70,7 @@ static char filter[17];
 
 static unsigned char slotnumber;
 static char selectorpos;
-static unsigned char fRedraw_files, fRepaginate_files;
+static unsigned char fRedraw_files, fRepaginate_files, fRedraw_status;
 static UWORD page_number;
 
 static disk_in_drive disks_slot_a[NUMBER_OF_SLOT];
@@ -515,11 +515,13 @@ void enter_sub_dir(disk_in_drive *disk_ptr)
 
 
 
-void show_all_slots(void)
+void handle_show_all_slots(void)
 {
 	#define ALLSLOTS_Y_POS 16
 	char tmp_str[17];
 	int i;
+
+	clear_list(5);
 
 	for ( i = 1; i < NUMBER_OF_SLOT; i++ )
 	{
@@ -541,12 +543,196 @@ void show_all_slots(void)
 		}
 	}
 
-	hxc_printf(1,0,ALLSLOTS_Y_POS + NUMBER_OF_SLOT*8 + 1,"---Press space key---");
+	hxc_printf(1,0,ALLSLOTS_Y_POS + NUMBER_OF_SLOT*8 + 1,"---Press any key---");
+	wait_function_key();
+}
+
+
+
+
+
+void handle_help()
+{
+	int i;
+	clear_list(5);
+
+	i=0;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "Function Keys (1/2):");
+
+	i=2;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "Up/Down/Right/Left: Browse the SDCard files");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "Caps Lock         : Go back to the top of the folder");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "Insert            : Insert the selected file in the current slot to A:");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "                    Enter a subfolder");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "Clr/Home          : Insert the selected file in the current slot to B:");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "Pipe              : Insert the selected file in the current slot to A: and ");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "                    select the next slot");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "F7                : Insert the selected file in the slot to 1 and restart the");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "                    computer with this disk.");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "Undo              : Select the the next slot");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "Backspace         : Clear the current slot");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "Delete            : Clear the current slot and Select the the next slot");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "TAB               : Show all slots selections");
+
+	i=i+2;
+
+	hxc_printf(1,0,HELP_Y_POS+(i*8), "---Any key to continue---");
+
+	wait_function_key();
+
+	clear_list(5);
+
+	i=0;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "Function Keys (2/2):");
+
+	i=2;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "F1                : Search files in the current folder");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "                    Type the word to search then enter");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "                    Enter blank to abort the search");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "F2                : Change color");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "F3                : Settings menu");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "F8                : Reboot");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "F9                : Save");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "F10               : Save and Reboot");
+
+	i=i+2;
+	i = display_credits(i);
+
+	wait_function_key();
+}
+
+
+
+void handle_emucfg(void)
+{
+	cfgfile * cfgfile_ptr;
+	int i;
+	unsigned char c;
+
+	clear_list(5);
+	cfgfile_ptr=(cfgfile * )cfgfile_header;
+
+	i=0;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "SD HxC Floppy Emulator settings:");
+
+	i=2;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "Track step sound :");
+	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%s ",cfgfile_ptr->step_sound?"on":"off");
+	
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "User interface sound:");
+	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d  ",cfgfile_ptr->buzzer_duty_cycle);
+	
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "LCD Backlight standby:");
+	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s",cfgfile_ptr->back_light_tmr);
+	
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "SDCard Standby:");
+	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s",cfgfile_ptr->standby_tmr);
+
+	i=i+2;
+	hxc_printf(1,0,HELP_Y_POS+(i*8), "---Press Esc to exit---");
+
+	i=2;
+	invert_line(HELP_Y_POS+(i*8));
 	do
 	{
+		c=wait_function_key();
+		switch(c)
+		{
+			case FCT_UP_KEY:
+				invert_line(HELP_Y_POS+(i*8));
+				if(i>2) i--;
+				invert_line(HELP_Y_POS+(i*8));
+			break;
+			case FCT_DOWN_KEY:
+				invert_line(HELP_Y_POS+(i*8));
+				if(i<5) i++;
+				invert_line(HELP_Y_POS+(i*8));
+			break;
+			case FCT_LEFT_KEY:
+				invert_line(HELP_Y_POS+(i*8));
+				switch(i)
+				{
+				case 2:
+					cfgfile_ptr->step_sound=~cfgfile_ptr->step_sound;
+					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%s ",cfgfile_ptr->step_sound?"on":"off");
+				break;
+				case 3:
+					if(cfgfile_ptr->buzzer_duty_cycle) cfgfile_ptr->buzzer_duty_cycle--;
+					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d  ",cfgfile_ptr->buzzer_duty_cycle);
+					if(!cfgfile_ptr->buzzer_duty_cycle) cfgfile_ptr->ihm_sound=0x00;
+					break;
+				case 4:
+					if(cfgfile_ptr->back_light_tmr) cfgfile_ptr->back_light_tmr--;
+					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->back_light_tmr);
+				break;
+				
+				case 5:
+					if(cfgfile_ptr->standby_tmr) cfgfile_ptr->standby_tmr--;
+					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->standby_tmr);
+				break;
+				}
+				invert_line(HELP_Y_POS+(i*8));
+				
+			break;
+			case FCT_RIGHT_KEY:
+				invert_line(HELP_Y_POS+(i*8));
+				switch(i)
+				{
+				case 2:
+					cfgfile_ptr->step_sound=~cfgfile_ptr->step_sound;
+					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%s ",cfgfile_ptr->step_sound?"on":"off");
+					break;
+				case 3:
+					if(cfgfile_ptr->buzzer_duty_cycle<0x80) cfgfile_ptr->buzzer_duty_cycle++;
+					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d  ",cfgfile_ptr->buzzer_duty_cycle);
+					cfgfile_ptr->ihm_sound=0xFF;
+				break;
+				case 4:
+					if(cfgfile_ptr->back_light_tmr<0xFF) cfgfile_ptr->back_light_tmr++;
+					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->back_light_tmr);
+					
+				break;
+				case 5:
+					if(cfgfile_ptr->standby_tmr<0xFF) cfgfile_ptr->standby_tmr++;
+					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->standby_tmr);
+				break;
+				}
+				invert_line(HELP_Y_POS+(i*8));
+			break;
+			
+		}
+	}while(c!=FCT_ESC);
 
-	} while(wait_function_key()!=FCT_OK);
 }
+
+
+
+
+
+
+
 
 
 
@@ -558,10 +744,9 @@ int main(int argc, char* argv[])
 {
 	unsigned short i;
 	unsigned char key, entrytype,bootdev,j;
-	unsigned char isLastPage,filtermode,c;
+	unsigned char isLastPage,c;
 	disk_in_drive diskInDrive;
 	disk_in_drive * disk_ptr = &diskInDrive;
-	cfgfile * cfgfile_ptr;
 	unsigned char colormode;
 
 	FILE *f;
@@ -615,23 +800,19 @@ int main(int argc, char* argv[])
 		set_color_scheme(cfgfile_header[256+128]);
 
 	strcpy( currentPath, "/" );
-	displayFolder();
 
 	slotnumber=1;
-	printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 	
 	colormode=0;
 	selectorpos=0;
 	page_number=0;
 	isLastPage=0;
-	filtermode=0;
-
-	clear_list(0);
 
 	// get all the files in the dir
 	dir_scan(currentPath);
 	dir_setFilter(0);
 	fRepaginate_files = 1;
+	fRedraw_status = 1;
 
 
 	
@@ -647,6 +828,15 @@ int main(int argc, char* argv[])
 			fRedraw_files=1;
 			fRepaginate_files=0;
 		} // if (fRepaginate_files)
+
+		if (fRedraw_status) {
+			clear_list(5);
+			display_status();
+			printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
+			displayFolder();
+			fRedraw_files=1;
+			fRedraw_status=0;
+		}
 
 		if (fRedraw_files) {
 			// start at the first file of the directory
@@ -695,8 +885,6 @@ int main(int argc, char* argv[])
 			fRedraw_files = 0;
 			inverted_line = -1;
 		} // if (fRedraw_files)
-
-		filtermode=0;
 
 		// reset the inverted line
 		if (inverted_line>=0) {
@@ -864,212 +1052,21 @@ hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d nbPages:%d    ", pa
 			break;
 
 		case FCT_HELP:
-			clear_list(5);
+			handle_help();
 
-			i=0;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "Function Keys (1/2):");
-
-			i=2;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "Up/Down/Right/Left: Browse the SDCard files");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "Caps Lock         : Go back to the top of the folder");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "Insert            : Insert the selected file in the current slot to A:");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "                    Enter a subfolder");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "Clr/Home          : Insert the selected file in the current slot to B:");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "Pipe              : Insert the selected file in the current slot to A: and ");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "                    select the next slot");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "F7                : Insert the selected file in the slot to 1 and restart the");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "                    computer with this disk.");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "Undo              : Select the the next slot");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "Backspace         : Clear the current slot");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "Delete            : Clear the current slot and Select the the next slot");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "TAB               : Show all slots selections");
-
-			i=i+2;
-
-			hxc_printf(1,0,HELP_Y_POS+(i*8), "---Press Space to continue---");
-
-
-			do
-			{
-
-			} while (wait_function_key()!=FCT_OK);
-
-			clear_list(5);
-
-			i=0;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "Function Keys (2/2):");
-
-			i=2;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "F1                : Search files in the current folder");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "                    Type the word to search then enter");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "                    Enter blank to abort the search");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "F2                : Change color");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "F3                : Settings menu");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "F8                : Reboot");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "F9                : Save");
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "F10               : Save and Reboot");
-
-			i=i+2;
-
-			hxc_printf(1,0,HELP_Y_POS+(i*8), "---Press Space to exit---");
-			i=i+1;
-			hxc_printf(1,0,HELP_Y_POS+(i*8), "SDCard HxC Floppy Emulator file selector for Atari ST");
-			i++;
-			hxc_printf(1,0,HELP_Y_POS+(i*8), "(c) 2006-2012 HxC2001 / Jean-Francois DEL NERO");
-			i++;
-			hxc_printf(1,0,HELP_Y_POS+(i*8), "Fast Loader by Gilles Bouthenot");
-			i++;
-			hxc_printf(1,0,HELP_Y_POS+(i*8), "Check for updates on :");
-			i++;
-			hxc_printf(1,0,HELP_Y_POS+(i*8), "http://www.hxc2001.com/");
-			i++;
-			hxc_printf(1,0,HELP_Y_POS+(i*8), "Email : hxc2001@hxc2001.com");
-			i++;
-			hxc_printf(1,0,HELP_Y_POS+(i*8), "V%s - %s",VERSIONCODE,DATECODE);
-			
-			wait_function_key();
-
-			clear_list(5);
-			display_status();
-			printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
-			displayFolder();
-			fRedraw_files=1;
-
+			fRedraw_status = 1;
 			break;
 
 		case FCT_EMUCFG:
-			clear_list(5);
-			cfgfile_ptr=(cfgfile * )cfgfile_header;
+			handle_emucfg();
 
-			i=0;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "SD HxC Floppy Emulator settings:");
-
-			i=2;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "Track step sound :");
-			hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%s ",cfgfile_ptr->step_sound?"on":"off");
-			
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "User interface sound:");
-			hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d  ",cfgfile_ptr->buzzer_duty_cycle);
-			
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "LCD Backlight standby:");
-			hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s",cfgfile_ptr->back_light_tmr);
-			
-			i++;
-			hxc_printf(0,0,HELP_Y_POS+(i*8), "SDCard Standby:");
-			hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s",cfgfile_ptr->standby_tmr);
-
-			i=i+2;
-			hxc_printf(1,0,HELP_Y_POS+(i*8), "---Press Esc to exit---");
-		
-			i=2;
-			invert_line(HELP_Y_POS+(i*8));
-			do
-			{
-				c=wait_function_key();
-				switch(c)
-				{
-					case FCT_UP_KEY:
-						invert_line(HELP_Y_POS+(i*8));
-						if(i>2) i--;
-						invert_line(HELP_Y_POS+(i*8));
-					break;
-					case FCT_DOWN_KEY:
-						invert_line(HELP_Y_POS+(i*8));
-						if(i<5) i++;
-						invert_line(HELP_Y_POS+(i*8));
-					break;
-					case FCT_LEFT_KEY:
-						invert_line(HELP_Y_POS+(i*8));
-						switch(i)
-						{
-						case 2:
-							cfgfile_ptr->step_sound=~cfgfile_ptr->step_sound;
-							hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%s ",cfgfile_ptr->step_sound?"on":"off");
-						break;
-						case 3:
-							if(cfgfile_ptr->buzzer_duty_cycle) cfgfile_ptr->buzzer_duty_cycle--;
-							hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d  ",cfgfile_ptr->buzzer_duty_cycle);
-							if(!cfgfile_ptr->buzzer_duty_cycle) cfgfile_ptr->ihm_sound=0x00;
-							break;
-						case 4:
-							if(cfgfile_ptr->back_light_tmr) cfgfile_ptr->back_light_tmr--;
-							hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->back_light_tmr);
-						break;
-						
-						case 5:
-							if(cfgfile_ptr->standby_tmr) cfgfile_ptr->standby_tmr--;
-							hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->standby_tmr);
-						break;
-						}
-						invert_line(HELP_Y_POS+(i*8));
-						
-					break;
-					case FCT_RIGHT_KEY:
-						invert_line(HELP_Y_POS+(i*8));
-						switch(i)
-						{
-						case 2:
-							cfgfile_ptr->step_sound=~cfgfile_ptr->step_sound;
-							hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%s ",cfgfile_ptr->step_sound?"on":"off");
-							break;
-						case 3:
-							if(cfgfile_ptr->buzzer_duty_cycle<0x80) cfgfile_ptr->buzzer_duty_cycle++;
-							hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d  ",cfgfile_ptr->buzzer_duty_cycle);
-							cfgfile_ptr->ihm_sound=0xFF;
-						break;
-						case 4:
-							if(cfgfile_ptr->back_light_tmr<0xFF) cfgfile_ptr->back_light_tmr++;
-							hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->back_light_tmr);
-							
-						break;
-						case 5:
-							if(cfgfile_ptr->standby_tmr<0xFF) cfgfile_ptr->standby_tmr++;
-							hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->standby_tmr);
-						break;
-						}
-						invert_line(HELP_Y_POS+(i*8));
-					break;
-					
-				}
-			}while(c!=FCT_ESC);
-
-			clear_list(5);
-			display_status();
-			printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
-			displayFolder();
-			fRedraw_files=1;
+			fRedraw_status = 1;
 			break; // case FCT_EMUCFG:
 
 		case FCT_SHOWSLOTS:
-			clear_list(5);
-			show_all_slots();
+			handle_show_all_slots();
 
-			clear_list(5);
-			display_status();
-			printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
-			displayFolder();
-			fRedraw_files=1;
+			fRedraw_status = 1;
 			break;
 
 		case FCT_CLEARSLOT:
@@ -1114,7 +1111,6 @@ hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d nbPages:%d    ", pa
 			break;
 			
 		case FCT_SEARCH:
-			filtermode=0xFF;
 			hxc_printf(0,SCREEN_XRESOL/2+8*8,CURDIR_Y_POS+16,"                    ");
 			flush_char();
 			i=0;

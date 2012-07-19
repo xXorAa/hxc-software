@@ -35,6 +35,7 @@ void clear_line(unsigned short y_pos,unsigned short val);
 void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned short y_p2,unsigned short fillval,unsigned char fill);
 void init_display();
 void display_status();
+int  display_credits();
 void set_color_scheme(unsigned char color);
 
 #define VERSIONCODE "1.9b"

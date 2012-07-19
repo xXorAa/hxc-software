@@ -152,7 +152,7 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 				l++;
 				k++;
 			}
-		}	
+		}
 	}
 	else
 	{
@@ -168,7 +168,7 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 				l++;
 				k++;
 			}
-		}	
+		}
 	}
 
 }
@@ -485,6 +485,21 @@ void display_welcome()
 	h_line(8,0xFFFF) ;
 
 	i=0;
+	i = display_credits(i);
+
+	display_status();
+
+	// line just above the logos
+	h_line(SCREEN_YRESOL-34,0xFFFF) ;
+
+	hxc_printf(0,0,SCREEN_YRESOL-(8*1),"Ver %s",VERSIONCODE);
+	display_sprite(screen_buffer_aligned, bitmap_sdhxcfelogo_bmp,(SCREEN_XRESOL-bitmap_sdhxcfelogo_bmp->Xsize)/2, (SCREEN_YRESOL-bitmap_sdhxcfelogo_bmp->Ysize));
+	display_sprite(screen_buffer_aligned, bitmap_hxc2001logo_bmp,(SCREEN_XRESOL-bitmap_hxc2001logo_bmp->Xsize), (SCREEN_YRESOL-bitmap_hxc2001logo_bmp->Ysize));
+
+}
+
+int display_credits(int i)
+{
 	hxc_printf(1,0,HELP_Y_POS+(i*8), "SDCard HxC Floppy Emulator file selector for Atari ST");
 	i++;
 	hxc_printf(1,0,HELP_Y_POS+(i*8), "(c) 2006-2012 HxC2001 / Jean-Francois DEL NERO");
@@ -498,16 +513,9 @@ void display_welcome()
 	hxc_printf(1,0,HELP_Y_POS+(i*8), "Email : hxc2001@hxc2001.com");
 	i++;
 	hxc_printf(1,0,HELP_Y_POS+(i*8), "V%s - %s",VERSIONCODE,DATECODE);
+	i++;
 
-	display_status();
-
-	// line just above the logos
-	h_line(SCREEN_YRESOL-34,0xFFFF) ;
-
-	hxc_printf(0,0,SCREEN_YRESOL-(8*1),"Ver %s",VERSIONCODE);
-	display_sprite(screen_buffer_aligned, bitmap_sdhxcfelogo_bmp,(SCREEN_XRESOL-bitmap_sdhxcfelogo_bmp->Xsize)/2, (SCREEN_YRESOL-bitmap_sdhxcfelogo_bmp->Ysize));
-	display_sprite(screen_buffer_aligned, bitmap_hxc2001logo_bmp,(SCREEN_XRESOL-bitmap_hxc2001logo_bmp->Xsize), (SCREEN_YRESOL-bitmap_hxc2001logo_bmp->Ysize));
-
+	return i;
 }
 
 void display_status()
