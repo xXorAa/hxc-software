@@ -51,11 +51,9 @@
 
 #include "conf.h"
 
-unsigned char * screen_buffer;
-unsigned char * screen_buffer_aligned;
+unsigned char * screen_addr;
 unsigned char * screen_buffer_backup;
 unsigned char color;
-unsigned long old_physical_adr;
 unsigned long highresmode;
 
 unsigned char NUMBER_OF_FILE_ON_DISPLAY;/* 19-5 //19 -240 */
@@ -308,22 +306,22 @@ void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,cha
 	switch(mode)
 	{
 		case 0:
-			print_str(screen_buffer_aligned,temp_buffer,x_pos,y_pos,8);
+			print_str(screen_addr,temp_buffer,x_pos,y_pos,8);
 		break;
 		case 1:
-			print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8))/2,y_pos,8);
+			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8))/2,y_pos,8);
 		break;
 		case 2:
-			print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8)),y_pos,8);
+			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8)),y_pos,8);
 		break;
 		case 4:
-			print_str(screen_buffer_aligned,temp_buffer,x_pos,y_pos,16);
+			print_str(screen_addr,temp_buffer,x_pos,y_pos,16);
 		break;
 		case 5:
-			print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*16))/2,y_pos,16);
+			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*16))/2,y_pos,16);
 		break;
 		case 6:
-			print_str(screen_buffer_aligned,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*16)),y_pos,16);
+			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*16)),y_pos,16);
 		break;
 	}
 
@@ -341,7 +339,7 @@ void h_line(unsigned short y_pos,unsigned short val)
 	else
 		s=80;
 
-	ptr_dst=(unsigned short*)screen_buffer_aligned;
+	ptr_dst=(unsigned short*)screen_addr;
 	ptroffset=s* y_pos;
 
 	for(i=0;i<s;i++)
@@ -358,7 +356,7 @@ void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned sh
 	unsigned short i,j,ptroffset,x_size;
 
 
-	ptr_dst=(unsigned short*)screen_buffer_aligned;
+	ptr_dst=(unsigned short*)screen_addr;
 
 	if(highresmode)
 	{
@@ -403,7 +401,7 @@ void invert_line(unsigned short y_pos)
 	unsigned short *ptr_dst;
 	unsigned short ptroffset;
 
-	ptr_dst=(unsigned short*)screen_buffer_aligned;
+	ptr_dst=(unsigned short*)screen_addr;
 
 	if(highresmode)
 	{
@@ -433,7 +431,7 @@ void invert_line(unsigned short y_pos)
 
 void restore_box()
 {
-	memcpy(&screen_buffer_aligned[160*70],screen_buffer_backup, 8000L);
+	memcpy(&screen_addr[160*70],screen_buffer_backup, 8000L);
 }
 
 void hxc_printf_box(unsigned char mode,char * chaine, ...)
@@ -442,7 +440,7 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 	int str_size;
 	unsigned short i;
 
-	memcpy(screen_buffer_backup,&screen_buffer_aligned[160*70], 8000L);
+	memcpy(screen_buffer_backup,&screen_addr[160*70], 8000L);
 
 	va_list marker;
 	va_start( marker, chaine );
@@ -454,26 +452,26 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80-8,8);
+		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80-8,8);
 	}
-	print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),80-8,3);
-	print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),80-8,2);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),80-8,3);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),80-8,2);
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80,' ');
+		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80,' ');
 	}
 
-	print_str(screen_buffer_aligned,temp_buffer,((SCREEN_XRESOL-str_size)/2)+(2*8),80,8);
-	print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),80,7);
-	print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),80,6);
+	print_str(screen_addr,temp_buffer,((SCREEN_XRESOL-str_size)/2)+(2*8),80,8);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),80,7);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),80,6);
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80+8,9);
+		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80+8,9);
 	}
-	print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),80+8,5);
-	print_char8x8(screen_buffer_aligned,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),80+8,4);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),80+8,5);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),80+8,4);
 
 	va_end( marker );
 }
@@ -495,8 +493,8 @@ void display_welcome()
 	h_line(SCREEN_YRESOL-34,0xFFFF) ;
 
 	hxc_printf(0,0,SCREEN_YRESOL-(8*1),"Ver %s",VERSIONCODE);
-	display_sprite(screen_buffer_aligned, bitmap_sdhxcfelogo_bmp,(SCREEN_XRESOL-bitmap_sdhxcfelogo_bmp->Xsize)/2, (SCREEN_YRESOL-bitmap_sdhxcfelogo_bmp->Ysize));
-	display_sprite(screen_buffer_aligned, bitmap_hxc2001logo_bmp,(SCREEN_XRESOL-bitmap_hxc2001logo_bmp->Xsize), (SCREEN_YRESOL-bitmap_hxc2001logo_bmp->Ysize));
+	display_sprite(screen_addr, bitmap_sdhxcfelogo_bmp,(SCREEN_XRESOL-bitmap_sdhxcfelogo_bmp->Xsize)/2, (SCREEN_YRESOL-bitmap_sdhxcfelogo_bmp->Ysize));
+	display_sprite(screen_addr, bitmap_hxc2001logo_bmp,(SCREEN_XRESOL-bitmap_hxc2001logo_bmp->Xsize), (SCREEN_YRESOL-bitmap_hxc2001logo_bmp->Ysize));
 
 }
 
@@ -563,22 +561,23 @@ void init_display()
 
 	highresmode=get_vid_mode();
 
-	old_physical_adr=(unsigned long)Physbase();
-	screen_buffer=(unsigned char*)malloc(32256L);
-	screen_buffer_aligned = (unsigned char*)(((unsigned long)screen_buffer| 0xff)+1);
-	memset(screen_buffer_aligned,0,32000);
+	// Line-A : Hidemouse
+	__asm__("dc.w 0xa00a");
+
+	screen_addr = (unsigned char *) Physbase();
 
 	screen_buffer_backup=(unsigned char*)malloc(8000L);
 
 	/*Blitmode(1) */;
 	if(highresmode)
 	{
-		Setscreen((unsigned char *) -1, screen_buffer_aligned, 2 );
+		Setscreen((unsigned char *) -1, (unsigned char *) -1, 2 );
 	}
 	else
 	{
-		Setscreen((unsigned char *) -1, screen_buffer_aligned, 1 );
+		Setscreen((unsigned char *) -1, (unsigned char *) -1, 1 );
 	}
+
 	color=0;
 	my_Supexec((LONG *) initpal);
 

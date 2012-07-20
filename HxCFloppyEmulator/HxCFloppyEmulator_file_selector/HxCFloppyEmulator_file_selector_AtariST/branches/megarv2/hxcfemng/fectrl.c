@@ -90,7 +90,9 @@ extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
 
 void lockup()
 {
-	for(;;);
+	while(1) {
+		get_char();
+	}
 }
 
 
@@ -830,30 +832,30 @@ int main(int argc, char* argv[])
 
 	init_atari_hw();
 
-	switch(bootdev)
-	{
-	case 0:
-	case 1:
-		init_atari_fdc(bootdev);
-		break;
-	default:
-		hxc_printf_box(0,"ERROR: Bad parameter !");
-		for(;;);
-		break;
-	}
-
 	fn_diskio_read media_read_callback;
 	fn_diskio_write media_write_callback;
 
-	if(hxc_media_init())
-	{
-		media_read_callback = hxc_media_read;
-		media_write_callback = hxc_media_write;
-	}
-	else if (emulatordetect())
+	if (emulatordetect())
 	{
 		media_read_callback = bios_media_read;
 		media_write_callback = bios_media_write;
+	}
+	else if(hxc_media_init())
+	{
+		switch(bootdev)
+		{
+		case 0:
+		case 1:
+			init_atari_fdc(bootdev);
+			break;
+		default:
+			hxc_printf_box(0,"ERROR: Bad parameter !");
+			lockup();
+			break;
+		}
+
+		media_read_callback = hxc_media_read;
+		media_write_callback = hxc_media_write;
 	}
 	else
 	{
@@ -866,7 +868,7 @@ int main(int argc, char* argv[])
 	if (fl_attach_media(media_read_callback, media_write_callback) != FAT_INIT_OK)
 	{
 		hxc_printf_box(0,"ERROR: Media attach failed !");
-		for(;;);
+		lockup();
 	}
 	hxc_printf_box(0,"Reading HXCSDFE.CFG ...");
 

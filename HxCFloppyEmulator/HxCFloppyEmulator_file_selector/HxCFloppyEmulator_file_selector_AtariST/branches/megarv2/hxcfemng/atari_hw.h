@@ -204,6 +204,11 @@ __regsused("d0/d1/d2/a0/a1/a2") LONG my_Supexec(__reg("a0")LONG * function) =
 #endif
 
 
+/**
+ * Detect if the program is running under an emulator
+ * See emudtect.s from Steem documentation
+ * @returns 1 if running under emulator, otherwise 0
+ */
 #define emulatordetect(  )                          \
 __extension__                                       \
 ({                                                  \

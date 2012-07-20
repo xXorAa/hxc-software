@@ -166,7 +166,6 @@ void su_fdcUnlock(void)
 
 void su_headinit(void)
 {
-	CONTERM &= 0xFA;                /* disable key sound and bell */
 	su_fdcLock();
 	su_fdcSelectDriveASide0();
 	su_fdcRegSet(0x86, 255);        /* data : track number */
@@ -273,9 +272,16 @@ unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned c
 
 }
 
+void su_mutekeys(void)
+{
+	CONTERM &= 0xFA;                /* disable key sound and bell */
+}
+
+
 void init_atari_hw(void)
 {
 	kt=(KEYTAB *) Keytbl( (unsigned char *) -1, (unsigned char *) -1, (unsigned char *) -1 );
+	my_Supexec((LONG *) su_mutekeys);
 }
 
 void init_atari_fdc(unsigned char drive)
@@ -303,7 +309,7 @@ unsigned char get_char()
 {
 	unsigned char key;
 
-	key=Cconin()>>16;
+	key=Cnecin()>>16;
 	if(key == 0x1C) return '\n';
 
 	return kt->unshift[key];
@@ -318,7 +324,7 @@ unsigned char wait_function_key()
 	function_code=FCT_NO_FUNCTION;
 	do
 	{
-		key=Cconin()>>16;
+		key=Cnecin()>>16;
 		/* 	hxc_printf(0,0,0,"%08X",key); */
 
 		i=0;
