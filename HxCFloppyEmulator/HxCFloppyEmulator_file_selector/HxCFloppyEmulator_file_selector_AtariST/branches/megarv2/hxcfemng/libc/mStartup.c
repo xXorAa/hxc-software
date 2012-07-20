@@ -39,6 +39,8 @@ void* memset ( void * ptr, int value, size_t num )
 	return ptr;
 }
 
+// ----------------------------------------------------------------------------------------
+
 inline char *strcpy(char *dest, const char* src)
 {
 	char *ret = dest;
@@ -47,6 +49,7 @@ inline char *strcpy(char *dest, const char* src)
 
 	return ret;
 }
+
 // ----------------------------------------------------------------------------------------
 
 void * malloc ( size_t size )
@@ -109,20 +112,24 @@ void * reallocFAST ( void * ptr, size_t size )
 
 // ----------------------------------------------------------------------------------------
 
+/*
 size_t strlen ( const char * str )
 {
 	size_t len = 0;
 	while ( *(char*)str ++ != 0 ) len++;
 	return len;
 }
+*/
 
 // ----------------------------------------------------------------------------------------
 
+/*
 int strcmp(const char *s1, const char *s2)
 {
 	while((*s1 && *s2) && (*s1++ == *s2++));
 	return *(--s1) - *(--s2);
 }
+*/
 
 // ----------------------------------------------------------------------------------------
 

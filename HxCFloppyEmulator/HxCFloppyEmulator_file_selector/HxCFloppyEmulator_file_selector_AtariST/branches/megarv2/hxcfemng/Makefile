@@ -15,7 +15,7 @@ ARCH             = cygwin
 
 GCCBIN           = m68k-atari-mint-gcc
 GCCOPT           = -Os -Ifat32 -I.
-GCLOPT           = -Os -nostdlib -Wl,-Map,symbols.map -Wl,--traditional-format -s -fomit-frame-pointer -m68000
+GCLOPT           = -Os -nostdlib -Wl,-Map,symbols.map -Wl,--traditional-format -fomit-frame-pointer -m68000
 
 VASMBIN          = ../build-tools/vbcc/bin-$(ARCH)/vasmm68k_mot
 VASMOPT          = -Faout -showopt -m68000 -spaces -quiet
@@ -23,8 +23,10 @@ VASMOPT          = -Faout -showopt -m68000 -spaces -quiet
 # GCC : PRG size about 44054 bytes
 C                = $(GCCBIN)
 CFLAGS           = $(GCCOPT)
-LFLAGS           = $(GCLOPT)
 
+#LFLAGS           = $(GCLOPT) -s    # STRIP SYMBOLS
+#LFLAGS           = $(GCLOPT)  	    # KEEP SYMBOLS (debug)
+LFLAGS           = $(GCLOPT) -s    # STRIP SYMBOLS
 
 EXEC             = HXCFEMNG.PRG
 

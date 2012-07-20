@@ -4,12 +4,13 @@
 REDIRECT_OUTPUT_TO_SERIAL   equ 0   ;0-output to console,1-output to serial port
 
         xdef    _memcpy
+        xdef    _strlen
+        xdef    _strcmp
         xdef    ___mulsi3
         xdef    ___udivsi3
         xdef    ___umodsi3
         xdef    ___modsi3
         xdef    ___divsi3
-        xdef    _strcpy
 
 BASEPAGE_SIZE   equ $100
 STACK_SIZE      equ $1000
@@ -124,6 +125,37 @@ _memcpy:
 ;l1:     move.b    (a1)+, (a0)+
 ;        bne.s     l1
 ;        rts
+
+; --------------------------------------------------------------
+
+_strlen:
+        move.l    4(sp), a0
+        moveq     #0,d0
+        bra.s     .l1
+.l2:    addq.l    #1,d0
+.l1:    tst.b     (a0)+
+        bne.s     .l2
+        rts
+
+; --------------------------------------------------------------
+
+_strcmp:
+;from https://code.google.com/p/plan9front/source/browse/sys/src/libc/68000/strcmp.s?r=9123bbc7c967e80c38003f42bd47911db953aa75
+        move.l    4(sp),a0
+        move.l    8(sp),a1
+.next:  move.b    (a1)+,d0
+        beq.s     .end
+        cmp.b     (a0)+,d0
+        beq.s     .next
+        bcs.s     .gtr
+        moveq     #-1,d0
+        rts
+.gtr:   moveq     #1,d0
+        rts
+.end:   tst.b     (a0)
+        bne.s     .gtr
+        moveq     #0,d0
+        rts
 
 ; --------------------------------------------------------------
 
