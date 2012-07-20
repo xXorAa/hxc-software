@@ -68,7 +68,6 @@ static unsigned char sdfecfg_file[2048];
 static char filter[17];
 
 
-static unsigned char slotnumber;
 static char selectorpos;
 static unsigned char fRedraw_files, fRepaginate_files, fRedraw_status;
 static UWORD page_number;
@@ -226,32 +225,9 @@ int media_write(unsigned long sector, unsigned char *buffer)
 	return 1;
 }
 
-void _printslotstatus(unsigned char slotnumber,  disk_in_drive * disks_a,  disk_in_drive * disks_b)
-{
-	char tmp_str[17];
 
-	hxc_printf(0,0,SLOT_Y_POS,"Slot %02d:", slotnumber);
 
-	/* clear_line(SLOT_Y_POS+8,0); */
-	hxc_printf(0,0,SLOT_Y_POS+8,"Drive A:                 ");
-	if( read_long_odd(&(disks_a->DirEnt.size_b1)))
-	{
-		memcpy(tmp_str,disks_a->DirEnt.longName,16);
-		tmp_str[16]=0;
-		hxc_printf(0,0,SLOT_Y_POS+8,"Drive A: %s", tmp_str);
-	}
 
-	/* clear_line(SLOT_Y_POS+16,0); */
-	hxc_printf(0,0,SLOT_Y_POS+16,"Drive B:                 ");
-
-if( read_long_odd(&(disks_b->DirEnt.size_b1)))
-	{
-		memcpy(tmp_str,disks_b->DirEnt.longName,16);
-		tmp_str[16]=0;
-		hxc_printf(0,0,SLOT_Y_POS+16,"Drive B: %s", tmp_str);
-	}
-
-}
 
 char read_cfg_file(unsigned char * sdfecfg_file)
 {
@@ -413,17 +389,74 @@ void clear_list(unsigned char add)
 }
 
 
-void next_slot()
+
+
+
+
+void _printslotstatus(unsigned char slotnumber,  disk_in_drive * disks_a,  disk_in_drive * disks_b)
 {
-	slotnumber++;
-	if(slotnumber>(NUMBER_OF_SLOT-1))  slotnumber=1;
-	display_slots();
+	char tmp_str[17];
+
+	hxc_printf(0,0,SLOT_Y_POS,"Slot %02d:", slotnumber);
+
+	/* clear_line(SLOT_Y_POS+8,0); */
+	hxc_printf(0,0,SLOT_Y_POS+8,"Drive A:                 ");
+	if( read_long_odd(&(disks_a->DirEnt.size_b1)))
+	{
+		memcpy(tmp_str,disks_a->DirEnt.longName,16);
+		tmp_str[16]=0;
+		hxc_printf(0,0,SLOT_Y_POS+8,"Drive A: %s", tmp_str);
+	}
+
+	/* clear_line(SLOT_Y_POS+16,0); */
+	hxc_printf(0,0,SLOT_Y_POS+16,"Drive B:                 ");
+
+	if( read_long_odd(&(disks_b->DirEnt.size_b1)))
+	{
+		memcpy(tmp_str,disks_b->DirEnt.longName,16);
+		tmp_str[16]=0;
+		hxc_printf(0,0,SLOT_Y_POS+16,"Drive B: %s", tmp_str);
+	}
 }
 
-void display_slots()
+void display_slot(unsigned char slotnumber)
 {
 	_printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
 }
+
+
+unsigned char next_slot(unsigned char slotnumber)
+{
+	slotnumber++;
+	if(slotnumber>(NUMBER_OF_SLOT-1))
+	{	// slot 0 is reserved for autoboot
+		slotnumber=1;
+	}
+	display_slot(slotnumber);
+	return slotnumber;
+}
+
+void clear_slot(int slotnumber)
+{
+	memset((void*)&disks_slot_a[slotnumber],0,sizeof(disk_in_drive));
+	memset((void*)&disks_slot_b[slotnumber],0,sizeof(disk_in_drive));
+}
+
+void insert_in_slot(DirectoryEntry *dirEntLSB_ptr, unsigned char slotnumber, unsigned char drive)
+{
+	if (0 == drive)
+	{
+		memset((void*)&disks_slot_a[slotnumber], 0, sizeof(disk_in_drive));
+		memcpy((void*)&disks_slot_a[slotnumber], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
+	}
+	else
+	{
+		memset((void*)&disks_slot_b[slotnumber], 0, sizeof(disk_in_drive));
+		memcpy((void*)&disks_slot_b[slotnumber], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
+	}
+	display_slot(slotnumber);
+}
+
 
 
 
@@ -433,14 +466,16 @@ void display_slots()
 void displayFolder()
 {
 	int i;
-	hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS,"Current directory:");
+	hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS, "Current directory:");
 
-	for(i=SCREEN_XRESOL/2;i<SCREEN_XRESOL;i=i+8) hxc_printf(0,i,CURDIR_Y_POS+8," ");
+	for(i=CURDIR_X_POS; i<SCREEN_XRESOL; i=i+8) {
+		hxc_printf(0, i, CURDIR_Y_POS+8, " ");
+	}
 
-	if(strlen(currentPath)<32)
-		hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS+8,"%s",currentPath);
+	if(strlen(currentPath)<CURDIR_LEN)
+		hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS+8, "%s", currentPath);
 	else
-		hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS+8,"...%s    ",&currentPath[strlen(currentPath)-32]);
+		hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS+8, "...%s", &currentPath[strlen(currentPath)-CURDIR_LEN]+3);
 }
 
 
@@ -753,6 +788,8 @@ int main(int argc, char* argv[])
 	DirectoryEntry   dirEntLSB;
 	DirectoryEntry * dirEntLSB_ptr = &dirEntLSB;
 	unsigned char colormode;
+	unsigned char fSelectorValid;
+	unsigned char slotnumber;
 
 	FILE *f;
 
@@ -836,7 +873,7 @@ int main(int argc, char* argv[])
 		if (fRedraw_status) {
 			clear_list(5);
 			display_status();
-			display_slots();
+			display_slot(slotnumber);
 			displayFolder();
 			fRedraw_files=1;
 			fRedraw_status=0;
@@ -847,12 +884,15 @@ int main(int argc, char* argv[])
 			dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 			clear_list(0);
 
-			hxc_printf(0,PAGE_X_POS,PAGE_Y_POS,"Page %d of %d    ", page_number+1, nbPages);
-			if (strlen(filter)) {
-				hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS+16,"Search: [%s]", filter);
-			} else {
-				hxc_printf(0,SCREEN_XRESOL/2,CURDIR_Y_POS+16,"Search: [] (F1)");
+			for(i=PAGE_X_POS+5*8; i<SCREEN_XRESOL; i=i+8) {
+				hxc_printf(0, i, PAGE_Y_POS, " ");
 			}
+			hxc_printf(0,PAGE_X_POS, PAGE_Y_POS, "Page %d of %d    ", page_number+1, nbPages);
+
+			for(i=SEARCH_X_POS+13*8; i<SCREEN_XRESOL; i=i+8) {
+				hxc_printf(0, i, SEARCH_Y_POS, " ");
+			}
+			hxc_printf(0, SEARCH_X_POS, SEARCH_Y_POS,"Search (F1): [%s]", filter);
 
 			y_pos=FILELIST_Y_POS;
 			for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; )
@@ -885,6 +925,9 @@ int main(int argc, char* argv[])
 		inverted_line = FILELIST_Y_POS+(selectorpos*8);
 		hxc_printf(0,0,inverted_line,">");
 		invert_line(inverted_line);
+
+		fSelectorValid = fli_getDirEntryLSB(FilelistCurrentPage_tab[selectorpos], dirEntLSB_ptr);
+
 
 		// debug:
 		//hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d nbPages:%d    ", page_number, isLastPage, selectorpos, nbPages);
@@ -951,7 +994,7 @@ int main(int argc, char* argv[])
 			break;
 
 		case FCT_NEXTSLOT:
-			next_slot();
+			slotnumber = next_slot(slotnumber);
 			break;
 
 		case FCT_SAVE:
@@ -961,7 +1004,7 @@ int main(int argc, char* argv[])
 			break;
 
 		case FCT_SELECT_FILE_DRIVEA:
-			if (fli_getDirEntryLSB(FilelistCurrentPage_tab[selectorpos], dirEntLSB_ptr))
+			if (fSelectorValid)
 			{
 				if(dirEntLSB_ptr->attributes&0x10)
 				{
@@ -969,15 +1012,13 @@ int main(int argc, char* argv[])
 				}
 				else
 				{
-					memset((void*)&disks_slot_a[slotnumber], 0, sizeof(disk_in_drive));
-					memcpy((void*)&disks_slot_a[slotnumber], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
-					display_slots();
+					insert_in_slot(dirEntLSB_ptr, slotnumber, 0);
 				}
 			}
 			break;
 
 		case FCT_SELECT_FILE_DRIVEB:
-			if (fli_getDirEntryLSB(FilelistCurrentPage_tab[selectorpos], dirEntLSB_ptr))
+			if (fSelectorValid)
 			{
 				if(dirEntLSB_ptr->attributes&0x10)
 				{
@@ -985,15 +1026,13 @@ int main(int argc, char* argv[])
 				}
 				else
 				{
-					memset((void*)&disks_slot_b[slotnumber], 0, sizeof(disk_in_drive));
-					memcpy((void*)&disks_slot_b[slotnumber], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
-					display_slots();
+					insert_in_slot(dirEntLSB_ptr, slotnumber, 1);
 				}
 			}
 			break;
 
 		case FCT_SELECT_FILE_DRIVEA_AND_NEXTSLOT:
-			if (fli_getDirEntryLSB(FilelistCurrentPage_tab[selectorpos], dirEntLSB_ptr))
+			if (fSelectorValid)
 			{
 				if(dirEntLSB_ptr->attributes&0x10)
 				{
@@ -1001,15 +1040,14 @@ int main(int argc, char* argv[])
 				}
 				else
 				{
-					memset((void*)&disks_slot_a[slotnumber], 0, sizeof(disk_in_drive));
-					memcpy((void*)&disks_slot_a[slotnumber], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
-					next_slot();
+					insert_in_slot(dirEntLSB_ptr, slotnumber, 0);
+					slotnumber = next_slot(slotnumber);
 				}
 			}
 			break;
 
 		case FCT_SELECTSAVEREBOOT:
-			if (fli_getDirEntryLSB(FilelistCurrentPage_tab[selectorpos], dirEntLSB_ptr))
+			if (fSelectorValid)
 			{
 				if(dirEntLSB_ptr->attributes&0x10)
 				{
@@ -1017,8 +1055,7 @@ int main(int argc, char* argv[])
 				}
 				else
 				{
-					memset((void*)&disks_slot_a[1], 0, sizeof(disk_in_drive));
-					memcpy((void*)&disks_slot_a[1], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
+					insert_in_slot(dirEntLSB_ptr, 1, 0);
 					hxc_printf_box(0,"Saving selection and restart...");
 					save_cfg_file(sdfecfg_file);
 					restore_box();
@@ -1049,15 +1086,13 @@ int main(int argc, char* argv[])
 			break;
 
 		case FCT_CLEARSLOT:
-			memset((void*)&disks_slot_a[slotnumber],0,sizeof(disk_in_drive));
-			memset((void*)&disks_slot_b[slotnumber],0,sizeof(disk_in_drive));
-			display_slots();
+			clear_slot(slotnumber);
+			display_slot(slotnumber);
 			break;
 
 		case FCT_CLEARSLOT_AND_NEXTSLOT:
-			memset((void*)&disks_slot_a[slotnumber],0,sizeof(disk_in_drive));
-			memset((void*)&disks_slot_b[slotnumber],0,sizeof(disk_in_drive));
-			next_slot();
+			clear_slot(slotnumber);
+			slotnumber = next_slot(slotnumber);
 			break;
 
 		case FCT_SAVEREBOOT:
@@ -1090,7 +1125,9 @@ int main(int argc, char* argv[])
 			break;
 
 		case FCT_SEARCH:
-			hxc_printf(0,SCREEN_XRESOL/2+8*8,CURDIR_Y_POS+16,"                    ");
+			for(i=SEARCH_X_POS+13*8; i<SCREEN_XRESOL; i=i+8) {
+				hxc_printf(0, i, SEARCH_Y_POS, " ");
+			}
 			flush_char();
 			i=0;
 			do
@@ -1100,7 +1137,7 @@ int main(int argc, char* argv[])
 				if(c!='\n')
 				{
 					filter[i]=c;
-					hxc_printf(0,SCREEN_XRESOL/2+(8*8)+(8*i),CURDIR_Y_POS+16,"%c",c);
+					hxc_printf(0, SEARCH_X_POS+13*8+(8*i), SEARCH_Y_POS, "%c", c);
 				}
 				i++;
 			}while(c!='\n' && i<16);
