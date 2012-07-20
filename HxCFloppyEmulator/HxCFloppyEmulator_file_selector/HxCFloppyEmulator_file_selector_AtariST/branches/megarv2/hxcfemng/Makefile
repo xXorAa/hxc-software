@@ -24,9 +24,8 @@ VASMOPT          = -Faout -showopt -m68000 -spaces -quiet
 C                = $(GCCBIN)
 CFLAGS           = $(GCCOPT)
 
-#LFLAGS           = $(GCLOPT) -s    # STRIP SYMBOLS
-#LFLAGS           = $(GCLOPT)  	    # KEEP SYMBOLS (debug)
 LFLAGS           = $(GCLOPT) -s    # STRIP SYMBOLS
+#LFLAGS           = $(GCLOPT)  	    # KEEP SYMBOLS (debug)
 
 EXEC             = HXCFEMNG.PRG
 
@@ -45,7 +44,7 @@ push-gbo-dsi: $(EXEC)
 	rsync --perms $< gbouthen@gbo-dsi.openvpn:/cygdrive/c/data/dropbox/emul/atari/hd/c/tmp/
 
 
-$(EXEC):          libc/mStartupAsmC.o libc/mStartup.o fectrl.o filelist.o dir.o gui_utils.o atari_hw.o fat32/fat_access.o fat32/fat_filelib.o fat32/fat_misc.o fat32/fat_string.o fat32/fat_table.o fat32/fat_write.o fat32/fat_cache.o libc/snprintf/snprintf.o
+$(EXEC):          libc/mStartupAsmC.o libc/mStartup.o quickersort.o fectrl.o filelist.o dir.o gui_utils.o atari_hw.o fat32/fat_access.o fat32/fat_filelib.o fat32/fat_misc.o fat32/fat_string.o fat32/fat_table.o fat32/fat_write.o fat32/fat_cache.o libc/snprintf/snprintf.o
 	$(C)          $(LFLAGS)           $^ -o $@
 
 atari_hw.o:       atari_hw.c       atari_hw.h keysfunc_defs.h keys_defs.h
@@ -91,4 +90,7 @@ libc/snprintf/snprintf.o: libc/snprintf/snprintf.c libc/snprintf/snprintf.h
 	$(C)          $(CFLAGS)        -c $< -o $@
 
 libc/mStartupAsmC.o: libc/mStartupAsmC.s
+	$(VASMBIN)    $(VASMOPT)          $< -o $@
+
+quickersort.o: quickersort.s
 	$(VASMBIN)    $(VASMOPT)          $< -o $@

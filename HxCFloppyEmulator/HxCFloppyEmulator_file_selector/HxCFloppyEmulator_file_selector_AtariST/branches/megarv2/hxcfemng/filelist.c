@@ -108,7 +108,7 @@ int fli_getDirEntryMSB(UWORD number, struct fs_dir_ent * dir_entry)
 
     memcpy(&dir_entry->cluster, newAdr, 8);       // copy cluster, size
     dir_entry->is_dir = *(newAdr+8);              // copy is_dir
-    strcpy(dir_entry->filename, newAdr+9);        // copy filename
+    strcpy(dir_entry->filename, (char *) newAdr+9);        // copy filename
 
     return TRUE;
 }
@@ -155,4 +155,38 @@ int fli_getDirEntryLSB(UWORD number, DirectoryEntry * dir_entry)
     memcpy(dir_entry->longName, newAdr+9, LFN_MAX_SIZE);    // copy longname
     dir_entry->longName[LFN_MAX_SIZE-1] = 0;
     return TRUE;
+}
+
+
+//extern void *quickersort(UWORD nbEntries, UBYTE offset, UBYTE *adr);
+extern void quickersort(UWORD, UWORD);
+void flisort2(UWORD, UWORD);
+
+
+#define testsort(func, a, b, c )              \
+__extension__                           \
+({                                      \
+short _func = (long )(func);                  \
+short _a = (short)(a);                  \
+short _b = (short)(b);                  \
+long  _c = (long)(c);                   \
+                                        \
+__asm__ volatile                        \
+(                                       \
+"move.l   %3,-(sp)\n\t"                    \
+"move.w   %2,-(sp)\n\t"                    \
+"move.w   %1,-(sp)\n\t"                    \
+"jsr      (%0)\n\t"                         \
+"addq.l    #8,sp"                          \
+: /* outputs "=r"(retvalue) */           \
+: /* inputs   */ "a"(_func), "g"(_a), "g"(_b), "g"(_c) \
+: /* clobbers */ "d0", "d1", "d2", "a0", "a1", "a2" \
+  AND_MEMORY                            \
+);                                      \
+})
+
+
+void fli_sort(void)
+{
+    testsort(quickersort, (UWORD) _nbEntries, (UBYTE) 9, _base);
 }

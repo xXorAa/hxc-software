@@ -1150,6 +1150,13 @@ int main(int argc, char* argv[])
 			fRepaginate_files=1;
 			break;
 
+		case FCT_SORT:
+			fli_sort();
+			page_number=0;
+			selectorpos=0;
+			fRepaginate_files=1;
+			break;
+
 		default:
 			/* printf("err %d!\n",key); */
 			break;

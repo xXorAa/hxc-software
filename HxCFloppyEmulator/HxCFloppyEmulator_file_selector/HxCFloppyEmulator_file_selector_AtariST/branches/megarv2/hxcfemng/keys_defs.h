@@ -59,5 +59,6 @@ keyboard_funct_mapper keysmap[]=
 	{FCT_TOP,53},
 	{FCT_CHGCOLOR,60},
 	{FCT_EMUCFG,61},
-	{FCT_NO_FUNCTION,0x00}
+	{FCT_SORT,0x1f},
+	{FCT_NO_FUNCTION,0x00}	// must be last
 };
