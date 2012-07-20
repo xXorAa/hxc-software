@@ -28,10 +28,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-/* #include <mint/osbind.h> */
+
 #ifdef __VBCC__
 #include <tos.h>
+#else
+#include <mint/osbind.h>
 #endif
+
 #include <time.h>
 /* #include <vt52.h>
  */
@@ -128,7 +131,7 @@ int setlbabase(unsigned long lba)
  * Display Firmware version
  * @return 0 on failure, 1 on success
  */
-int media_init()
+int hxc_media_init()
 {
 	unsigned char ret;
 	unsigned char sector[512];
@@ -163,7 +166,7 @@ int media_init()
 	return 0;
 }
 
-int media_read(unsigned long sector, unsigned char *buffer)
+int hxc_media_read(unsigned long sector, unsigned char *buffer)
 {
 	int ret,retry;
 	direct_access_status_sector * dass;
@@ -201,7 +204,7 @@ int media_read(unsigned long sector, unsigned char *buffer)
 	return 1;
 }
 
-int media_write(unsigned long sector, unsigned char *buffer)
+int hxc_media_write(unsigned long sector, unsigned char *buffer)
 {
 	int ret,retry;
 	direct_access_status_sector * dass;
@@ -224,6 +227,20 @@ int media_write(unsigned long sector, unsigned char *buffer)
 
 	return 1;
 }
+
+
+int bios_media_read(unsigned long sector, unsigned char *buffer)
+{
+	Rwabs(0, buffer, 1, sector, 0);
+	return 1;
+}
+
+int bios_media_write(unsigned long sector, unsigned char *buffer)
+{
+	Rwabs(1, buffer, 1, sector, 0);
+	return 1;
+}
+
 
 
 
@@ -808,6 +825,11 @@ int main(int argc, char* argv[])
 
 	bootdev=0;/* argv[1][0]-'0'; */
 
+	/* Initialise File IO Library */
+	fl_init();
+
+	init_atari_hw();
+
 	switch(bootdev)
 	{
 	case 0:
@@ -820,16 +842,28 @@ int main(int argc, char* argv[])
 		break;
 	}
 
-	if(!media_init())
+	fn_diskio_read media_read_callback;
+	fn_diskio_write media_write_callback;
+
+	if(hxc_media_init())
+	{
+		media_read_callback = hxc_media_read;
+		media_write_callback = hxc_media_write;
+	}
+	else if (emulatordetect())
+	{
+		media_read_callback = bios_media_read;
+		media_write_callback = bios_media_write;
+	}
+	else
 	{
 		lockup();
 	}
 
-	/* Initialise File IO Library */
-	fl_init();
+
 
 	/* Attach media access functions to library*/
-	if (fl_attach_media(media_read, media_write) != FAT_INIT_OK)
+	if (fl_attach_media(media_read_callback, media_write_callback) != FAT_INIT_OK)
 	{
 		hxc_printf_box(0,"ERROR: Media attach failed !");
 		for(;;);

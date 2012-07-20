@@ -24,8 +24,8 @@ VASMOPT          = -Faout -showopt -m68000 -spaces -quiet
 C                = $(GCCBIN)
 CFLAGS           = $(GCCOPT)
 
-LFLAGS           = $(GCLOPT) -s    # STRIP SYMBOLS
-#LFLAGS           = $(GCLOPT)  	    # KEEP SYMBOLS (debug)
+#LFLAGS           = $(GCLOPT) -s    # STRIP SYMBOLS
+LFLAGS           = $(GCLOPT)  	    # KEEP SYMBOLS (debug)
 
 EXEC             = HXCFEMNG.PRG
 

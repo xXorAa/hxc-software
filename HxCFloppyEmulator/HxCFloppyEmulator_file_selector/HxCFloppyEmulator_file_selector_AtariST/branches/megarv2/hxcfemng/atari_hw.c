@@ -273,14 +273,16 @@ unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned c
 
 }
 
+void init_atari_hw(void)
+{
+	kt=(KEYTAB *) Keytbl( (unsigned char *) -1, (unsigned char *) -1, (unsigned char *) -1 );
+}
 
 void init_atari_fdc(unsigned char drive)
 {
 	valid_cache=0;
 	floppydrive=drive;
 	my_Supexec((LONG *) su_headinit);
-
-	kt=(KEYTAB *) Keytbl( (unsigned char *) -1, (unsigned char *) -1, (unsigned char *) -1 );
 }
 
 unsigned char Keyboard()

@@ -72,3 +72,18 @@ cd vbcc/src
 Edit Makefile : Fill ARCH and TARGET.
 make
 make install (this only move the binaries to ../bin-$ARCH)
+
+
+
+
+*************************
+ Compiling under windows
+*************************
+
+To compile under windows, you need Cygwin with the following packages:
+make
+libmpc1
+libmpfr4   (if gcc hangs it means you don't have it !)
+libcloog0
+
+

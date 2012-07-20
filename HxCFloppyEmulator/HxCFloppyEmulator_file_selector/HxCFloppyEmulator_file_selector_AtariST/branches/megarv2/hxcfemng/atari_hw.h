@@ -28,6 +28,7 @@
 //
 */
 
+void init_atari_hw(void);
 void init_atari_fdc(unsigned char drive);
 unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned char invalidate_cache);
 unsigned char writesector(unsigned char sectornum,unsigned char * data);
@@ -201,3 +202,34 @@ __regsused("d0/d1/d2/a0/a1/a2") LONG my_Supexec(__reg("a0")LONG * function) =
 #endif
 
 #endif
+
+
+#define emulatordetect(  )                          \
+__extension__                                       \
+({                                                  \
+    register long retvalue __asm__("d0");           \
+                                                    \
+    __asm__ volatile                                \
+    (                                               \
+        "move.l  #0x456d753f,d5\n\t" /* Emu? */     \
+        "move.l  d5,d7\n\t"                         \
+        "move.l  d5,d6\n\t"                         \
+        "movw    #37,sp@-\n\t"                      \
+        "trap    #14\n\t"                           \
+        "addql   #2,sp\n\t"                         \
+        "moveq   #0,d0\n\t"                         \
+        "cmp.l   d5,d6\n\t"                         \
+        "bne.s   Lyes\n\t"                          \
+        "cmp.l   d5,d7\n\t"                         \
+        "beq.s   Lend\n\t"                          \
+        "Lyes:moveq #1,d0\n\t"                      \
+        "Lend:"                                     \
+    : /* outputs  */ "=r"(retvalue)                 \
+    : /* inputs   */                                \
+    : /* clobbers */ __CLOBBER_RETURN("d0")         \
+                     "d1", "d2", "d5", "d6", "d7",  \
+                     "a0", "a1", "a2"               \
+                     AND_MEMORY                     \
+    );                                              \
+    retvalue;                                       \
+})
