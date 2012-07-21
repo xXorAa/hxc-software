@@ -917,33 +917,48 @@ int main(int argc, char* argv[])
 
 		if (fRedraw_files) {
 			// start at the first file of the directory
-			dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
+//			dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
 			clear_list(0);
 
+			// clear the page
+			for (i=1; i<32; i++) {
+				FilelistCurrentPage_tab[i] = 0xffff;
+			}
+
+			// page number
 			for(i=PAGE_X_POS+5*8; i<SCREEN_XRESOL; i=i+8) {
 				hxc_printf(0, i, PAGE_Y_POS, " ");
 			}
 			hxc_printf(0,PAGE_X_POS, PAGE_Y_POS, "Page %d of %d    ", page_number+1, nbPages);
 
+			// search
 			for(i=SEARCH_X_POS+13*8; i<SCREEN_XRESOL; i=i+8) {
 				hxc_printf(0, i, SEARCH_Y_POS, " ");
 			}
 			hxc_printf(0, SEARCH_X_POS, SEARCH_Y_POS,"Search (F1): [%s]", filter);
 
 			y_pos=FILELIST_Y_POS;
-			for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; )
-			{
-				UWORD curFile;
 
-				curFile = FilelistCurrentPage_tab[i];
-				if (0xffff != curFile && fli_getDirEntryMSB(curFile, &dir_entry))
-				{
-					hxc_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(12), dir_entry.filename);
-					y_pos=y_pos+8;
-					i++;
-				} else {
-					break;
-				}
+
+			UWORD curFile;
+			curFile = dir_getFirstFileForPage(page_number);
+			fli_getDirEntryMSB(curFile, &dir_entry);
+
+			for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; i++)
+			{
+				hxc_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(12), dir_entry.filename);
+				y_pos=y_pos+8;
+
+				FilelistCurrentPage_tab[i] = curFile;
+				do {
+					curFile++;
+					if (!fli_getDirEntryMSB(curFile, &dir_entry)) {
+						i = NUMBER_OF_FILE_ON_DISPLAY;
+						break;
+					}
+					;
+				} while (!dir_filter(&dir_entry));
+				
 			}
 
 			fRedraw_files = 0;

@@ -86,6 +86,16 @@ int fli_push(struct fs_dir_ent * dir_entry) {
 }
 
 
+#if(0)
+UWORD fli_next(UWORD current)
+{
+	if ( (current+1) < _nbEntries ) {
+		return current+1;
+	}
+	return 0xffff;
+}
+#endif
+
 /**
  * Fill the provided fs_dir_ent struct for the specified file index
  * This is the Big Endian struct defined in fat_access.h:

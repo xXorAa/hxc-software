@@ -54,13 +54,12 @@ void mystrlwr(char *string)
 	}
 }
 
-#if(0)
 UWORD dir_getFirstFileForPage(UWORD page)
 {
 	return _FilelistPages_tab[page];
 }
-#endif
 
+#if(0)
 int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 {
 	UWORD i, currentFile;
@@ -90,7 +89,7 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 
 	return TRUE;
 }
-
+#endif
 
 
 

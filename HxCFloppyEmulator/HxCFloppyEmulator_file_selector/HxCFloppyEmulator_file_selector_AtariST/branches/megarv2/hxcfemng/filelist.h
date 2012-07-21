@@ -8,6 +8,7 @@
 void fli_clear(void);
 int fli_init(void * base, LONG length);
 int fli_push(struct fs_dir_ent * dir_entry);
+UWORD fli_next(UWORD current);
 int fli_getDirEntryMSB(UWORD number, struct fs_dir_ent * dir_entry);
 int fli_getDirEntryLSB(UWORD number, DirectoryEntry * dir_entry);
 void fli_sort(void);
