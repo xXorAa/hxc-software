@@ -53,6 +53,7 @@
 
 unsigned char * screen_addr;
 unsigned char * screen_buffer_backup;
+unsigned char screen_backup_isUsed;
 unsigned char color;
 unsigned long highresmode;
 
@@ -432,6 +433,7 @@ void invert_line(unsigned short y_pos)
 void restore_box()
 {
 	memcpy(&screen_addr[160*70],screen_buffer_backup, 8000L);
+	screen_backup_isUsed = 0;
 }
 
 void hxc_printf_box(unsigned char mode,char * chaine, ...)
@@ -440,7 +442,10 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 	int str_size;
 	unsigned short i;
 
-	memcpy(screen_buffer_backup,&screen_addr[160*70], 8000L);
+	if (!screen_backup_isUsed) {
+		memcpy(screen_buffer_backup,&screen_addr[160*70], 8000L);
+	}
+	screen_backup_isUsed = 1;
 
 	va_list marker;
 	va_start( marker, chaine );
@@ -558,6 +563,7 @@ void init_display()
 
 	SCREEN_YRESOL=200;
 	NUMBER_OF_FILE_ON_DISPLAY=19-5;/* 19-5 //19 -240 */
+	screen_backup_isUsed = 0;
 
 	highresmode=get_vid_mode();
 

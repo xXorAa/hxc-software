@@ -120,7 +120,7 @@ int setlbabase(unsigned long lba)
 	ret=writesector( 0,(unsigned char *)&sector);
 	if(!ret)
 	{
-		hxc_printf_box(0,"ERROR: Write CTRL ERROR !");
+		hxc_printf_box(0,"FATAL ERROR: Write CTRL ERROR !");
 		lockup();
 	}
 
@@ -164,6 +164,7 @@ int hxc_media_init()
 		return 0;
 	}
 	hxc_printf_box(0,"ERROR: Floppy Access error!  [%d]",ret);
+	get_char();
 
 	return 0;
 }
@@ -189,6 +190,7 @@ int hxc_media_read(unsigned long sector, unsigned char *buffer)
 		if(!readsector(0,buffer,0))
 		{
 			hxc_printf_box(0,"ERROR: Read ERROR ! fsector %d",(sector-last_setlbabase)+1);
+			get_char();
 		}
 		last_setlbabase=L_INDIAN(dass->lba_base);
 
@@ -197,7 +199,7 @@ int hxc_media_read(unsigned long sector, unsigned char *buffer)
 
 	if(!readsector((sector-last_setlbabase)+1,buffer,0))
 	{
-		hxc_printf_box(0,"ERROR: Read ERROR ! fsector %d",(sector-last_setlbabase)+1);
+		hxc_printf_box(0,"FATAL ERROR: Read ERROR ! fsector %d",(sector-last_setlbabase)+1);
 		lockup();
 	}
 
@@ -221,7 +223,7 @@ int hxc_media_write(unsigned long sector, unsigned char *buffer)
 
 	if(!writesector((sector-last_setlbabase)+1,buffer))
 	{
-		hxc_printf_box(0,"ERROR: Write sector ERROR !");
+		hxc_printf_box(0,"FATAL ERROR: Write sector ERROR !");
 		lockup();
 	}
 
@@ -295,6 +297,7 @@ char read_cfg_file(unsigned char * sdfecfg_file)
 	if(ret)
 	{
 		hxc_printf_box(0,"ERROR: Access HXCSDFE.CFG file failed! [%d]",ret);
+		get_char();
 	}
 
 	return ret;
@@ -338,6 +341,7 @@ char save_cfg_file(unsigned char * sdfecfg_file)
 					if (fl_fswrite((unsigned char*)sdfecfg_file, 1,sect_nb, file) != 1)
 					{
 						hxc_printf_box(0,"ERROR: Write file failed!");
+						get_char();
 						ret=1;
 					}
 					/* Next sector */
@@ -354,6 +358,7 @@ char save_cfg_file(unsigned char * sdfecfg_file)
 			if (fl_fswrite((unsigned char*)sdfecfg_file, 1,sect_nb, file) != 1)
 			{
 				hxc_printf_box(0,"ERROR: Write file failed!");
+				get_char();
 				ret=1;
 			}
 		}
@@ -375,6 +380,7 @@ char save_cfg_file(unsigned char * sdfecfg_file)
 		if (fl_fswrite((unsigned char*)cfgfile_header, 1,0, file) != 1)
 		{
 			hxc_printf_box(0,"ERROR: Write file failed!");
+			get_char();
 			ret=1;
 		}
 
@@ -382,6 +388,7 @@ char save_cfg_file(unsigned char * sdfecfg_file)
 	else
 	{
 		hxc_printf_box(0,"ERROR: Create file failed!");
+		get_char();
 		ret=1;
 	}
 	/* Close file */
@@ -849,7 +856,7 @@ int main(int argc, char* argv[])
 			init_atari_fdc(bootdev);
 			break;
 		default:
-			hxc_printf_box(0,"ERROR: Bad parameter !");
+			hxc_printf_box(0,"FATAL ERROR: Bad parameter !");
 			lockup();
 			break;
 		}
@@ -867,7 +874,7 @@ int main(int argc, char* argv[])
 	/* Attach media access functions to library*/
 	if (fl_attach_media(media_read_callback, media_write_callback) != FAT_INIT_OK)
 	{
-		hxc_printf_box(0,"ERROR: Media attach failed !");
+		hxc_printf_box(0,"FATAL ERROR: Media attach failed !");
 		lockup();
 	}
 	hxc_printf_box(0,"Reading HXCSDFE.CFG ...");
