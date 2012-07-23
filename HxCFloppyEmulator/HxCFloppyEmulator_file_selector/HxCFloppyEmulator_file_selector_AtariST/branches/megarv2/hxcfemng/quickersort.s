@@ -9,17 +9,18 @@ _quickersort:
 ;8(sp).l : pointer to array of pointers to the strings to be sorted.
 ;          This array will be sorted
 
-            movem.l     a0-a5/d0-d3,-(sp)
+            movem.l     a0-a5/d0-d4,-(sp)
 
             moveq   #0,d0
-            move.w  $28+4(sp),d0                ;d0:number of strings
+            move.w  $2c+4(sp),d0            ;d0:number of strings
             move.l  d0,d1                   ;d1:number of strings:initial gap
 
             moveq   #0,d3
-            move.w  $28+6(sp),d3                ;d3:offset to sort from
+            move.w  $2c+6(sp),d3            ;d3:offset to sort from
+            moveq   #-33,d4                 ;d4: constant used by case insensitive compare
 
             ;compute end of pointers:
-            move.l  $28+8(sp),a2
+            move.l  $2c+8(sp),a2
             lsl.l   #2,d0
             add.l   d0,a2                   ;a2:end of pointers
 
@@ -38,7 +39,7 @@ reducegap:  move.l  d1,d0                   ;divide d1 by 1.28
             lsl.l   #2,d1                   ;d1:gap*4
 
             ;initpass:
-            move.l  $28+8(sp),a0                ;a0:string LEFT
+            move.l  $2c+8(sp),a0                ;a0:string LEFT
             lea     0(a0,d1.l),a1           ;a1:string RIGHT
 
 .comp:      ;compare:
@@ -61,7 +62,7 @@ endpart:    ;insertion sort
             ;a2: end of pointers
 
 
-            move.l  $28+8(sp),a5    ;a5:first string pointer
+            move.l  $2c+8(sp),a5    ;a5:first string pointer
             addq.l  #4,a5       ;a5:second string pointer
             moveq   #0,d2       ;d2: number-1 of strings to test
 
@@ -95,7 +96,7 @@ endpart:    ;insertion sort
             cmp.l   a2,a5
             blo.s   .pass
 
-            movem.l     (sp)+,a0-a5/d0-d3
+            movem.l     (sp)+,a0-a5/d0-d4
             rts
 
 
@@ -109,6 +110,8 @@ compare:    ;left:a3
             beq.s   .leftz
             move.b  (a4)+,d1
             beq.s   .cmpend
+            and.b   d4,d0
+            and.b   d4,d1
             cmp.b   d1,d0
             beq.s   .next
             movem.l (sp)+,a3-a4/d0-d1

@@ -820,7 +820,7 @@ int main(int argc, char* argv[])
 	FILE *f;
 
 	UBYTE * bigmem_adr;
-	int     bigmem_len;
+	LONG    bigmem_len;
 
 	UWORD	nbPages;
 
@@ -933,15 +933,9 @@ int main(int argc, char* argv[])
 			}
 
 			// page number
-			for(i=PAGE_X_POS+5*8; i<SCREEN_XRESOL; i=i+8) {
-				hxc_printf(0, i, PAGE_Y_POS, " ");
-			}
-			hxc_printf(0,PAGE_X_POS, PAGE_Y_POS, "Page %d of %d    ", page_number+1, nbPages);
+			hxc_printf(0,PAGE_X_POS, PAGE_Y_POS, "Page %d of %d      ", page_number+1, nbPages);
 
 			// search
-			for(i=SEARCH_X_POS+13*8; i<SCREEN_XRESOL; i=i+8) {
-				hxc_printf(0, i, SEARCH_Y_POS, " ");
-			}
 			hxc_printf(0, SEARCH_X_POS, SEARCH_Y_POS,"Search (F1): [%s]", filter);
 
 			y_pos=FILELIST_Y_POS;
@@ -953,7 +947,7 @@ int main(int argc, char* argv[])
 
 			for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; i++)
 			{
-				hxc_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(12), dir_entry.filename);
+				hxc_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(' '), dir_entry.filename);
 				y_pos=y_pos+8;
 
 				FilelistCurrentPage_tab[i] = curFile;
@@ -965,7 +959,7 @@ int main(int argc, char* argv[])
 					}
 					;
 				} while (!dir_filter(&dir_entry));
-				
+
 			}
 
 			fRedraw_files = 0;

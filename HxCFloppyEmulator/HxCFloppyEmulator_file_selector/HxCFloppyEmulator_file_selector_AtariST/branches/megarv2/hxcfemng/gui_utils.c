@@ -296,6 +296,14 @@ void print_str(unsigned char * membuffer,char * buf,unsigned short x_pos,unsigne
 	}
 }
 
+/**
+ * printf a string. Add 4 to mode to use the 16x16 font
+ * @param int    mode  0:normal(use x,y)  1:align=center (use y)  2:align=right (use y)
+ * @param int    x_pos  (in pixel)
+ * @param int    y_pos  (in pixel) of the top of the char
+ * @param string chaine
+ * @param ...
+ */
 void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,char * chaine, ...)
 {
 	char temp_buffer[1024];
