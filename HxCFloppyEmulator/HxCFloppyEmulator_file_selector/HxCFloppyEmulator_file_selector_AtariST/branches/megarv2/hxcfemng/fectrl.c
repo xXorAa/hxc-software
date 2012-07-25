@@ -77,7 +77,7 @@ static UWORD page_number;
 
 static disk_in_drive disks_slot_a[NUMBER_OF_SLOT];
 static disk_in_drive disks_slot_b[NUMBER_OF_SLOT];
-static UWORD FilelistCurrentPage_tab[32];
+static UWORD FilelistCurrentPage_tab[120];
 
 static struct fs_dir_list_status file_list_status;
 static struct fat_dir_entry sfEntry;
@@ -404,7 +404,7 @@ char save_cfg_file(unsigned char * sdfecfg_file)
  */
 void clear_list(unsigned char add)
 {
-	unsigned char y_pos,i;
+	unsigned short y_pos,i;
 
 	y_pos=FILELIST_Y_POS;
 	for(i=0;i<NUMBER_OF_FILE_ON_DISPLAY+add;i++)

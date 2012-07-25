@@ -414,11 +414,11 @@ int display_credits(int i)
 
 void display_status()
 {
-	// line just above thestatusbar
-	h_line(SCREEN_YRESOL-(48+20)+24-2,0xFF) ;
+	// line just above the statusbar
+	h_line(SCREEN_YRESOL-48-24-2,0xFF) ;
 
 	// line just under the statusbar
-	h_line(SCREEN_YRESOL-((48+(3*8))+2),0xFF) ;
+	h_line(SCREEN_YRESOL-48+2,0xFF) ;
 
 	hxc_printf(1,0,SCREEN_YRESOL-(48+20)+24,">>>Press HELP key for the function key list<<<");
 }
@@ -450,7 +450,6 @@ void init_display()
 	unsigned short loop,yr;
 	unsigned short k,i;
 
-	NUMBER_OF_FILE_ON_DISPLAY=19-5;/* 19-5 //19 -240 */
 	screen_backup_isUsed = 0;
 
 	highresmode=get_vid_mode();
@@ -482,6 +481,8 @@ void init_display()
 	LINE_WORDS    = V_BYTES_LIN/2;
 	LINE_CHARS    = SCREEN_XRESOL/8;
 	NB_PLANES     = __aline->_VPLANES;
+
+	NUMBER_OF_FILE_ON_DISPLAY = ((SCREEN_YRESOL-48-24-2) - (FILELIST_Y_POS+2)) / 8;
 
 	for (i=NB_PLANES, k=0; i!=0; i>>=1, k++);
 	PLANES_ALIGNDEC = k;
