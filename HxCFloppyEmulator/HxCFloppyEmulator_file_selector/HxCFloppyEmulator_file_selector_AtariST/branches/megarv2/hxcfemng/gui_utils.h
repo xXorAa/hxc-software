@@ -25,6 +25,7 @@
 //
 */
 
+void get_char_restore_box(void);
 void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,char * chaine, ...);
 void hxc_printf_box(unsigned char mode,char * chaine, ...);
 void restore_box();

@@ -159,12 +159,11 @@ int hxc_media_init()
 			return 1;
 		}
 
-		hxc_printf_box(0,"Bad signature - HxC Floppy Emulator not found!");
+		hxc_printf_box(0,"FATAL ERROR: HxC Floppy Emulator not found!");
 
 		return 0;
 	}
-	hxc_printf_box(0,"ERROR: Floppy Access error!  [%d]",ret);
-	get_char();
+	hxc_printf_box(0,"FATAL ERROR: Floppy Access error!  [%d]",ret);
 
 	return 0;
 }
@@ -190,7 +189,7 @@ int hxc_media_read(unsigned long sector, unsigned char *buffer)
 		if(!readsector(0,buffer,0))
 		{
 			hxc_printf_box(0,"ERROR: Read ERROR ! fsector %d",(sector-last_setlbabase)+1);
-			get_char();
+			get_char_restore_box();
 		}
 		last_setlbabase=L_INDIAN(dass->lba_base);
 
@@ -297,7 +296,7 @@ char read_cfg_file(unsigned char * sdfecfg_file)
 	if(ret)
 	{
 		hxc_printf_box(0,"ERROR: Access HXCSDFE.CFG file failed! [%d]",ret);
-		get_char();
+		get_char_restore_box();
 	}
 
 	return ret;
@@ -341,7 +340,7 @@ char save_cfg_file(unsigned char * sdfecfg_file)
 					if (fl_fswrite((unsigned char*)sdfecfg_file, 1,sect_nb, file) != 1)
 					{
 						hxc_printf_box(0,"ERROR: Write file failed!");
-						get_char();
+						get_char_restore_box();
 						ret=1;
 					}
 					/* Next sector */
@@ -358,7 +357,7 @@ char save_cfg_file(unsigned char * sdfecfg_file)
 			if (fl_fswrite((unsigned char*)sdfecfg_file, 1,sect_nb, file) != 1)
 			{
 				hxc_printf_box(0,"ERROR: Write file failed!");
-				get_char();
+				get_char_restore_box();
 				ret=1;
 			}
 		}
@@ -380,7 +379,7 @@ char save_cfg_file(unsigned char * sdfecfg_file)
 		if (fl_fswrite((unsigned char*)cfgfile_header, 1,0, file) != 1)
 		{
 			hxc_printf_box(0,"ERROR: Write file failed!");
-			get_char();
+			get_char_restore_box();
 			ret=1;
 		}
 
@@ -388,7 +387,7 @@ char save_cfg_file(unsigned char * sdfecfg_file)
 	else
 	{
 		hxc_printf_box(0,"ERROR: Create file failed!");
-		get_char();
+		get_char_restore_box();
 		ret=1;
 	}
 	/* Close file */
@@ -847,28 +846,17 @@ int main(int argc, char* argv[])
 		media_read_callback = bios_media_read;
 		media_write_callback = bios_media_write;
 	}
-	else if(hxc_media_init())
+	else
 	{
-		switch(bootdev)
-		{
-		case 0:
-		case 1:
-			init_atari_fdc(bootdev);
-			break;
-		default:
-			hxc_printf_box(0,"FATAL ERROR: Bad parameter !");
+		init_atari_fdc(bootdev);
+
+		if(!hxc_media_init()) {
 			lockup();
-			break;
 		}
 
 		media_read_callback = hxc_media_read;
 		media_write_callback = hxc_media_write;
 	}
-	else
-	{
-		lockup();
-	}
-
 
 
 	/* Attach media access functions to library*/
@@ -877,9 +865,10 @@ int main(int argc, char* argv[])
 		hxc_printf_box(0,"FATAL ERROR: Media attach failed !");
 		lockup();
 	}
-	hxc_printf_box(0,"Reading HXCSDFE.CFG ...");
 
+	hxc_printf_box(0,"Reading HXCSDFE.CFG ...");
 	read_cfg_file(sdfecfg_file);
+	restore_box();
 
 	if(cfgfile_header[256+128]!=0xFF)
 		set_color_scheme(cfgfile_header[256+128]);
@@ -1110,7 +1099,6 @@ int main(int argc, char* argv[])
 					insert_in_slot(dirEntLSB_ptr, 1, 0);
 					hxc_printf_box(0,"Saving selection and restart...");
 					save_cfg_file(sdfecfg_file);
-					restore_box();
 					hxc_printf_box(0,">>>>>Rebooting...<<<<<");
 					/* sleep(1); */
 					jumptotrack0();
@@ -1150,7 +1138,6 @@ int main(int argc, char* argv[])
 		case FCT_SAVEREBOOT:
 			hxc_printf_box(0,"Saving selection and restart...");
 			save_cfg_file(sdfecfg_file);
-			restore_box();
 			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
 			/* sleep(1); */
 			jumptotrack0();

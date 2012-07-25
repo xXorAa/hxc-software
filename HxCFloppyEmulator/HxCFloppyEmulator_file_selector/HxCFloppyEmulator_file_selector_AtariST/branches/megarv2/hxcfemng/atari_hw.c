@@ -342,7 +342,7 @@ unsigned char wait_function_key()
 
 
 
-unsigned long su_get_vid_mode()
+unsigned char su_get_vid_mode()
 {
 	if( *((unsigned char *) 0xFFFA01 ) & 0x80 )
 		return 0;
@@ -350,9 +350,9 @@ unsigned long su_get_vid_mode()
 		return 1;
 }
 
-unsigned long get_vid_mode()
+unsigned char get_vid_mode()
 {
-	return (unsigned long) my_Supexec((LONG *) su_get_vid_mode);
+	return (unsigned char) my_Supexec((LONG *) su_get_vid_mode);
 }
 
 void su_reboot()
@@ -369,10 +369,10 @@ void reboot()
 unsigned long read_long_odd(unsigned char * adr)
 {
 	unsigned long ret = 0;
-	ret |= (unsigned long) (*(adr)<<24);
-	ret |= (unsigned long) (*(adr+1)<<16);
-	ret |= (unsigned long) (*(adr+2)<<8);
-	ret |= (unsigned long) (*(adr+3));
+	ret |= ((unsigned long) *(adr)<<24);
+	ret |= ((unsigned long) *(adr+1)<<16);
+	ret |= ((unsigned long) *(adr+2)<<8);
+	ret |= ((unsigned long) *(adr+3));
 	return ret;
 }
 void write_long_odd(unsigned char * adr, unsigned long value)
