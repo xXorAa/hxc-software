@@ -84,6 +84,7 @@ static struct fat_dir_entry sfEntry;
 static struct fs_dir_ent dir_entry;
 extern  struct fatfs _fs;
 
+extern unsigned short SCREEN_XRESOL;
 extern unsigned short SCREEN_YRESOL;
 extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
 
@@ -491,16 +492,19 @@ void insert_in_slot(DirectoryEntry *dirEntLSB_ptr, unsigned char slotnumber, uns
 void displayFolder()
 {
 	int i;
+	UWORD curdir_len;
+
+	curdir_len = (SCREEN_XRESOL - CURDIR_X_POS)/8;
 	hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS, "Current directory:");
 
 	for(i=CURDIR_X_POS; i<SCREEN_XRESOL; i=i+8) {
 		hxc_printf(0, i, CURDIR_Y_POS+8, " ");
 	}
 
-	if(strlen(currentPath)<CURDIR_LEN)
+	if(strlen(currentPath) < curdir_len)
 		hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS+8, "%s", currentPath);
 	else
-		hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS+8, "...%s", &currentPath[strlen(currentPath)-CURDIR_LEN]+3);
+		hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS+8, "...%s", &currentPath[strlen(currentPath)-curdir_len]+3);
 }
 
 

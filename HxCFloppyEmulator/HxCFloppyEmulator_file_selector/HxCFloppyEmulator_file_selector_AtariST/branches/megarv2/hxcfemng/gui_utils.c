@@ -33,6 +33,7 @@
 # include <tos.h>
 #else
 # include <mint/osbind.h>
+# include <mint/linea.h>
 # include "libc/snprintf/snprintf.h"
 #endif
 
@@ -57,25 +58,19 @@ unsigned char screen_backup_isUsed;
 unsigned char color;
 unsigned char highresmode;
 
-unsigned char NUMBER_OF_FILE_ON_DISPLAY;/* 19-5 //19 -240 */
-unsigned short SCREEN_YRESOL;
+unsigned char  NUMBER_OF_FILE_ON_DISPLAY;/* 19-5 //19 -240 */
 
+unsigned short SCREEN_YRESOL;				/* screen X resolution (pixels) */
+unsigned short SCREEN_XRESOL;               /* screen Y resolution (pixels) */
+unsigned short LINE_BYTES;                  /* number of bytes per line     */
+unsigned short LINE_WORDS;                  /* number of words per line     */
+unsigned short LINE_CHARS;                  /* number of 8x8 chars per line */
+unsigned short NB_PLANES;                   /* number of planes (1:2 colors */
+                                            /*  4:16 colors, 8: 256 colors) */
+__LINEA *__aline;
+__FONT  **__fonts;
+short  (**__funcs) (void);
 
-	#define BLACK 0x002           /*  RGB values for the four colors used.   */
-	#define RED   0xFFF
-	#define GREEN 0x0f0
-	#define BLUE  0x00f
-
-
-	#define WIDTH  SCREEN_XRESOL /* 640 pixels wide (high resolution)                */
-	/*#define HEIGHT SCREEN_YRESOL  200 lines high (non interlaced NTSC display)     */
-	#define DEPTH    2 /* 1 BitPlanes should be used, gives eight colours. */
-	#define COLOURS  2 /* 2^1 = 2                                          */
-
-	#define BLACK 0x002           /*  RGB values for the four colors used.   */
-	#define RED   0xFFF
-	#define GREEN 0x0f0
-	#define BLUE  0x00f
 
 /*
 -------+-----+-----------------------------------------------------+----------
@@ -129,9 +124,10 @@ static unsigned long colortable[] = {
 
 void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short x, unsigned short y)
 {
-	unsigned short i,j,k,l,x_offset,base_offset;
+	unsigned short i,j,k,x_offset,p;
 	unsigned short *ptr_src;
 	unsigned short *ptr_dst;
+	ULONG          base_offset, l;
 
 	ptr_dst=(unsigned short*)membuffer;
 	ptr_src=(unsigned short*)&sprite->data[0];
@@ -141,13 +137,13 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 
 	if(highresmode)
 	{
-		base_offset=((y*80)+ (((x>>3)&(~0x1))))/2;
+		base_offset=(((ULONG) y*LINE_BYTES)+ (((x>>3)&(~0x1))))/2;
 		for(j=0;j<(sprite->Ysize);j++)
 		{
-			l=base_offset +(40*j);
+			l=(ULONG) base_offset +((ULONG) LINE_WORDS*j);
 			for(i=0;i<(sprite->Xsize/16);i++)
 			{
-				ptr_dst[l]=ptr_src[k];
+				ptr_dst[(ULONG) l]=ptr_src[k];
 				l++;
 				k++;
 			}
@@ -155,10 +151,10 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 	}
 	else
 	{
-		base_offset=((y*160)+ (((x>>2)&(~0x3))))/2;
+		base_offset=(((ULONG) y*LINE_BYTES)+ (((x>>2)&(~0x3))))/2;
 		for(j=0;j<(sprite->Ysize);j++)
 		{
-			l=base_offset +(80*j);
+			l=base_offset +(LINE_WORDS*j);
 			for(i=0;i<(sprite->Xsize/16);i++)
 			{
 				ptr_dst[l]=ptr_src[k];
@@ -174,9 +170,10 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 
 void print_char(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
 {
-	unsigned short j,k,l,c1;
+	unsigned short j,k,c1;
 	unsigned short *ptr_src;
 	unsigned short *ptr_dst;
+	ULONG l;
 
 	ptr_dst=(unsigned short*)membuffer;
 	ptr_src=(unsigned short*)&font->data[0];
@@ -185,13 +182,13 @@ void print_char(unsigned char * membuffer, bmaptype * font,unsigned short x, uns
 	{
 		x=(x>>3) & (~0x1);
 
-		l=(y*40)+ x;
+		l=((ULONG) y*LINE_WORDS)+ x;
 		k=((c>>4)*(16*16))+(c&0xF);
 		for(j=0;j<16;j++)
 		{
 			ptr_dst[l]  =ptr_src[k];
 			k=k+(16);
-			l=l+(40);
+			l=l+((ULONG) LINE_WORDS);
 		}
 
 	}
@@ -199,14 +196,14 @@ void print_char(unsigned char * membuffer, bmaptype * font,unsigned short x, uns
 	{
 		x=(x>>3) & (~0x1);
 
-		l=(y*80)+ x;
+		l=((ULONG) y*LINE_WORDS)+ x;
 		k=((c>>4)*(16*16))+(c&0xF);
 		for(j=0;j<16;j++)
 		{
 			ptr_dst[l]  =ptr_src[k];
 			ptr_dst[l+1]=ptr_src[k];
 			k=k+(16);
-			l=l+(80);
+			l=l+((ULONG) LINE_WORDS);
 		}
 	}
 
@@ -214,45 +211,47 @@ void print_char(unsigned char * membuffer, bmaptype * font,unsigned short x, uns
 
 void print_char8x8_mr(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
 {
-	unsigned short j,k,l,c1;
+	unsigned short j,k,c1;
 	unsigned char *ptr_src;
 	unsigned char *ptr_dst;
+	ULONG l;
 
 	ptr_dst=(unsigned char*)membuffer;
 	ptr_src=(unsigned char*)&font->data[0];
 
 	x=x>>3;
 	x=((x&(~0x1))<<1)+(x&1);/*  0 1   2 3 */
-	l=(y*160)+ (x);
+	l=((ULONG) y*LINE_BYTES)+ (x);
 	k=((c>>4)*(8*8*2))+(c&0xF);
 	for(j=0;j<8;j++)
 	{
 		ptr_dst[l]  =ptr_src[k];
 		ptr_dst[l+2]=ptr_src[k];
 		k=k+(16);
-		l=l+(160);
+		l=l+(LINE_BYTES);
 	}
 
 }
 
 void print_char8x8_hr(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
 {
-	unsigned short j,k,l,c1;
+	unsigned short j,k,c1;
 	unsigned char *ptr_src;
 	unsigned char *ptr_dst;
+	ULONG l;
 
 	ptr_dst=(unsigned char*)membuffer;
 	ptr_src=(unsigned char*)&font->data[0];
 
 	x=x>>3;
 	x=((x&(~0x1))<<0)+(x&1);/*  0 1   2 3 */
-	l=(y*80)+ (x);
+	l=((ULONG) y*LINE_BYTES)+ (x);
 	k=((c>>4)*(8*8*2))+(c&0xF);
 	for(j=0;j<8;j++)
 	{
 		ptr_dst[l] = ptr_src[k];
 		k=k+(16);
-		l=l+(80);
+		l=l+(LINE_BYTES);
 	}
 }
 
@@ -338,24 +337,18 @@ void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,cha
 }
 
 
-void h_line(unsigned short y_pos,unsigned short val)
+void h_line(unsigned short y_pos,unsigned char val)
 {
-	unsigned short *ptr_dst;
-	unsigned short i,s,ptroffset;
+	UBYTE * ptr_dst;
+	unsigned short i,s;
+	unsigned long ptroffset;
 
-	if(highresmode)
-		s=40;
-	else
-		s=80;
+	s=LINE_BYTES;
 
-	ptr_dst=(unsigned short*)screen_addr;
-	ptroffset=s* y_pos;
+	ptr_dst=(UBYTE *) screen_addr;
+	ptr_dst += (ULONG) s * y_pos;
 
-	for(i=0;i<s;i++)
-	{
-		ptr_dst[ptroffset+i]=val;
-	}
-
+	memset(ptr_dst, val, s);
 }
 
 #if(0)
@@ -377,7 +370,7 @@ void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned sh
 			{
 				ptr_dst[ptroffset+i]=fillval;
 			}
-			ptroffset=40* (y_p1+j);
+			ptroffset=LINE_WORDS* (y_p1+j);
 		}
 
 	}
@@ -391,17 +384,19 @@ void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned sh
 			{
 				ptr_dst[ptroffset+i]=fillval;
 			}
-			ptroffset=80* (y_p1+j);
+			ptroffset=LINE_WORDS* (y_p1+j);
 		}
 	}
 }
 #endif
 
-void clear_line(unsigned short y_pos,unsigned short val)
+void clear_line(unsigned short y_pos, unsigned short val)
 {
-	unsigned char i;
-	for(i=0;i<8;i++)
-		h_line(y_pos+i,val);
+	unsigned short i;
+	for(i=0; i<8; i++)
+	{
+		h_line(y_pos+i, val);
+	}
 }
 
 void invert_line(unsigned short y_pos)
@@ -416,9 +411,9 @@ void invert_line(unsigned short y_pos)
 	{
 		for(j=0;j<8;j++)
 		{
-			ptroffset=40* (y_pos+j);
+			ptroffset=LINE_WORDS* (y_pos+j);
 
-			for(i=0;i<40;i++)
+			for(i=0;i<LINE_WORDS;i++)
 			{
 				ptr_dst[ptroffset+i]=ptr_dst[ptroffset+i]^0xFFFF;
 			}
@@ -428,9 +423,9 @@ void invert_line(unsigned short y_pos)
 	{
 		for(j=0;j<8;j++)
 		{
-			ptroffset=80* (y_pos+j);
+			ptroffset=LINE_WORDS* (y_pos+j);
 
-			for(i=0;i<80;i+=2)
+			for(i=0;i<LINE_WORDS;i+=2)
 			{
 				ptr_dst[ptroffset+i]=ptr_dst[ptroffset+i]^0xFFFF;
 			}
@@ -448,7 +443,7 @@ void restore_box()
 {
 	if (screen_backup_isUsed) {
 		if (1 == screen_backup_isUsed) {
-			memcpy(&screen_addr[160*70], screen_buffer_backup, 8000L);
+			memcpy(&screen_addr[LINE_BYTES*70], screen_buffer_backup, 8000L);
 		}
 		screen_backup_isUsed--;
 	}
@@ -461,7 +456,7 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 	unsigned short i;
 
 	if (!screen_backup_isUsed) {
-		memcpy(screen_buffer_backup,&screen_addr[160*70], 8000L);
+		memcpy(screen_buffer_backup,&screen_addr[LINE_BYTES*70], 8000L);
 	}
 	screen_backup_isUsed++;
 
@@ -475,26 +470,26 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80-8,8);
+		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,LINE_CHARS-8,8);
 	}
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),80-8,3);
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),80-8,2);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),LINE_CHARS-8,3);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),LINE_CHARS-8,2);
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80,' ');
+		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,LINE_CHARS,' ');
 	}
 
-	print_str(screen_addr,temp_buffer,((SCREEN_XRESOL-str_size)/2)+(2*8),80,8);
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),80,7);
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),80,6);
+	print_str(screen_addr,temp_buffer,((SCREEN_XRESOL-str_size)/2)+(2*8),LINE_CHARS,8);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),LINE_CHARS,7);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),LINE_CHARS,6);
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,80+8,9);
+		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,LINE_CHARS+8,9);
 	}
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),80+8,5);
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),80+8,4);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),LINE_CHARS+8,5);
+	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),LINE_CHARS+8,4);
 
 	va_end( marker );
 }
@@ -505,7 +500,7 @@ void display_welcome()
 	int i;
 
 	hxc_printf(1,0,0,"SDCard HxC Floppy Emulator Manager for Atari ST");
-	h_line(8,0xFFFF) ;
+	h_line(8,0xFF) ;
 
 	i=0;
 	i = display_credits(i);
@@ -513,7 +508,7 @@ void display_welcome()
 	display_status();
 
 	// line just above the logos
-	h_line(SCREEN_YRESOL-34,0xFFFF) ;
+	h_line(SCREEN_YRESOL-34,0xFF) ;
 
 	hxc_printf(0,0,SCREEN_YRESOL-(8*1),"Ver %s",VERSIONCODE);
 	display_sprite(screen_addr, bitmap_sdhxcfelogo_bmp,(SCREEN_XRESOL-bitmap_sdhxcfelogo_bmp->Xsize)/2, (SCREEN_YRESOL-bitmap_sdhxcfelogo_bmp->Ysize));
@@ -544,10 +539,10 @@ int display_credits(int i)
 void display_status()
 {
 	// line just above thestatusbar
-	h_line(SCREEN_YRESOL-(48+20)+24-2,0xFFFF) ;
+	h_line(SCREEN_YRESOL-(48+20)+24-2,0xFF) ;
 
 	// line just under the statusbar
-	h_line(SCREEN_YRESOL-((48+(3*8))+2),0xFFFF) ;
+	h_line(SCREEN_YRESOL-((48+(3*8))+2),0xFF) ;
 
 	hxc_printf(1,0,SCREEN_YRESOL-(48+20)+24,">>>Press HELP key for the function key list<<<");
 }
@@ -579,11 +574,12 @@ void init_display()
 	unsigned short loop,yr;
 	unsigned short k,i;
 
-	SCREEN_YRESOL=200;
 	NUMBER_OF_FILE_ON_DISPLAY=19-5;/* 19-5 //19 -240 */
 	screen_backup_isUsed = 0;
 
 	highresmode=get_vid_mode();
+
+	linea0();
 
 	// Line-A : Hidemouse
 	__asm__("dc.w 0xa00a");
@@ -592,15 +588,34 @@ void init_display()
 
 	screen_buffer_backup=(unsigned char*)malloc(8000L);
 
-	/*Blitmode(1) */;
-	if(highresmode)
-	{
-		Setscreen((unsigned char *) -1, (unsigned char *) -1, 2 );
+	if (V_X_MAX < 640) {
+		/*Blitmode(1) */;
+		if(highresmode)
+		{
+			Setscreen((unsigned char *) -1, (unsigned char *) -1, 2 );
+		}
+		else
+		{
+			Setscreen((unsigned char *) -1, (unsigned char *) -1, 1 );
+		}
 	}
-	else
-	{
-		Setscreen((unsigned char *) -1, (unsigned char *) -1, 1 );
+
+	SCREEN_XRESOL = V_X_MAX;
+	SCREEN_YRESOL = V_Y_MAX;
+	LINE_BYTES    = V_BYTES_LIN;
+	LINE_WORDS    = V_BYTES_LIN/2;
+	LINE_CHARS    = SCREEN_XRESOL/8;
+	NB_PLANES     = __aline->_VPLANES;
+
+	if (1 == NB_PLANES) {
+		highresmode = 1;
+	} else {
+		highresmode = 0;
 	}
+
+	// clear the screen
+	memset(screen_addr, 0, (ULONG) SCREEN_YRESOL * LINE_BYTES);
+
 
 	color=0;
 	my_Supexec((LONG *) initpal);
