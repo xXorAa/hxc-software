@@ -136,41 +136,20 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 	ptr_src=(unsigned short*)&sprite->data[0];
 
 	k=0;
-	l=0;
 
-	if(highresmode)
+	base_offset=( ((ULONG) y*LINE_BYTES) + ((x>>4)<<PLANES_ALIGNDEC) )/2;
+	for(j=0;j<(sprite->Ysize);j++)
 	{
-//		base_offset=(((ULONG) y*LINE_BYTES)+ (((x>>3)&(~0x1))))/2;
-		base_offset=( ((ULONG) y*LINE_BYTES) + ((x>>4)<<PLANES_ALIGNDEC) )/2;
-		for(j=0;j<(sprite->Ysize);j++)
+		l = base_offset;
+		for (i=0; i<(sprite->Xsize>>4); i++)
 		{
-			l=(ULONG) base_offset +((ULONG) LINE_WORDS*j);
-			for(i=0;i<(sprite->Xsize/16);i++)
-			{
-				ptr_dst[(ULONG) l]=ptr_src[k];
-				l++;
-				k++;
+			for(p=0; p<NB_PLANES; p++) {
+				ptr_dst[l++]=ptr_src[k];
 			}
+			k++;
 		}
+		base_offset += LINE_WORDS;
 	}
-	else
-	{
-//		base_offset=(((ULONG) y*LINE_BYTES)+ (((x>>2)&(~0x3))))/2;
-		base_offset=( ((ULONG) y*LINE_BYTES) + ((x>>4)<<PLANES_ALIGNDEC) )/2;
-		for(j=0;j<(sprite->Ysize);j++)
-		{
-			l=base_offset +(LINE_WORDS*j);
-			for(i=0;i<(sprite->Xsize/16);i++)
-			{
-				for(p=0; p<NB_PLANES; p++)
-				{
-					ptr_dst[l++]=ptr_src[k];
-				}
-				k++;
-			}
-		}
-	}
-
 }
 
 void print_char(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
@@ -214,7 +193,8 @@ void print_char(unsigned char * membuffer, bmaptype * font,unsigned short x, uns
 
 }
 
-void print_char8x8_mr(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
+
+void print_char8x8(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
 {
 	unsigned short j,k,p,c1;
 	unsigned char *ptr_src;
@@ -237,38 +217,8 @@ void print_char8x8_mr(unsigned char * membuffer, bmaptype * font,unsigned short 
 		k=k+(16);
 		base_offset += LINE_BYTES;
 	}
-
 }
 
-void print_char8x8_hr(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
-{
-	unsigned short j,k,c1;
-	unsigned char *ptr_src;
-	unsigned char *ptr_dst;
-	ULONG l;
-
-	ptr_dst=(unsigned char*)membuffer;
-	ptr_src=(unsigned char*)&font->data[0];
-
-	x=x>>3;
-	x=((x&(~0x1))<<0)+(x&1);/*  0 1   2 3 */
-	l=((ULONG) y*LINE_BYTES)+ (x);
-	k=((c>>4)*(8*8*2))+(c&0xF);
-	for(j=0;j<8;j++)
-	{
-		ptr_dst[l] = ptr_src[k];
-		k=k+(16);
-		l=l+(LINE_BYTES);
-	}
-}
-
-void print_char8x8(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
-{
-	if(highresmode)
-		print_char8x8_hr(membuffer,font,x,y,c);
-	else
-		print_char8x8_mr(membuffer,font,x,y,c);
-}
 
 void print_str(unsigned char * membuffer,char * buf,unsigned short x_pos,unsigned short y_pos,unsigned char font)
 {
@@ -411,28 +361,14 @@ void invert_line(unsigned short y_pos)
 
 	ptr_dst=(unsigned short*)screen_addr;
 
-	if(highresmode)
+	for(j=0;j<8;j++)
 	{
-		for(j=0;j<8;j++)
-		{
-			ptroffset=(ULONG) LINE_WORDS* (y_pos+j);
+		ptroffset=(ULONG) LINE_WORDS* (y_pos+j);
 
-			for(i=0;i<LINE_WORDS;i++)
-			{
-				ptr_dst[ptroffset+i]=ptr_dst[ptroffset+i]^0xFFFF;
-			}
-		}
-	}
-	else
-	{
-		for(j=0;j<8;j++)
+		for(i=0; i<LINE_WORDS; i+=NB_PLANES)
 		{
-			ptroffset=(ULONG) LINE_WORDS* (y_pos+j);
-
-			for(i=0;i<LINE_WORDS;i+=2)
-			{
-				ptr_dst[ptroffset+i]=ptr_dst[ptroffset+i]^0xFFFF;
-			}
+			ptr_dst[ptroffset] = ptr_dst[ptroffset]^0xFFFF;
+			ptroffset += NB_PLANES;
 		}
 	}
 }
