@@ -43,7 +43,6 @@
 
 
 #include "graphx/data_bmp_hxc2001logo_bmp.h"
-#include "graphx/data_bmp_font_bmp.h"
 #include "graphx/data_bmp_font8x8_bmp.h"
 #include "graphx/data_bmp_sdhxcfelogo_bmp.h"
 
@@ -152,54 +151,16 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 	}
 }
 
-void print_char(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
+
+void print_char8x8(unsigned char * membuffer, unsigned short x, unsigned short y,unsigned char c)
 {
-	unsigned short j,k,c1;
-	unsigned short *ptr_src;
-	unsigned short *ptr_dst;
-	ULONG l;
-
-	ptr_dst=(unsigned short*)membuffer;
-	ptr_src=(unsigned short*)&font->data[0];
-
-	if(highresmode)
-	{
-		x=(x>>3) & (~0x1);
-
-		l=((ULONG) y*LINE_WORDS)+ x;
-		k=((c>>4)*(16*16))+(c&0xF);
-		for(j=0;j<16;j++)
-		{
-			ptr_dst[l]  =ptr_src[k];
-			k=k+(16);
-			l=l+((ULONG) LINE_WORDS);
-		}
-
-	}
-	else
-	{
-		x=(x>>3) & (~0x1);
-
-		l=((ULONG) y*LINE_WORDS)+ x;
-		k=((c>>4)*(16*16))+(c&0xF);
-		for(j=0;j<16;j++)
-		{
-			ptr_dst[l]  =ptr_src[k];
-			ptr_dst[l+1]=ptr_src[k];
-			k=k+(16);
-			l=l+((ULONG) LINE_WORDS);
-		}
-	}
-
-}
-
-
-void print_char8x8(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
-{
+	bmaptype * font;
 	unsigned short j,k,p,c1;
 	unsigned char *ptr_src;
 	unsigned char *ptr_dst;
 	ULONG base_offset;
+
+	font = bitmap_font8x8_bmp;
 
 	ptr_dst=(unsigned char*)membuffer;
 	ptr_src=(unsigned char*)&font->data[0];
@@ -220,40 +181,24 @@ void print_char8x8(unsigned char * membuffer, bmaptype * font,unsigned short x, 
 }
 
 
-void print_str(unsigned char * membuffer,char * buf,unsigned short x_pos,unsigned short y_pos,unsigned char font)
+void print_str(unsigned char * membuffer,char * buf,unsigned short x_pos,unsigned short y_pos)
 {
 	unsigned short i;
 	i=0;
 
-	switch(font)
+	while(buf[i])
 	{
-	case 8:
-		while(buf[i])
+		if(x_pos<=(SCREEN_XRESOL-8))
 		{
-			if(x_pos<=(SCREEN_XRESOL-8))
-			{
-				print_char8x8(membuffer,bitmap_font8x8_bmp,x_pos,y_pos,buf[i]);
-				x_pos=x_pos+8;
-			}
-			i++;
+			print_char8x8(membuffer, x_pos, y_pos, buf[i]);
+			x_pos=x_pos+8;
 		}
-	break;
-	case 16:
-		while(buf[i])
-		{
-			if(x_pos<=(SCREEN_XRESOL-16))
-			{
-				print_char(membuffer,bitmap_font_bmp,x_pos,y_pos,buf[i]);
-				x_pos=x_pos+16;
-			}
-			i++;
-		}
-	break;
+		i++;
 	}
 }
 
 /**
- * printf a string. Add 4 to mode to use the 16x16 font
+ * printf a string.
  * @param int    mode  0:normal(use x,y)  1:align=center (use y)  2:align=right (use y)
  * @param int    x_pos  (in pixel)
  * @param int    y_pos  (in pixel) of the top of the char
@@ -271,22 +216,13 @@ void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,cha
 	switch(mode)
 	{
 		case 0:
-			print_str(screen_addr,temp_buffer,x_pos,y_pos,8);
+			print_str(screen_addr,temp_buffer,x_pos,y_pos);
 		break;
 		case 1:
-			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8))/2,y_pos,8);
+			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8))/2,y_pos);
 		break;
 		case 2:
-			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8)),y_pos,8);
-		break;
-		case 4:
-			print_str(screen_addr,temp_buffer,x_pos,y_pos,16);
-		break;
-		case 5:
-			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*16))/2,y_pos,16);
-		break;
-		case 6:
-			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*16)),y_pos,16);
+			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8)),y_pos);
 		break;
 	}
 
@@ -410,26 +346,26 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,LINE_CHARS-8,8);
+		print_char8x8(screen_addr, ((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS-8, 8);
 	}
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),LINE_CHARS-8,3);
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),LINE_CHARS-8,2);
+	print_char8x8(screen_addr,     ((SCREEN_XRESOL-str_size)/2)+(i-8), LINE_CHARS-8, 3);
+	print_char8x8(screen_addr,     ((SCREEN_XRESOL-str_size)/2),       LINE_CHARS-8, 2);
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,LINE_CHARS,' ');
+		print_char8x8(screen_addr, ((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS, ' ');
 	}
 
-	print_str(screen_addr,temp_buffer,((SCREEN_XRESOL-str_size)/2)+(2*8),LINE_CHARS,8);
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),LINE_CHARS,7);
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),LINE_CHARS,6);
+	print_str(screen_addr,temp_buffer,((SCREEN_XRESOL-str_size)/2)+(2*8),LINE_CHARS);
+	print_char8x8(screen_addr,     ((SCREEN_XRESOL-str_size)/2)+(i-8), LINE_CHARS,   7);
+	print_char8x8(screen_addr,     ((SCREEN_XRESOL-str_size)/2),       LINE_CHARS,   6);
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+i,LINE_CHARS+8,9);
+		print_char8x8(screen_addr, ((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS+8, 9);
 	}
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2)+(i-8),LINE_CHARS+8,5);
-	print_char8x8(screen_addr,bitmap_font8x8_bmp,((SCREEN_XRESOL-str_size)/2),LINE_CHARS+8,4);
+	print_char8x8(screen_addr, ((SCREEN_XRESOL-str_size)/2)+(i-8),     LINE_CHARS+8, 5);
+	print_char8x8(screen_addr, ((SCREEN_XRESOL-str_size)/2),           LINE_CHARS+8, 4);
 
 	va_end( marker );
 }

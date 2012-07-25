@@ -1103,6 +1103,7 @@ int main(int argc, char* argv[])
 					insert_in_slot(dirEntLSB_ptr, 1, 0);
 					hxc_printf_box(0,"Saving selection and restart...");
 					save_cfg_file(sdfecfg_file);
+					restore_box();
 					hxc_printf_box(0,">>>>>Rebooting...<<<<<");
 					/* sleep(1); */
 					jumptotrack0();
@@ -1142,6 +1143,7 @@ int main(int argc, char* argv[])
 		case FCT_SAVEREBOOT:
 			hxc_printf_box(0,"Saving selection and restart...");
 			save_cfg_file(sdfecfg_file);
+			restore_box();
 			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
 			/* sleep(1); */
 			jumptotrack0();
