@@ -67,6 +67,9 @@ unsigned short LINE_WORDS;                  /* number of words per line     */
 unsigned short LINE_CHARS;                  /* number of 8x8 chars per line */
 unsigned short NB_PLANES;                   /* number of planes (1:2 colors */
                                             /*  4:16 colors, 8: 256 colors) */
+unsigned short PLANES_ALIGNDEC;             /* number of left shifts to
+                                               transform nbChucks to Bytes  */
+
 __LINEA *__aline;
 __FONT  **__fonts;
 short  (**__funcs) (void);
@@ -137,7 +140,8 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 
 	if(highresmode)
 	{
-		base_offset=(((ULONG) y*LINE_BYTES)+ (((x>>3)&(~0x1))))/2;
+//		base_offset=(((ULONG) y*LINE_BYTES)+ (((x>>3)&(~0x1))))/2;
+		base_offset=( ((ULONG) y*LINE_BYTES) + ((x>>4)<<PLANES_ALIGNDEC) )/2;
 		for(j=0;j<(sprite->Ysize);j++)
 		{
 			l=(ULONG) base_offset +((ULONG) LINE_WORDS*j);
@@ -151,16 +155,17 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 	}
 	else
 	{
-		base_offset=(((ULONG) y*LINE_BYTES)+ (((x>>2)&(~0x3))))/2;
+//		base_offset=(((ULONG) y*LINE_BYTES)+ (((x>>2)&(~0x3))))/2;
+		base_offset=( ((ULONG) y*LINE_BYTES) + ((x>>4)<<PLANES_ALIGNDEC) )/2;
 		for(j=0;j<(sprite->Ysize);j++)
 		{
 			l=base_offset +(LINE_WORDS*j);
 			for(i=0;i<(sprite->Xsize/16);i++)
 			{
-				ptr_dst[l]=ptr_src[k];
-				l++;
-				ptr_dst[l]=ptr_src[k];
-				l++;
+				for(p=0; p<NB_PLANES; p++)
+				{
+					ptr_dst[l++]=ptr_src[k];
+				}
 				k++;
 			}
 		}
@@ -211,24 +216,26 @@ void print_char(unsigned char * membuffer, bmaptype * font,unsigned short x, uns
 
 void print_char8x8_mr(unsigned char * membuffer, bmaptype * font,unsigned short x, unsigned short y,unsigned char c)
 {
-	unsigned short j,k,c1;
+	unsigned short j,k,p,c1;
 	unsigned char *ptr_src;
 	unsigned char *ptr_dst;
-	ULONG l;
+	ULONG base_offset;
 
 	ptr_dst=(unsigned char*)membuffer;
 	ptr_src=(unsigned char*)&font->data[0];
 
-	x=x>>3;
-	x=((x&(~0x1))<<1)+(x&1);/*  0 1   2 3 */
-	l=((ULONG) y*LINE_BYTES)+ (x);
 	k=((c>>4)*(8*8*2))+(c&0xF);
+
+	base_offset=((ULONG) y*LINE_BYTES) + ((x>>4)<<PLANES_ALIGNDEC) + ((x&8)==8);
+	// in a 16-pixel chunk, there are 2 8-pixel chars, hence the x&8==8
+
 	for(j=0;j<8;j++)
 	{
-		ptr_dst[l]  =ptr_src[k];
-		ptr_dst[l+2]=ptr_src[k];
+		for(p=0; p<NB_PLANES<<1; p+=2) {
+			ptr_dst[base_offset+p]  = ptr_src[k];
+		}
 		k=k+(16);
-		l=l+(LINE_BYTES);
+		base_offset += LINE_BYTES;
 	}
 
 }
@@ -340,15 +347,11 @@ void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,cha
 void h_line(unsigned short y_pos,unsigned char val)
 {
 	UBYTE * ptr_dst;
-	unsigned short i,s;
-	unsigned long ptroffset;
-
-	s=LINE_BYTES;
 
 	ptr_dst=(UBYTE *) screen_addr;
-	ptr_dst += (ULONG) s * y_pos;
+	ptr_dst += (ULONG) LINE_BYTES * y_pos;
 
-	memset(ptr_dst, val, s);
+	memset(ptr_dst, val, LINE_BYTES);
 }
 
 #if(0)
@@ -401,9 +404,10 @@ void clear_line(unsigned short y_pos, unsigned short val)
 
 void invert_line(unsigned short y_pos)
 {
-	unsigned char i,j;
+	unsigned short i;
+	unsigned char j;
 	unsigned short *ptr_dst;
-	unsigned short ptroffset;
+	ULONG ptroffset;
 
 	ptr_dst=(unsigned short*)screen_addr;
 
@@ -411,7 +415,7 @@ void invert_line(unsigned short y_pos)
 	{
 		for(j=0;j<8;j++)
 		{
-			ptroffset=LINE_WORDS* (y_pos+j);
+			ptroffset=(ULONG) LINE_WORDS* (y_pos+j);
 
 			for(i=0;i<LINE_WORDS;i++)
 			{
@@ -423,7 +427,7 @@ void invert_line(unsigned short y_pos)
 	{
 		for(j=0;j<8;j++)
 		{
-			ptroffset=LINE_WORDS* (y_pos+j);
+			ptroffset=(ULONG) LINE_WORDS* (y_pos+j);
 
 			for(i=0;i<LINE_WORDS;i+=2)
 			{
@@ -606,6 +610,9 @@ void init_display()
 	LINE_WORDS    = V_BYTES_LIN/2;
 	LINE_CHARS    = SCREEN_XRESOL/8;
 	NB_PLANES     = __aline->_VPLANES;
+
+	for (i=NB_PLANES, k=0; i!=0; i>>=1, k++);
+	PLANES_ALIGNDEC = k;
 
 	if (1 == NB_PLANES) {
 		highresmode = 1;
