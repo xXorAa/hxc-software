@@ -66,6 +66,8 @@ unsigned short LINE_WORDS;                  /* number of words per line     */
 unsigned short LINE_CHARS;                  /* number of 8x8 chars per line */
 unsigned short NB_PLANES;                   /* number of planes (1:2 colors */
                                             /*  4:16 colors, 8: 256 colors) */
+unsigned short CHUNK_WORDS;                 /* number of words for a 16-    */
+                                            /* pixel chunk =2*NB_PLANES     */
 unsigned short PLANES_ALIGNDEC;             /* number of left shifts to
                                                transform nbChucks to Bytes  */
 
@@ -86,40 +88,40 @@ $FF825E|word |Video palette register 15                            |R/W
 -------+-----+-----------------------------------------------------+----------
 */
 
-static unsigned long colortable[] = {
-								0x002, 0xFFF, 0x567, 0x226, // ok
-								0x000, 0xFFF, 0x3f3, 0x00f,
-								0xFFF, 0x000, 0x5f5, 0x00f, // ok
-								0x030, 0xFFF, 0x0f0, 0x00f,
-								0x300, 0xFFF, 0xff4, 0x00f, // ok
-								0x303, 0xFFF, 0xee4, 0x00f, // ok
-								0x999, 0x000, 0x333, 0x999, // ok
-								0xFFF, 0x343, 0x0f0, 0x00f, // ok
-								0xF33, 0xFFF, 0xe11, 0x777, // ok
-								0xF0F, 0xFFF, 0x44f, 0x000, // ok
-								0xFFF, 0x0F0, 0x0f0, 0x4c4, // ok
-								0x330, 0xFFF, 0xcc0, 0x77f, // ok caca d'oie
-								0x000, 0xF00, 0xd00, 0x003, // ok rouge sur noir
-								0x000, 0x0F0, 0x0f0, 0x00f, // ok vert sur noir
-								0x000, 0x00F, 0xdd1, 0x222, // ok bleu sur noir
-								0x004, 0xFFF, 0x5f5, 0x00e, // ok
+static unsigned short colortable[] = {
+								0x300, 0xEEE, 0x00f, 0xee4, // b ok blanc sur rouge foncé (nice)
+								0x777, 0x300, 0x00f, 0x5f5, // w noir sur blanc, select vert (nice)
+								0x002, 0xeee, 0x226, 0x567, // b ok blanc sur bleu nuit (nice)
+								0xFFF, 0x343, 0x00f, 0x0f0, // w ok vert sombre sur blanc, select vert
+								0x000, 0x00F, 0x222, 0xdd1, // b ok bleu sur noir
+								0x000, 0xFFF, 0x00f, 0x3f3, // b ok blanc sur noir, select vert
+								0x303, 0xFFF, 0x00f, 0xee4, // w ok blanc sur mauve
+								0x030, 0xFFF, 0x00f, 0x0f0, // b ok vert
+								0x999, 0x000, 0x999, 0x333, // w ok gris sombre
+								0x330, 0xFFF, 0x77f, 0xcc0, // b ok caca d'oie
+								0xF33, 0xFFF, 0x777, 0xe11, // w ok blanc sur rose et rouge
+								0x000, 0xF00, 0x003, 0xd00, // b ok rouge sur noir
+								0xF0F, 0xFFF, 0x000, 0x44f, // w ok violet vif
+								0x000, 0x0E0, 0x00f, 0x0f0, // b ok vert sur noir
+								0xFFF, 0x0F0, 0x4c4, 0x0f0, // w ok vert sur blanc
+								0x004, 0xFFF, 0x00e, 0x5f5, // b ok blanc sur bleu marine
 
-								0x036, 0xFFF, 0x0f0, 0x00f,
-								0x444, 0x037, 0x0f0, 0x00f,
-								0x000, 0xFF0, 0x0f0, 0x00f,
-								0x404, 0x743, 0x0f0, 0x00f,
-								0xFFF, 0x700, 0x0f0, 0x00f,
-								0x000, 0x222, 0x0f0, 0x00f,
-								0x000, 0x333, 0x0f0, 0x00f,
-								0x000, 0x444, 0x0f0, 0x00f,
-								0x000, 0x555, 0x0f0, 0x00f,
-								0x000, 0x666, 0x0f0, 0x00f,
-								0x000, 0x777, 0x0f0, 0x00f,
-								0x222, 0x000, 0x0f0, 0x00f,
-								0x333, 0x000, 0x0f0, 0x00f,
-								0x444, 0x000, 0x0f0, 0x00f,
-								0x555, 0x000, 0x0f0, 0x00f,
-								0x666, 0x000, 0x0f0, 0x00f,
+								0x036, 0xFFF, 0x00f, 0x0f0, // b
+								0x444, 0x037, 0x00f, 0x0f0, // b
+								0x000, 0xFF0, 0x00f, 0x0f0, // b
+								0x404, 0x743, 0x00f, 0x0f0, // b
+								0xFFF, 0x700, 0x00f, 0x0f0, // w
+								0x000, 0x222, 0x00f, 0x0c0, // b
+								0x000, 0x333, 0x00f, 0x0d0, // b
+								0x000, 0x444, 0x00f, 0x0e0, // b
+								0x000, 0x555, 0x00f, 0x0f0, // b
+								0x000, 0x666, 0x00f, 0x0f0, // b
+								0x000, 0x777, 0x00f, 0x0f0, // b
+								0x222, 0x000, 0x00f, 0x0c0, // b
+								0x333, 0x000, 0x00f, 0x0d0, // w
+								0x444, 0x000, 0x00f, 0x0e0, // b
+								0x555, 0x000, 0x00f, 0x0f0, // w
+								0x666, 0x000, 0x00f, 0x0f0, // b
 
 };
 
@@ -142,9 +144,8 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 		l = base_offset;
 		for (i=0; i<(sprite->Xsize>>4); i++)
 		{
-			for(p=0; p<NB_PLANES; p++) {
-				ptr_dst[l++]=ptr_src[k];
-			}
+			ptr_dst[l]=ptr_src[k];
+			l += NB_PLANES;
 			k++;
 		}
 		base_offset += LINE_WORDS;
@@ -155,7 +156,7 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 void print_char8x8(unsigned char * membuffer, unsigned short x, unsigned short y,unsigned char c)
 {
 	bmaptype * font;
-	unsigned short j,k,p,c1;
+	unsigned short j,k,c1;
 	unsigned char *ptr_src;
 	unsigned char *ptr_dst;
 	ULONG base_offset;
@@ -172,9 +173,7 @@ void print_char8x8(unsigned char * membuffer, unsigned short x, unsigned short y
 
 	for(j=0;j<8;j++)
 	{
-		for(p=0; p<NB_PLANES<<1; p+=2) {
-			ptr_dst[base_offset+p]  = ptr_src[k];
-		}
+		ptr_dst[base_offset] = ptr_src[k];
 		k=k+(16);
 		base_offset += LINE_BYTES;
 	}
@@ -230,14 +229,20 @@ void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,cha
 }
 
 
-void h_line(unsigned short y_pos,unsigned char val)
+void h_line(unsigned short y_pos, unsigned short val)
 {
-	UBYTE * ptr_dst;
+	UWORD * ptr_dst;
+	UWORD i;
 
-	ptr_dst=(UBYTE *) screen_addr;
-	ptr_dst += (ULONG) LINE_BYTES * y_pos;
+	ptr_dst=(UWORD *) screen_addr;
+	ptr_dst += (ULONG) LINE_WORDS * y_pos;
 
-	memset(ptr_dst, val, LINE_BYTES);
+	for(i=0; i<LINE_WORDS; i+=NB_PLANES)
+	{
+		*(ptr_dst) = val;
+		ptr_dst += NB_PLANES;
+	}
+
 }
 
 #if(0)
@@ -301,10 +306,10 @@ void invert_line(unsigned short y_pos)
 	{
 		ptroffset=(ULONG) LINE_WORDS* (y_pos+j);
 
-		for(i=0; i<LINE_WORDS; i+=NB_PLANES)
+		for(i=0; i<LINE_WORDS; i+=1)
 		{
 			ptr_dst[ptroffset] = ptr_dst[ptroffset]^0xFFFF;
-			ptroffset += NB_PLANES;
+			ptroffset ++;
 		}
 	}
 }
@@ -376,7 +381,7 @@ void display_welcome()
 	int i;
 
 	hxc_printf(1,0,0,"SDCard HxC Floppy Emulator Manager for Atari ST");
-	h_line(8,0xFF) ;
+	h_line(8,0xFFFF) ;
 
 	i=0;
 	i = display_credits(i);
@@ -384,7 +389,7 @@ void display_welcome()
 	display_status();
 
 	// line just above the logos
-	h_line(SCREEN_YRESOL-34,0xFF) ;
+	h_line(SCREEN_YRESOL-34,0xFFFF) ;
 
 	hxc_printf(0,0,SCREEN_YRESOL-(8*1),"Ver %s",VERSIONCODE);
 	display_sprite(screen_addr, bitmap_sdhxcfelogo_bmp,(SCREEN_XRESOL-bitmap_sdhxcfelogo_bmp->Xsize)/2, (SCREEN_YRESOL-bitmap_sdhxcfelogo_bmp->Ysize));
@@ -415,33 +420,46 @@ int display_credits(int i)
 void display_status()
 {
 	// line just above the statusbar
-	h_line(SCREEN_YRESOL-48-24-2,0xFF) ;
+	h_line(SCREEN_YRESOL-48-24-2,0xFFFF) ;
 
 	// line just under the statusbar
-	h_line(SCREEN_YRESOL-48+2,0xFF) ;
+	h_line(SCREEN_YRESOL-48+2,0xFFFF) ;
 
 	hxc_printf(1,0,SCREEN_YRESOL-(48+20)+24,">>>Press HELP key for the function key list<<<");
 }
 
-void initpal()
+/**
+ * Set the palette
+ * @param int colorm the number of the palette, -1 to cycle
+ * @return int the new palette number
+ */
+unsigned char set_color_scheme(unsigned char colorm)
 {
-	volatile unsigned short * ptr;
+	unsigned short * palette;
+	int i,j;
+	int nbcols;
 
-	ptr=(unsigned short *)0xFF8240;
-	*ptr=colortable[((color&0x1F)*4)+0];
-	ptr=(unsigned short *)0xFF8242;
-	*ptr=colortable[((color&0x1F)*4)+2];
-	ptr=(unsigned short *)0xFF8244;
-	*ptr=colortable[((color&0x1F)*4)+3];
-	ptr=(unsigned short *)0xFF8246;
-	*ptr=colortable[((color&0x1F)*4)+1];
+	if (0xff == colorm) {
+		colorm = color+1;
+	}
+	if ( colorm >= (sizeof(colortable))>>3 ) {
+		colorm = 0;
+	}
+	color = colorm;
+	palette = &colortable[color<<2];
+	nbcols = 2<<(NB_PLANES-1);
 
-}
+	for (i=0; i<4 && i<nbcols; i++) {
+		j = i;
+		if (i>=2) {
+			// the first two colors are always pal[0] and pal[1]
+			// the last two colors may be pal[2] and pal[3] in 2 planes, or pal[14] and pal[15] in 4 planes
+			j = nbcols - 4 + i;
+		}
+		Setcolor(j, palette[i]);
+	}
 
-void set_color_scheme(unsigned char colorm)
-{
-	color=colorm;
-	my_Supexec((LONG *) initpal);
+	return color;
 }
 
 
@@ -481,6 +499,7 @@ void init_display()
 	LINE_WORDS    = V_BYTES_LIN/2;
 	LINE_CHARS    = SCREEN_XRESOL/8;
 	NB_PLANES     = __aline->_VPLANES;
+	CHUNK_WORDS   = NB_PLANES<<1;
 
 	NUMBER_OF_FILE_ON_DISPLAY = ((SCREEN_YRESOL-48-24-2) - (FILELIST_Y_POS+2)) / 8;
 
@@ -497,8 +516,7 @@ void init_display()
 	memset(screen_addr, 0, (ULONG) SCREEN_YRESOL * LINE_BYTES);
 
 
-	color=0;
-	my_Supexec((LONG *) initpal);
+	set_color_scheme(0);
 
 	display_welcome();
 }

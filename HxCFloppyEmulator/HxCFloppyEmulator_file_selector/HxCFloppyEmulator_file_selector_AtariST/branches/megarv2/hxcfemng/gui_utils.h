@@ -32,15 +32,15 @@ void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,cha
 void hxc_printf_box(unsigned char mode,char * chaine, ...);
 void restore_box();
 
-void h_line(unsigned short y_pos,unsigned char val);
+void h_line(unsigned short y_pos, unsigned short val);
 void invert_line(unsigned short y_pos);
-void clear_line(unsigned short y_pos,unsigned short val);
+void clear_line(unsigned short y_pos, unsigned short val);
 void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned short y_p2,unsigned short fillval,unsigned char fill);
 void init_display();
 void display_status();
 int  display_credits();
-void set_color_scheme(unsigned char color);
+unsigned char set_color_scheme(unsigned char color);
 
-#define VERSIONCODE "1.9b"
-#define DATECODE "2012-07-14"
+#define VERSIONCODE "2.0 alpha 1"
+#define DATECODE "2012-07-21"
 #endif

@@ -875,7 +875,9 @@ int main(int argc, char* argv[])
 	restore_box();
 
 	if(cfgfile_header[256+128]!=0xFF)
+	{
 		set_color_scheme(cfgfile_header[256+128]);
+	}
 
 	strcpy( currentPath, "/" );
 
@@ -1158,8 +1160,7 @@ int main(int argc, char* argv[])
 			break;
 
 		case FCT_CHGCOLOR:
-			colormode++;
-			set_color_scheme(colormode);
+			colormode = set_color_scheme(0xff);
 			cfgfile_header[256+128]=colormode;
 			break;
 
