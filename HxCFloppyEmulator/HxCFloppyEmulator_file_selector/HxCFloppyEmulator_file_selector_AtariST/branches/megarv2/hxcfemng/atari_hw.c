@@ -275,6 +275,7 @@ unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned c
 void su_mutekeys(void)
 {
 	CONTERM &= 0xFA;                /* disable key sound and bell */
+	CONTERM |= 8;					/* enable keyboard function to return shift/alt/ctrl status */
 }
 
 
@@ -316,28 +317,12 @@ unsigned char get_char()
 
 }
 
-unsigned char wait_function_key()
+
+long wait_function_key()
 {
-	unsigned char key,i;
-	unsigned char function_code,key_code;
+	long keylong = Cnecin();
 
-	function_code=FCT_NO_FUNCTION;
-	do
-	{
-		key=Cnecin()>>16;
-		/* 	hxc_printf(0,0,0,"%08X",key); */
-
-		i=0;
-		do
-		{
-			function_code=keysmap[i].function_code;
-			key_code=keysmap[i].keyboard_code;
-			i++;
-		}while((key_code!=key) && (function_code!=FCT_NO_FUNCTION) );
-
-	}while(function_code==FCT_NO_FUNCTION);
-
-	return function_code;
+	return keylong;
 }
 
 

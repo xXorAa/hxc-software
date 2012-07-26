@@ -46,6 +46,7 @@
 #include "hxcfeda.h"
 #include "dir.h"
 #include "filelist.h"
+#include "gui_filelist.h"
 
 
 #include "atari_hw.h"
@@ -71,23 +72,19 @@ static unsigned char sdfecfg_file[2048];
 static char filter[17];
 
 
-static char selectorpos;
-static unsigned char fRedraw_files, fRepaginate_files, fRedraw_status;
-static UWORD page_number;
+static unsigned char fRepaginate_files, fRedraw_status;
 
 static disk_in_drive disks_slot_a[NUMBER_OF_SLOT];
 static disk_in_drive disks_slot_b[NUMBER_OF_SLOT];
-static UWORD FilelistCurrentPage_tab[120];
 
 static struct fs_dir_list_status file_list_status;
 static struct fat_dir_entry sfEntry;
-static struct fs_dir_ent dir_entry;
+/* static struct fs_dir_ent dir_entry; */
 extern  struct fatfs _fs;
 
 extern unsigned short SCREEN_XRESOL;
 extern unsigned short SCREEN_YRESOL;
-extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
-
+extern DirectoryEntry * gfl_dirEntLSB_ptr;
 
 void lockup()
 {
@@ -398,21 +395,6 @@ char save_cfg_file(unsigned char * sdfecfg_file)
 }
 
 
-/**
- * Clear the screen
- * @param integer add number of additional lines to clear. Allow to clear the status bar
- */
-void clear_list(unsigned char add)
-{
-	unsigned short y_pos,i;
-
-	y_pos=FILELIST_Y_POS;
-	for(i=0;i<NUMBER_OF_FILE_ON_DISPLAY+add;i++)
-	{
-		clear_textline(y_pos, 0);
-		y_pos += 8;
-	}
-}
 
 
 
@@ -468,17 +450,17 @@ void clear_slot(int slotnumber)
 	memset((void*)&disks_slot_b[slotnumber],0,sizeof(disk_in_drive));
 }
 
-void insert_in_slot(DirectoryEntry *dirEntLSB_ptr, unsigned char slotnumber, unsigned char drive)
+void insert_in_slot(DirectoryEntry *gfl_dirEntLSB_ptr, unsigned char slotnumber, unsigned char drive)
 {
 	if (0 == drive)
 	{
 		memset((void*)&disks_slot_a[slotnumber], 0, sizeof(disk_in_drive));
-		memcpy((void*)&disks_slot_a[slotnumber], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
+		memcpy((void*)&disks_slot_a[slotnumber], gfl_dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
 	}
 	else
 	{
 		memset((void*)&disks_slot_b[slotnumber], 0, sizeof(disk_in_drive));
-		memcpy((void*)&disks_slot_b[slotnumber], dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
+		memcpy((void*)&disks_slot_b[slotnumber], gfl_dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
 	}
 	display_slot(slotnumber);
 }
@@ -501,15 +483,15 @@ void displayFolder()
 		hxc_printf(0, i, CURDIR_Y_POS+8, " ");
 	}
 
-	if(strlen(currentPath) < curdir_len)
+	if(strlen((const char *)currentPath) < curdir_len)
 		hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS+8, "%s", currentPath);
 	else
-		hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS+8, "...%s", &currentPath[strlen(currentPath)-curdir_len]+3);
+		hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS+8, "...%s", &currentPath[strlen((const char *)currentPath)-curdir_len]+3);
 }
 
 
 
-void enter_sub_dir(DirectoryEntry *dirEntLSB_ptr)
+void enter_sub_dir(DirectoryEntry *gfl_dirEntLSB_ptr)
 {
 	int currentPathLength;
 	unsigned char folder[LFN_MAX_SIZE];
@@ -517,11 +499,11 @@ void enter_sub_dir(DirectoryEntry *dirEntLSB_ptr)
 	int i;
 	int old_index;
 
-	old_index=strlen( currentPath );
+	old_index=strlen((const char *)currentPath);
 
-	if ( (dirEntLSB_ptr->longName[0] == (unsigned char)'.') && (dirEntLSB_ptr->longName[1] == (unsigned char)'.') )
+	if ( (gfl_dirEntLSB_ptr->longName[0] == (unsigned char)'.') && (gfl_dirEntLSB_ptr->longName[1] == (unsigned char)'.') )
 	{
-		currentPathLength = strlen( currentPath ) - 1;
+		currentPathLength = strlen((const char *)currentPath) - 1;
 		do
 		{
 			currentPath[ currentPathLength ] = 0;
@@ -536,14 +518,14 @@ void enter_sub_dir(DirectoryEntry *dirEntLSB_ptr)
 	}
 	else
 	{
-		if((dirEntLSB_ptr->longName[0] == (unsigned char)'.'))
+		if((gfl_dirEntLSB_ptr->longName[0] == (unsigned char)'.'))
 		{
 		}
 		else
 		{
 			for (i=0; i < LFN_MAX_SIZE; i++ )
 			{
-				c = dirEntLSB_ptr->longName[i];
+				c = gfl_dirEntLSB_ptr->longName[i];
 				if ( ( c >= (32+0) ) && (c <= 127) )
 				{
 					folder[i] = c;
@@ -556,16 +538,16 @@ void enter_sub_dir(DirectoryEntry *dirEntLSB_ptr)
 			}
 			folder[LFN_MAX_SIZE-1] = 0;
 
-			currentPathLength = strlen( currentPath );
+			currentPathLength = strlen((const char *)currentPath);
 			/*if ( currentPath[ currentPathLength-1-1 ] != (unsigned char)':' )
 			{
 				strcat( currentPath, "/" );
 			}*/
 
 			if( currentPath[ currentPathLength-1] != '/')
-			strcat( currentPath, "/" );
+			strcat((char *)currentPath, "/");
 
-			strcat( currentPath, folder );
+			strcat((char *)currentPath, (char *)folder);
 		}
 
 		/* strcat( currentPath, "/" ); */
@@ -573,12 +555,12 @@ void enter_sub_dir(DirectoryEntry *dirEntLSB_ptr)
 
 	displayFolder();
 
-	if(!fl_list_opendir(currentPath, &file_list_status))
+	if(!fl_list_opendir((const char *)currentPath, &file_list_status))
 	{
 		currentPath[old_index]=0;
 		displayFolder();
 	}
-	dir_scan(currentPath);
+	dir_scan((char *)currentPath);
 
 	fRepaginate_files = 1;
 }
@@ -812,13 +794,12 @@ void handle_emucfg(void)
 int main(int argc, char* argv[])
 {
 	unsigned short i;
-	unsigned char key, entrytype,bootdev,j;
-	unsigned char isLastPage,c;
-	DirectoryEntry   dirEntLSB;
-	DirectoryEntry * dirEntLSB_ptr = &dirEntLSB;
+	unsigned char entrytype,bootdev,j;
+	unsigned char c;
 	unsigned char colormode;
 	unsigned char fSelectorValid;
 	unsigned char slotnumber;
+	long key;
 
 	FILE *f;
 
@@ -879,298 +860,131 @@ int main(int argc, char* argv[])
 		set_color_scheme(cfgfile_header[256+128]);
 	}
 
-	strcpy( currentPath, "/" );
+	strcpy((char *)currentPath, "/" );
 
 	slotnumber=1;
 
 	colormode=0;
-	selectorpos=0;
-	page_number=0;
+//	selectorpos=0;
+//	page_number=0;
 
 	// get all the files in the dir
-	dir_scan(currentPath);
+	dir_scan((char *)currentPath);
 	dir_setFilter(0);
 	fRepaginate_files = 1;
 	fRedraw_status = 1;
 
 
-
-	int inverted_line;
-	for(;;)
+	do
 	{
 		y_pos=FILELIST_Y_POS;
 
-		if (fRepaginate_files) {
-			nbPages = dir_paginate();
-			selectorpos=0;
-			page_number=0;
-			fRedraw_files=1;
-			fRepaginate_files=0;
-		} // if (fRepaginate_files)
+		gfl_showFilesForPage(fRepaginate_files, fRedraw_status);
 
-		if (fRedraw_status) {
-			clear_list(5);
+		if (fRedraw_status)
+		{
 			display_status();
 			display_slot(slotnumber);
 			displayFolder();
-			fRedraw_files=1;
 			fRedraw_status=0;
 		}
+		fRepaginate_files=0;
 
-		if (fRedraw_files) {
-			// start at the first file of the directory
-//			dir_getFilesForPage(page_number, FilelistCurrentPage_tab);
-			clear_list(0);
+		key = gfl_mainloop();
+		unsigned char isDir = (gfl_dirEntLSB_ptr->attributes&0x10);
 
-			// clear the page
-			for (i=1; i<120; i++) {
-				FilelistCurrentPage_tab[i] = 0xffff;
-			}
-
-			// page number
-			hxc_printf(0,PAGE_X_POS, PAGE_Y_POS, "Page %d of %d      ", page_number+1, nbPages);
-
-			// filter
-			hxc_printf(0, FILTER_X_POS, FILTER_Y_POS,"Filter (F1): [%s]", filter);
-
-			y_pos=FILELIST_Y_POS;
-
-
-			UWORD curFile;
-			curFile = dir_getFirstFileForPage(page_number);
-			fli_getDirEntryMSB(curFile, &dir_entry);
-
-			for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; i++)
-			{
-				hxc_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(' '), dir_entry.filename);
-				y_pos=y_pos+8;
-
-				FilelistCurrentPage_tab[i] = curFile;
-				do {
-					curFile++;
-					if (!fli_getDirEntryMSB(curFile, &dir_entry)) {
-						i = NUMBER_OF_FILE_ON_DISPLAY;
-						break;
-					}
-					;
-				} while (!dir_filter(&dir_entry));
-
-			}
-
-			fRedraw_files = 0;
-			inverted_line = -1;
-			isLastPage = ((page_number+1) == nbPages);
-		} // if (fRedraw_files)
-
-		// reset the inverted line
-		if (inverted_line>=0) {
-			invert_line(inverted_line);
-			hxc_printf(0,0,inverted_line," ");
-		}
-
-		// set the inverted line
-		inverted_line = FILELIST_Y_POS+(selectorpos*8);
-		hxc_printf(0,0,inverted_line,">");
-		invert_line(inverted_line);
-
-		fSelectorValid = fli_getDirEntryLSB(FilelistCurrentPage_tab[selectorpos], dirEntLSB_ptr);
-
-
-		// debug:
-		//hxc_printf(0,0,0,"pagenumber:%d isLastPage:%d selectorpos:%d nbPages:%d    ", page_number, isLastPage, selectorpos, nbPages);
-
-
-		key=wait_function_key();
-		switch(key)
+		switch((UWORD) (key>>16))
 		{
-		case FCT_UP_KEY: /* UP */
-			if (selectorpos > 0) {
-				selectorpos--;
-				break;
-			}
-
-			// top line
-			if (0==page_number) {
-				// first page: stuck
-				break;
-			}
-
-			// top line not on the first page
-			selectorpos=NUMBER_OF_FILE_ON_DISPLAY-1;
-			page_number--;
-			fRedraw_files=1;
+		case 0: /* Already treated */
 			break;
 
-		case FCT_DOWN_KEY: /* Down */
-			if ( (selectorpos+1)==NUMBER_OF_FILE_ON_DISPLAY ) {
-				// last line of display
-				if (!isLastPage) {
-					page_number++;
-					fRedraw_files = 1;
-					selectorpos = 0;
-				}
-				break;
-			} else if (0xffff != FilelistCurrentPage_tab[selectorpos+1]) {
-				// next file exist: allow down
-				selectorpos++;
-			}
-			break;
-
-		case FCT_RIGHT_KEY: /* Right */
-			if (nbPages > 1) {
-				if (isLastPage) {
-					page_number = 0;
-				} else {
-					page_number++;
-				}
-				fRedraw_files=1;
-				selectorpos=0;
-			}
-			break;
-
-		case FCT_LEFT_KEY:
-			if (nbPages > 1) {
-				if(0 == page_number) {
-					page_number = nbPages - 1;
-				} else {
-					page_number--;
-				}
-				selectorpos=0;
-				fRedraw_files=1;
-			}
-			break;
-
-		case FCT_NEXTSLOT:
+		case 0x61: /* Undo: Next slot */
 			slotnumber = next_slot(slotnumber);
 			break;
 
-		case FCT_SAVE:
-			hxc_printf_box(0,"Saving selection...");
-			save_cfg_file(sdfecfg_file);
-			restore_box();
-			break;
-
-		case FCT_SELECT_FILE_DRIVEA:
-			if (fSelectorValid)
+		case 0x1c: /* Return: Enter subdir */
+			if (isDir)
 			{
-				if(dirEntLSB_ptr->attributes&0x10)
-				{
-					enter_sub_dir(dirEntLSB_ptr);
-				}
-				else
-				{
-					insert_in_slot(dirEntLSB_ptr, slotnumber, 0);
-				}
+				enter_sub_dir(gfl_dirEntLSB_ptr);
 			}
 			break;
 
-		case FCT_SELECT_FILE_DRIVEB:
-			if (fSelectorValid)
+		case 0x52: /* Insert: Insert Drive A */
+			if (isDir)
 			{
-				if(dirEntLSB_ptr->attributes&0x10)
-				{
-					enter_sub_dir(dirEntLSB_ptr);
-				}
-				else
-				{
-					insert_in_slot(dirEntLSB_ptr, slotnumber, 1);
-				}
+				enter_sub_dir(gfl_dirEntLSB_ptr);
+			}
+			else
+			{
+				insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 0);
 			}
 			break;
 
-		case FCT_SELECT_FILE_DRIVEA_AND_NEXTSLOT:
-			if (fSelectorValid)
+		case 0x47: /* ClrHome: Insert Drive B */
+			if (isDir)
 			{
-				if(dirEntLSB_ptr->attributes&0x10)
-				{
-					enter_sub_dir(dirEntLSB_ptr);
-				}
-				else
-				{
-					insert_in_slot(dirEntLSB_ptr, slotnumber, 0);
-					slotnumber = next_slot(slotnumber);
-				}
+				enter_sub_dir(gfl_dirEntLSB_ptr);
+			}
+			else
+			{
+				insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 1);
 			}
 			break;
 
-		case FCT_SELECTSAVEREBOOT:
-			if (fSelectorValid)
+		case 0x2b: /* Pipe: Insert, Next slot */
+			if (isDir)
 			{
-				if(dirEntLSB_ptr->attributes&0x10)
-				{
-					enter_sub_dir(dirEntLSB_ptr);
-				}
-				else
-				{
-					insert_in_slot(dirEntLSB_ptr, 1, 0);
-					hxc_printf_box(0,"Saving selection and restart...");
-					save_cfg_file(sdfecfg_file);
-					restore_box();
-					hxc_printf_box(0,">>>>>Rebooting...<<<<<");
-					/* sleep(1); */
-					jumptotrack0();
-					reboot();
-				}
+				enter_sub_dir(gfl_dirEntLSB_ptr);
+			}
+			else
+			{
+				insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 0);
+				slotnumber = next_slot(slotnumber);
 			}
 			break;
 
-		case FCT_HELP:
+
+		case 0x41: /* F7: Insert, Select, Reboot */
+			if (isDir)
+			{
+				enter_sub_dir(gfl_dirEntLSB_ptr);
+			}
+			else
+			{
+				insert_in_slot(gfl_dirEntLSB_ptr, 1, 0);
+				hxc_printf_box(0,"Saving selection and restart...");
+				save_cfg_file(sdfecfg_file);
+				restore_box();
+				hxc_printf_box(0,">>>>>Rebooting...<<<<<");
+				/* sleep(1); */
+				jumptotrack0();
+				reboot();
+			}
+			break;
+
+		case 0x62: /* Help */
 			handle_help();
 
 			fRedraw_status = 1;
 			break;
 
-		case FCT_EMUCFG:
-			handle_emucfg();
-
-			fRedraw_status = 1;
-			break; // case FCT_EMUCFG:
-
-		case FCT_SHOWSLOTS:
+		case 0x0f: /* Tab: Show Slots */
 			handle_show_all_slots();
 
 			fRedraw_status = 1;
 			break;
 
-		case FCT_CLEARSLOT:
+		case 0x0e: /* Backspace: Clear slot */
 			clear_slot(slotnumber);
 			display_slot(slotnumber);
 			break;
 
-		case FCT_CLEARSLOT_AND_NEXTSLOT:
+		case 0x53: /* Delete: Clear SLot, Next Slot */
 			clear_slot(slotnumber);
 			slotnumber = next_slot(slotnumber);
 			break;
 
-		case FCT_SAVEREBOOT:
-			hxc_printf_box(0,"Saving selection and restart...");
-			save_cfg_file(sdfecfg_file);
-			restore_box();
-			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
-			/* sleep(1); */
-			jumptotrack0();
-			reboot();
-			break;
-
-		case FCT_REBOOT:
-			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
-			/* sleep(1); */
-			jumptotrack0();
-			reboot();
-			break;
-
-		case FCT_CHGCOLOR:
-			colormode = set_color_scheme(0xff);
-			cfgfile_header[256+128]=colormode;
-			break;
-
-		case FCT_TOP:
-			page_number=0;
-			selectorpos=0;
-			fRedraw_files=1;
-			break;
-
-		case FCT_FILTER:
+		case 0x3b:	/* F1: Filter */
 			for(i=FILTER_X_POS+13*8; i<SCREEN_XRESOL; i=i+8) {
 				hxc_printf(0, i, FILTER_Y_POS, " ");
 			}
@@ -1196,18 +1010,49 @@ int main(int argc, char* argv[])
 			fRepaginate_files=1;
 			break;
 
-		case FCT_SORT:
+		case 0x3c: /* F2: Change palette */
+			colormode = set_color_scheme(0xff);
+			cfgfile_header[256+128]=colormode;
+			break;
+
+		case 0x3d: /* F3: Emuconfig */
+			handle_emucfg();
+			fRedraw_status = 1;
+			break; // case FCT_EMUCFG:
+
+		case 0x42: /* F8: Reboot */
+			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
+			/* sleep(1); */
+			jumptotrack0();
+			reboot();
+			break;
+
+		case 0x43: /* F9: Save */
+			hxc_printf_box(0,"Saving selection...");
+			save_cfg_file(sdfecfg_file);
+			restore_box();
+			break;
+
+		case 0x44: /* F10: Save, Reboot */
+			hxc_printf_box(0,"Saving selection and restart...");
+			save_cfg_file(sdfecfg_file);
+			restore_box();
+			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
+			/* sleep(1); */
+			jumptotrack0();
+			reboot();
+			break;
+
+		case 0x1f: /* S: Sort */
 			fli_sort();
-			page_number=0;
-			selectorpos=0;
 			fRepaginate_files=1;
 			break;
 
 		default:
-			/* printf("err %d!\n",key); */
+			hxc_printf(0,0,0,"key:%08lx!",key);
 			break;
 		}
-	} // for(;;)
+	} while (1 || key == 0);
 
 	return 0;
 }

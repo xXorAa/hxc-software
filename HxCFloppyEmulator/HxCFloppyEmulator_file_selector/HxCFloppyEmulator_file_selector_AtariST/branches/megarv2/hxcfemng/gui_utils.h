@@ -34,6 +34,7 @@ void restore_box();
 
 void h_line(unsigned short y_pos, unsigned short val);
 void invert_line(unsigned short y_pos);
+void clear_list(unsigned char add);
 void clear_line(unsigned short y_pos, unsigned short val);
 void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned short y_p2,unsigned short fillval,unsigned char fill);
 void init_display();

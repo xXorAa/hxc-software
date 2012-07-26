@@ -288,6 +288,8 @@ void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned sh
 }
 #endif
 
+
+
 /**
  * memset 8 horizontal lines to 0s (all bitplanes)
  */
@@ -295,32 +297,55 @@ void clear_textline(unsigned short y_pos, unsigned short val)
 {
 	unsigned char * ptr_dst;
 
-	ptr_dst =  (unsigned byte *)screen_addr;
+	ptr_dst =  (UBYTE *)screen_addr;
 	ptr_dst += (ULONG) LINE_BYTES * y_pos;
 	memset(ptr_dst, 0, (ULONG) LINE_BYTES<<3);
 
 }
 
+
+
 /**
- * invert all planes on a line
+ * Clear the screen
+ * @param integer add number of additional lines to clear. Allow to clear the status bar
  */
-void invert_line(unsigned short y_pos)
+void clear_list(unsigned char add)
+{
+	unsigned short y_pos,i;
+
+	y_pos=FILELIST_Y_POS;
+	for(i=0;i<NUMBER_OF_FILE_ON_DISPLAY+add;i++)
+	{
+		clear_textline(y_pos, 0);
+		y_pos += 8;
+	}
+}
+
+
+
+/**
+ * invert all planes on a line of text of the file selector
+ * @param integer linenumber number of the line of text to invert
+ */
+void invert_line(unsigned short linenumber)
 {
 	unsigned short i;
 	unsigned char j;
-	unsigned short *ptr_dst;
-	ULONG ptroffset;
+	unsigned char  *ptr_dst;
+	unsigned short *ptr_dst2;
 
-	ptr_dst=(unsigned short*)screen_addr;
+	ptr_dst   = screen_addr;
+	ptr_dst  += (ULONG) LINE_BYTES * (FILELIST_Y_POS + (linenumber<<3));
+
+	ptr_dst2 = (unsigned short *)ptr_dst;
 
 	for(j=0;j<8;j++)
 	{
-		ptroffset=(ULONG) LINE_WORDS* (y_pos+j);
-
 		for(i=0; i<LINE_WORDS; i+=1)
 		{
-			ptr_dst[ptroffset] = ptr_dst[ptroffset]^0xFFFF;
-			ptroffset ++;
+			//*ptr_dst = (*ptr_dst ^ 0xFFFF);
+			*ptr_dst2 = (*ptr_dst2 ^ 0xFFFF);
+			ptr_dst2++;
 		}
 	}
 }

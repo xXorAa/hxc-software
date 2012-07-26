@@ -35,7 +35,7 @@ unsigned char writesector(unsigned char sectornum,unsigned char * data);
 unsigned char Keyboard();
 void flush_char();
 unsigned char get_char();
-unsigned char wait_function_key();
+long wait_function_key();
 void jumptotrack0();
 void reboot();
 unsigned long read_long_odd(unsigned char * adr);

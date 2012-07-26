@@ -37,6 +37,7 @@ static struct fs_dir_list_status _file_list_status;
 static UWORD _FilelistPages_tab[512];
 static struct fs_dir_ent _dir_entry;
 static char * _filter=0;
+static UWORD _nbPages = 0xffff;
 
 extern unsigned short SCREEN_YRESOL;
 extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
@@ -92,13 +93,20 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 #endif
 
 
+/**
+ * @returns integer number of pages
+ */
+UWORD dir_getNbPages()
+{
+	return _nbPages;
+}
+
 
 /**
  * Filter the files and fill an array with the first file index
  * for each page.
- * @returns integer number of pages
  */
-UWORD dir_paginate()
+void dir_paginate()
 {
 	UWORD i;
 	UWORD currentPage;
@@ -131,10 +139,14 @@ UWORD dir_paginate()
 		currentFile++;
 	}
 
-	return currentPage+1;
+	_nbPages = currentPage+1;
 }
 
 
+char * dir_getFilter()
+{
+	return _filter;
+}
 
 void dir_setFilter(char *filter)
 {
