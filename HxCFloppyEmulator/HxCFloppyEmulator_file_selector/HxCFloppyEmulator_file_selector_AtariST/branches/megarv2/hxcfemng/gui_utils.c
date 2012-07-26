@@ -229,6 +229,10 @@ void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,cha
 }
 
 
+/**
+ * Draw / remove a horizontal line
+ * (only the first bitplane)
+ */
 void h_line(unsigned short y_pos, unsigned short val)
 {
 	UWORD * ptr_dst;
@@ -284,15 +288,22 @@ void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned sh
 }
 #endif
 
-void clear_line(unsigned short y_pos, unsigned short val)
+/**
+ * memset 8 horizontal lines to 0s (all bitplanes)
+ */
+void clear_textline(unsigned short y_pos, unsigned short val)
 {
-	unsigned short i;
-	for(i=0; i<8; i++)
-	{
-		h_line(y_pos+i, val);
-	}
+	unsigned char * ptr_dst;
+
+	ptr_dst =  (unsigned byte *)screen_addr;
+	ptr_dst += (ULONG) LINE_BYTES * y_pos;
+	memset(ptr_dst, 0, (ULONG) LINE_BYTES<<3);
+
 }
 
+/**
+ * invert all planes on a line
+ */
 void invert_line(unsigned short y_pos)
 {
 	unsigned short i;

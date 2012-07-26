@@ -39,5 +39,5 @@
 #define CURDIR_Y_POS  SCREEN_YRESOL-(48+(3*8))
 #define PAGE_X_POS    640-17*8
 #define PAGE_Y_POS    CURDIR_Y_POS
-#define SEARCH_X_POS  30*8
-#define SEARCH_Y_POS  CURDIR_Y_POS+16
+#define FILTER_X_POS  30*8
+#define FILTER_Y_POS  CURDIR_Y_POS+16

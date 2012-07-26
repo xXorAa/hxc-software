@@ -409,8 +409,8 @@ void clear_list(unsigned char add)
 	y_pos=FILELIST_Y_POS;
 	for(i=0;i<NUMBER_OF_FILE_ON_DISPLAY+add;i++)
 	{
-		clear_line(y_pos,0);
-		y_pos=y_pos+8;
+		clear_textline(y_pos, 0);
+		y_pos += 8;
 	}
 }
 
@@ -668,11 +668,11 @@ void handle_help()
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "Function Keys (2/2):");
 
 	i=2;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "F1                : Search files in the current folder");
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "F1                : Filter files in the current folder");
 	i++;
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "                    Type the word to search then enter");
 	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "                    Enter blank to abort the search");
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "                    Enter blank to abort the filter");
 	i++;
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "F2                : Change color");
 	i++;
@@ -923,15 +923,15 @@ int main(int argc, char* argv[])
 			clear_list(0);
 
 			// clear the page
-			for (i=1; i<32; i++) {
+			for (i=1; i<120; i++) {
 				FilelistCurrentPage_tab[i] = 0xffff;
 			}
 
 			// page number
 			hxc_printf(0,PAGE_X_POS, PAGE_Y_POS, "Page %d of %d      ", page_number+1, nbPages);
 
-			// search
-			hxc_printf(0, SEARCH_X_POS, SEARCH_Y_POS,"Search (F1): [%s]", filter);
+			// filter
+			hxc_printf(0, FILTER_X_POS, FILTER_Y_POS,"Filter (F1): [%s]", filter);
 
 			y_pos=FILELIST_Y_POS;
 
@@ -1170,9 +1170,9 @@ int main(int argc, char* argv[])
 			fRedraw_files=1;
 			break;
 
-		case FCT_SEARCH:
-			for(i=SEARCH_X_POS+13*8; i<SCREEN_XRESOL; i=i+8) {
-				hxc_printf(0, i, SEARCH_Y_POS, " ");
+		case FCT_FILTER:
+			for(i=FILTER_X_POS+13*8; i<SCREEN_XRESOL; i=i+8) {
+				hxc_printf(0, i, FILTER_Y_POS, " ");
 			}
 			flush_char();
 			i=0;
@@ -1183,7 +1183,7 @@ int main(int argc, char* argv[])
 				if(c!='\n')
 				{
 					filter[i]=c;
-					hxc_printf(0, SEARCH_X_POS+13*8+(8*i), SEARCH_Y_POS, "%c", c);
+					hxc_printf(0, FILTER_X_POS+13*8+(8*i), FILTER_Y_POS, "%c", c);
 				}
 				i++;
 			}while(c!='\n' && i<16);
