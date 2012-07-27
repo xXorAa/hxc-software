@@ -38,16 +38,12 @@
 #include <time.h>
 /* #include <vt52.h> */
 
-#include "keysfunc_defs.h"
-#include "keys_defs.h"
 #include "atari_hw.h"
 /* #include "atari_regs.h" */
 
 static unsigned char floppydrive;
 static unsigned char datacache[512*9];
 static unsigned char valid_cache;
-
-KEYTAB * kt;
 
 WORD fdcDmaMode = 0;
 
@@ -281,7 +277,6 @@ void su_mutekeys(void)
 
 void init_atari_hw(void)
 {
-	kt=(KEYTAB *) Keytbl( (unsigned char *) -1, (unsigned char *) -1, (unsigned char *) -1 );
 	my_Supexec((LONG *) su_mutekeys);
 }
 
@@ -313,8 +308,7 @@ unsigned char get_char()
 	key=Cnecin()>>16;
 	if(key == 0x1C) return '\n';
 
-	return kt->unshift[key];
-
+	return key;
 }
 
 

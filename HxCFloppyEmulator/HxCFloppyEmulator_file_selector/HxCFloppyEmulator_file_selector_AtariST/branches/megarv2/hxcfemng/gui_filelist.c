@@ -31,8 +31,6 @@
 
 /* #include <time.h> */
 
-#include "keysfunc_defs.h"
-
 #include "gui_utils.h"
 #include "cfg_file.h"
 #include "hxcfeda.h"

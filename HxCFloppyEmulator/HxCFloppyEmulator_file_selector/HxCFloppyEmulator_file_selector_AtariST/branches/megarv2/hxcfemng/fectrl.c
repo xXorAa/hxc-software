@@ -39,8 +39,6 @@
 /* #include <vt52.h>
  */
 
-#include "keysfunc_defs.h"
-
 #include "gui_utils.h"
 #include "cfg_file.h"
 #include "hxcfeda.h"
@@ -712,17 +710,17 @@ void handle_emucfg(void)
 		c=wait_function_key();
 		switch(c)
 		{
-			case FCT_UP_KEY:
+			case 0x48: /* Up */
 				invert_line(HELP_Y_POS+(i*8));
 				if(i>2) i--;
 				invert_line(HELP_Y_POS+(i*8));
 			break;
-			case FCT_DOWN_KEY:
+			case 0x50: /* Down */
 				invert_line(HELP_Y_POS+(i*8));
 				if(i<5) i++;
 				invert_line(HELP_Y_POS+(i*8));
 			break;
-			case FCT_LEFT_KEY:
+			case 0x4b: /* Left */
 				invert_line(HELP_Y_POS+(i*8));
 				switch(i)
 				{
@@ -748,7 +746,7 @@ void handle_emucfg(void)
 				invert_line(HELP_Y_POS+(i*8));
 
 			break;
-			case FCT_RIGHT_KEY:
+			case 0x4d: /* Right */
 				invert_line(HELP_Y_POS+(i*8));
 				switch(i)
 				{
@@ -775,7 +773,7 @@ void handle_emucfg(void)
 			break;
 
 		}
-	}while(c!=FCT_ESC);
+	}while(c!=0x01); /* Esc */
 
 }
 
@@ -891,100 +889,44 @@ int main(int argc, char* argv[])
 		fRepaginate_files=0;
 
 		key = gfl_mainloop();
-		unsigned char isDir = (gfl_dirEntLSB_ptr->attributes&0x10);
 
-		switch((UWORD) (key>>16))
-		{
-		case 0: /* Already treated */
-			break;
+		UBYTE isDir = (gfl_dirEntLSB_ptr->attributes&0x10);
+		UWORD keylow = key>>16;
 
-		case 0x61: /* Undo: Next slot */
+		if (keylow == 0) {
+		} else if (isDir && (keylow==0x1c || keylow==0x52 || keylow==0x47 || keylow==0x2b) ) {
+			enter_sub_dir(gfl_dirEntLSB_ptr);
+		} else if (keylow == 0x61) { /* Undo: Next slot */
 			slotnumber = next_slot(slotnumber);
-			break;
-
-		case 0x1c: /* Return: Enter subdir */
-			if (isDir)
-			{
-				enter_sub_dir(gfl_dirEntLSB_ptr);
-			}
-			break;
-
-		case 0x52: /* Insert: Insert Drive A */
-			if (isDir)
-			{
-				enter_sub_dir(gfl_dirEntLSB_ptr);
-			}
-			else
-			{
-				insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 0);
-			}
-			break;
-
-		case 0x47: /* ClrHome: Insert Drive B */
-			if (isDir)
-			{
-				enter_sub_dir(gfl_dirEntLSB_ptr);
-			}
-			else
-			{
-				insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 1);
-			}
-			break;
-
-		case 0x2b: /* Pipe: Insert, Next slot */
-			if (isDir)
-			{
-				enter_sub_dir(gfl_dirEntLSB_ptr);
-			}
-			else
-			{
-				insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 0);
-				slotnumber = next_slot(slotnumber);
-			}
-			break;
-
-
-		case 0x41: /* F7: Insert, Select, Reboot */
-			if (isDir)
-			{
-				enter_sub_dir(gfl_dirEntLSB_ptr);
-			}
-			else
-			{
-				insert_in_slot(gfl_dirEntLSB_ptr, 1, 0);
-				hxc_printf_box(0,"Saving selection and restart...");
-				save_cfg_file(sdfecfg_file);
-				restore_box();
-				hxc_printf_box(0,">>>>>Rebooting...<<<<<");
-				/* sleep(1); */
-				jumptotrack0();
-				reboot();
-			}
-			break;
-
-		case 0x62: /* Help */
+		} else if (keylow==0x52) {  /* Insert: Insert Drive A */
+			insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 0);
+		} else if (keylow==0x47) {  /* ClrHome: Insert Drive B */
+			insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 1);
+		} else if (keylow==0x2b) {  /* Pipe: Insert, Next slot */
+			insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 0);
+			slotnumber = next_slot(slotnumber);
+		} else if (keylow==0x41) {  /* F7: Insert, Select, Reboot */
+			insert_in_slot(gfl_dirEntLSB_ptr, 1, 0);
+			hxc_printf_box(0,"Saving selection and restart...");
+			save_cfg_file(sdfecfg_file);
+			restore_box();
+			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
+			/* sleep(1); */
+			jumptotrack0();
+			reboot();
+		} else if (keylow==0x62) { /* Help */
 			handle_help();
-
 			fRedraw_status = 1;
-			break;
-
-		case 0x0f: /* Tab: Show Slots */
+		} else if (keylow==0x0f) { /* Tab: Show Slots */
 			handle_show_all_slots();
-
 			fRedraw_status = 1;
-			break;
-
-		case 0x0e: /* Backspace: Clear slot */
+		} else if (keylow==0x0e) { /* Backspace: Clear slot */
 			clear_slot(slotnumber);
 			display_slot(slotnumber);
-			break;
-
-		case 0x53: /* Delete: Clear SLot, Next Slot */
+		} else if (keylow==0x53) { /* Delete: Clear SLot, Next Slot */
 			clear_slot(slotnumber);
 			slotnumber = next_slot(slotnumber);
-			break;
-
-		case 0x3b:	/* F1: Filter */
+		} else if (keylow==0x3b) { /* F1: Filter */
 			for(i=FILTER_X_POS+13*8; i<SCREEN_XRESOL; i=i+8) {
 				hxc_printf(0, i, FILTER_Y_POS, " ");
 			}
@@ -1008,32 +950,22 @@ int main(int argc, char* argv[])
 
 			dir_setFilter(filter);
 			fRepaginate_files=1;
-			break;
-
-		case 0x3c: /* F2: Change palette */
+		} else if (keylow==0x3c) { /* F2: Change palette */
 			colormode = set_color_scheme(0xff);
 			cfgfile_header[256+128]=colormode;
-			break;
-
-		case 0x3d: /* F3: Emuconfig */
+		} else if (keylow==0x3d) { /* F3: Emuconfig */
 			handle_emucfg();
 			fRedraw_status = 1;
-			break; // case FCT_EMUCFG:
-
-		case 0x42: /* F8: Reboot */
+		} else if (keylow==0x42) { /* F8: Reboot */
 			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
 			/* sleep(1); */
 			jumptotrack0();
 			reboot();
-			break;
-
-		case 0x43: /* F9: Save */
+		} else if (keylow==0x43) { /* F9: Save */
 			hxc_printf_box(0,"Saving selection...");
 			save_cfg_file(sdfecfg_file);
 			restore_box();
-			break;
-
-		case 0x44: /* F10: Save, Reboot */
+		} else if (keylow==0x44) { /* F10: Save, Reboot */
 			hxc_printf_box(0,"Saving selection and restart...");
 			save_cfg_file(sdfecfg_file);
 			restore_box();
@@ -1041,16 +973,11 @@ int main(int argc, char* argv[])
 			/* sleep(1); */
 			jumptotrack0();
 			reboot();
-			break;
-
-		case 0x1f: /* S: Sort */
+		} else if (keylow==0x1f) { /* S: Sort */
 			fli_sort();
 			fRepaginate_files=1;
-			break;
-
-		default:
+		} else {
 			hxc_printf(0,0,0,"key:%08lx!",key);
-			break;
 		}
 	} while (1 || key == 0);
 

@@ -62,14 +62,6 @@ unsigned char get_vid_mode();
 #endif
 
 
-#ifndef KEYTAB
-typedef struct {
-    unsigned char   *unshift;
-    unsigned char   *shift;
-    unsigned char   *capslock;
-} KEYTAB;
-#endif
-
 
 struct dma {
     UWORD   pad0[2];
