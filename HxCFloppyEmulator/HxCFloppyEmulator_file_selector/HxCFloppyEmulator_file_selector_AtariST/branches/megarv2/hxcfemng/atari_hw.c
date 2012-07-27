@@ -33,6 +33,7 @@
 # include <tos.h>
 #else
 # include <mint/osbind.h>
+# include <mint/sysvars.h>
 #endif
 
 #include <time.h>
@@ -303,12 +304,12 @@ void flush_char()
 
 unsigned char get_char()
 {
-	unsigned char key;
+	unsigned long key;
 
-	key=Cnecin()>>16;
-	if(key == 0x1C) return '\n';
+	key=Cnecin();
+	if((key>>16) == 0x1C) return '\n';
 
-	return key;
+	return (unsigned char) key&0xff;
 }
 
 
@@ -332,6 +333,15 @@ unsigned char su_get_vid_mode()
 unsigned char get_vid_mode()
 {
 	return (unsigned char) my_Supexec((LONG *) su_get_vid_mode);
+}
+
+unsigned long su_get_hz200()
+{
+	return *_hz_200;
+}
+unsigned long get_hz200()
+{
+	return	(unsigned long) my_Supexec((LONG *) su_get_hz200);
 }
 
 void su_reboot()

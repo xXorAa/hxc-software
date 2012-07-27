@@ -32,6 +32,10 @@
 #include "fat_opts.h"
 #include "fat_access.h"
 #include "conf.h"
+#include "fat32/fat_filelib.h"
+
+// A enlever:
+#include "gui_utils.h"
 
 static struct fs_dir_list_status _file_list_status;
 static UWORD _FilelistPages_tab[512];
@@ -54,6 +58,26 @@ void mystrlwr(char *string)
 		string++;
 	}
 }
+
+
+int dir_filter(struct fs_dir_ent *dir_entry)
+{
+	char tmp[FATFS_MAX_LONG_FILENAME];
+	if (0 != _filter && !(dir_entry->is_dir)) {
+		// only filter when filter is set. Don't filter dirs
+		strcpy(tmp, dir_entry->filename);
+		mystrlwr(tmp);
+
+		if(!strstr(tmp, _filter))
+		{
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+
+
 
 UWORD dir_getFirstFileForPage(UWORD page)
 {
@@ -123,6 +147,8 @@ void dir_paginate()
 	currentFile       = 0;
 	currentFileInPage = NUMBER_OF_FILE_ON_DISPLAY;
 
+unsigned long time = get_hz200();
+
 	while(fli_getDirEntryMSB(currentFile, &_dir_entry)) {
 		if (dir_filter(&_dir_entry)) {
 			// file will be shown
@@ -138,6 +164,10 @@ void dir_paginate()
 
 		currentFile++;
 	}
+
+time = get_hz200() - time;
+time = time / 2;
+hxc_printf(2,0,0, "dir_paginate(): %ld seconds/100", time);
 
 	_nbPages = currentPage+1;
 }
@@ -157,23 +187,6 @@ void dir_setFilter(char *filter)
 	}
 }
 
-
-
-int dir_filter(struct fs_dir_ent *dir_entry)
-{
-	unsigned char tmp[FATFS_MAX_LONG_FILENAME];
-	if (0 != _filter && !(dir_entry->is_dir)) {
-		// only filter when filter is set. Don't filter dirs
-		strcpy(tmp, dir_entry->filename);
-		mystrlwr(tmp);
-
-		if(!strstr(tmp, _filter))
-		{
-			return FALSE;
-		}
-	}
-	return TRUE;
-}
 
 
 int dir_scan(char *path)

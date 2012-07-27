@@ -24,6 +24,9 @@ puis les direntryVar, qui commencent à la fin du bloc.
 */
 
 
+// A enlever:
+#include "gui_utils.h"
+
 
 void fli_clear(void)
 {
@@ -172,5 +175,10 @@ int fli_getDirEntryLSB(UWORD number, DirectoryEntry * dir_entry)
 void fli_sort(void)
 {
     extern void quickersort(UWORD nbEntries, UBYTE offset, UBYTE *adr);
+unsigned long time = get_hz200();
     quickersort_call(quickersort, (UWORD) _nbEntries, (UBYTE) 8, _base);
+time = get_hz200() - time;
+time = time / 2;
+hxc_printf(0,0,0,"fli_sort(): %ld seconds/100 ", time);
+
 }

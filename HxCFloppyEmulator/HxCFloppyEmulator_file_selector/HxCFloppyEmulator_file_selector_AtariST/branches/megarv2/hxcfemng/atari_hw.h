@@ -42,6 +42,7 @@ unsigned long read_long_odd(unsigned char * adr);
 void write_long_odd(unsigned char * adr, unsigned long value);
 
 unsigned char get_vid_mode();
+unsigned long get_hz200();
 
 #define L_INDIAN(var) (((var&0x000000FF)<<24) |((var&0x0000FF00)<<8) |((var&0x00FF0000)>>8) |((var&0xFF000000)>>24))
 
