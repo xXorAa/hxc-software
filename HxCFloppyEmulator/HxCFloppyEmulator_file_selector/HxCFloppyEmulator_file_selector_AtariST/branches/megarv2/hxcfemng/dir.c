@@ -45,7 +45,7 @@ static UWORD _nbPages = 0xffff;
 
 extern unsigned short SCREEN_YRESOL;
 extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
-
+extern UWORD gfl_filelistCurrentPage_tab[];
 
 void mystrlwr(char *string)
 {
@@ -63,7 +63,7 @@ void mystrlwr(char *string)
 int dir_filter(struct fs_dir_ent *dir_entry)
 {
 	char tmp[FATFS_MAX_LONG_FILENAME];
-	if (0 != _filter && !(dir_entry->is_dir)) {
+	if (0 != _filter[0] && !(dir_entry->is_dir)) {
 		// only filter when filter is set. Don't filter dirs
 		strcpy(tmp, dir_entry->filename);
 		mystrlwr(tmp);
@@ -130,18 +130,17 @@ UWORD dir_getNbPages()
  * Filter the files and fill an array with the first file index
  * for each page.
  */
-void dir_paginate()
+void dir_paginateAndPrefillCurrentPage()
 {
-	UWORD i;
 	UWORD currentPage;
 	UWORD currentFile;
 	UBYTE currentFileInPage;
 
 	// erase all pages
-	for(i=0;i<512;i++)
-	{
-		_FilelistPages_tab[i] = 0xffff;
-	}
+	memset(_FilelistPages_tab, 0xff, 2*512);
+
+	// erase current page
+	memset(&gfl_filelistCurrentPage_tab[0], 0xff, 2*MAXFILESPERPAGE);
 
 	currentPage       = 0xffff;
 	currentFile       = 0;
@@ -158,6 +157,9 @@ unsigned long time = get_hz200();
 				currentFileInPage = 0;
 				// store the first file of the page
 				_FilelistPages_tab[currentPage] = currentFile;
+			}
+			if (0 == currentPage) {
+				gfl_filelistCurrentPage_tab[currentFileInPage] = currentFile;
 			}
 			currentFileInPage++;
 		}
@@ -180,11 +182,7 @@ char * dir_getFilter()
 
 void dir_setFilter(char *filter)
 {
-	if (filter != 0 && strlen(filter)) {
-		_filter = filter;
-	} else {
-		_filter = 0;
-	}
+	_filter = filter;
 }
 
 

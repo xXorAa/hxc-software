@@ -868,7 +868,8 @@ int main(int argc, char* argv[])
 
 	// get all the files in the dir
 	dir_scan((char *)currentPath);
-	dir_setFilter(0);
+	dir_setFilter(filter);
+
 	fRepaginate_files = 1;
 	fRedraw_status = 1;
 
@@ -947,8 +948,6 @@ int main(int argc, char* argv[])
 
 			/* get_str(&filter); */
 			mystrlwr(filter);
-
-			dir_setFilter(filter);
 			fRepaginate_files=1;
 		} else if (keylow==0x3c) { /* F2: Change palette */
 			colormode = set_color_scheme(0xff);

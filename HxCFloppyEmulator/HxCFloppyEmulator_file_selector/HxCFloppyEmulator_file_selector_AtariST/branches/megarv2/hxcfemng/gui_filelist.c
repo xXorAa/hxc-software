@@ -58,12 +58,12 @@ static unsigned char cfgfile_header[512];
 static unsigned char currentPath[4*256] = {"\\"};
 
 static unsigned char sdfecfg_file[2048];
-static char filter[17];
+static char filter[17] = "\0";
 
 
 static disk_in_drive disks_slot_a[NUMBER_OF_SLOT];
 static disk_in_drive disks_slot_b[NUMBER_OF_SLOT];
-static UWORD _filelistCurrentPage_tab[120];
+//static UWORD gfl_filelistCurrentPage_tab[120];
 
 static struct fs_dir_list_status file_list_status;
 static struct fat_dir_entry sfEntry;
@@ -81,7 +81,6 @@ extern unsigned short SCREEN_YRESOL;
 //
 extern unsigned char NUMBER_OF_FILE_ON_DISPLAY;
 
-#define MAXFILESPERPAGE 120
 
 
 //
@@ -90,21 +89,17 @@ extern unsigned char NUMBER_OF_FILE_ON_DISPLAY;
 static UWORD _currentPage = 0xffff;
 static UWORD _selectorPos;
 static signed short _invertedLine;
-static UWORD _filelistCurrentPage_tab[MAXFILESPERPAGE];
 static UBYTE _isLastPage;
 static UWORD _nbPages;
 
+// exported variables:
 DirectoryEntry   _dirEntLSB;
 DirectoryEntry * gfl_dirEntLSB_ptr = &_dirEntLSB;
+UWORD gfl_filelistCurrentPage_tab[MAXFILESPERPAGE];
 
 
 
 
-
-void _clear_filelistCurrentPage(void)
-{
-	memset(&_filelistCurrentPage_tab[0], 0xff, 2*MAXFILESPERPAGE);
-}
 
 #if(0)
 void gfl_jumpToFile(UWORD askedFile)
@@ -152,7 +147,7 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 	UBYTE fForceRedraw=0;
 
 	if (fRepaginate) {
-		dir_paginate();
+		dir_paginateAndPrefillCurrentPage();
 		_nbPages = dir_getNbPages();
 		_selectorPos = 0;
 		_currentPage = 0;
@@ -162,12 +157,11 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 	if ( (_oldPage != _currentPage) || fForceRedraw || fForceRedrawAll )
 	{
 		UWORD curFile;
+		unsigned char fCached;
 		struct fs_dir_ent dir_entry;
 
 		_oldPage = _currentPage;
 
-		// start at the first file of the directory
-//			dir_getFilesForPage(_currentPage, _filelistCurrentPage_tab);
 		if (fForceRedrawAll) {
 			clear_list(5);
 		} else {
@@ -175,8 +169,6 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 		}
 
 		_invertedLine = -1;	// the screen has been clear: no need to de-invert the line
-
-		_clear_filelistCurrentPage();
 
 		// page number
 		hxc_printf(0,PAGE_X_POS, PAGE_Y_POS, "Page %d of %d      ", _currentPage+1, _nbPages);
@@ -186,24 +178,49 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 
 		y_pos=FILELIST_Y_POS;
 
+		// start at the first file of the directory
 		curFile = dir_getFirstFileForPage(_currentPage);
+		if (curFile == gfl_filelistCurrentPage_tab[0])
+		{
+			fCached = 1;
+		}
+		else
+		{
+			// reset the files for this page
+			memset(&gfl_filelistCurrentPage_tab[0], 0xff, 2*MAXFILESPERPAGE);
+			fCached = 0;
+		}
+
 		fli_getDirEntryMSB(curFile, &dir_entry);
 
-		for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; i++)
+		for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; )
 		{
 			hxc_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(' '), dir_entry.filename);
 			y_pos=y_pos+8;
 
-			_filelistCurrentPage_tab[i] = curFile;
-			do {
-				curFile++;
+			gfl_filelistCurrentPage_tab[i] = curFile;
+			i++;
+
+			if ( fCached )
+			{
+				// filelist has already been processed
+				curFile = gfl_filelistCurrentPage_tab[i];
 				if (!fli_getDirEntryMSB(curFile, &dir_entry)) {
 					i = NUMBER_OF_FILE_ON_DISPLAY;
 					break;
 				}
-				;
-			} while (!dir_filter(&dir_entry));
-
+			}
+			else
+			{
+				// find the next file to display
+				do {
+					curFile++;
+					if (!fli_getDirEntryMSB(curFile, &dir_entry)) {
+						i = NUMBER_OF_FILE_ON_DISPLAY;
+						break;
+					}
+				} while (!dir_filter(&dir_entry));
+			}
 		}
 
 		_invertedLine = -1;
@@ -226,7 +243,7 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 		invert_line(_selectorPos);
 	}
 
-	fli_getDirEntryLSB(_filelistCurrentPage_tab[_selectorPos], gfl_dirEntLSB_ptr);
+	fli_getDirEntryLSB(gfl_filelistCurrentPage_tab[_selectorPos], gfl_dirEntLSB_ptr);
 }
 
 
@@ -265,7 +282,7 @@ long gfl_mainloop()
 					_selectorPos = 0;
 				}
 				break;
-			} else if (0xffff != _filelistCurrentPage_tab[_selectorPos+1]) {
+			} else if (0xffff != gfl_filelistCurrentPage_tab[_selectorPos+1]) {
 				// next file exist: allow down
 				_selectorPos++;
 			}
