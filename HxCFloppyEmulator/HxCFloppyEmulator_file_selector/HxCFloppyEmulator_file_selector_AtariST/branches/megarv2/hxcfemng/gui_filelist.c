@@ -25,11 +25,8 @@
 //
 */
 
-/* #include <stdio.h> */
-/* #include <stdlib.h> */
 #include <string.h>
 
-/* #include <time.h> */
 
 #include "gui_utils.h"
 #include "cfg_file.h"
@@ -41,45 +38,15 @@
 
 #include "atari_hw.h"
 
-/* #include "atari_regs.h" */
-
-/* #include "fat_opts.h" */
-/* #include "fat_misc.h" */
-/* #include "fat_defs.h" */
-/* #include "fat_filelib.h" */
 #include "conf.h"
-
-
-static unsigned long indexptr;
-static unsigned long last_setlbabase;
-static unsigned char sector[512];
-static unsigned char cfgfile_header[512];
-
-static unsigned char currentPath[4*256] = {"\\"};
-
-static unsigned char sdfecfg_file[2048];
-static char filter[17] = "\0";
-
-
-static disk_in_drive disks_slot_a[NUMBER_OF_SLOT];
-static disk_in_drive disks_slot_b[NUMBER_OF_SLOT];
-//static UWORD gfl_filelistCurrentPage_tab[120];
-
-static struct fs_dir_list_status file_list_status;
-static struct fat_dir_entry sfEntry;
-static struct fs_dir_ent dir_entry;
-extern  struct fatfs _fs;
-
-extern unsigned short SCREEN_XRESOL;
-extern unsigned short SCREEN_YRESOL;
-
-
 
 
 //
 // Externs
 //
 extern unsigned char NUMBER_OF_FILE_ON_DISPLAY;
+extern unsigned short SCREEN_XRESOL;
+extern unsigned short SCREEN_YRESOL;
 
 
 
@@ -91,6 +58,7 @@ static UWORD _selectorPos;
 static signed short _invertedLine;
 static UBYTE _isLastPage;
 static UWORD _nbPages;
+
 
 // exported variables:
 DirectoryEntry   _dirEntLSB;

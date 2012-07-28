@@ -146,7 +146,7 @@ void dir_paginateAndPrefillCurrentPage()
 	currentFile       = 0;
 	currentFileInPage = NUMBER_OF_FILE_ON_DISPLAY;
 
-unsigned long time = get_hz200();
+	//unsigned long time = get_hz200();
 
 	while(fli_getDirEntryMSB(currentFile, &_dir_entry)) {
 		if (dir_filter(&_dir_entry)) {
@@ -167,9 +167,9 @@ unsigned long time = get_hz200();
 		currentFile++;
 	}
 
-time = get_hz200() - time;
-time = time / 2;
-hxc_printf(2,0,0, "dir_paginate(): %ld seconds/100", time);
+	//time = get_hz200() - time;
+	//time = time / 2;
+	//hxc_printf(2,0,0, "dir_paginate(): %ld seconds/100", time);
 
 	_nbPages = currentPage+1;
 }

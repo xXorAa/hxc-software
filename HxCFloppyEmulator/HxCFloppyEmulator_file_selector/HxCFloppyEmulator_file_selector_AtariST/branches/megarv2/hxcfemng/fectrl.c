@@ -58,7 +58,6 @@
 #include "conf.h"
 
 
-static unsigned long indexptr;
 static unsigned short y_pos;
 static unsigned long last_setlbabase;
 static unsigned char sector[512];
@@ -76,9 +75,6 @@ static disk_in_drive disks_slot_a[NUMBER_OF_SLOT];
 static disk_in_drive disks_slot_b[NUMBER_OF_SLOT];
 
 static struct fs_dir_list_status file_list_status;
-static struct fat_dir_entry sfEntry;
-/* static struct fs_dir_ent dir_entry; */
-extern  struct fatfs _fs;
 
 extern unsigned short SCREEN_XRESOL;
 extern unsigned short SCREEN_YRESOL;
@@ -95,12 +91,8 @@ void lockup()
 int setlbabase(unsigned long lba)
 {
 	int ret;
-	unsigned char cmd_cnt;
-	unsigned long lbatemp;
 	direct_access_cmd_sector * dacs;
-	direct_access_status_sector * dass;
 
-	dass=(direct_access_status_sector *)sector;
 	dacs=(direct_access_cmd_sector  *)sector;
 
 	memset(&sector,0,512);
@@ -133,9 +125,6 @@ int hxc_media_init()
 {
 	unsigned char ret;
 	unsigned char sector[512];
-	int i;
-
-
 	direct_access_status_sector * dass;
 
 	last_setlbabase=0xFFFFF000;
@@ -166,14 +155,11 @@ int hxc_media_init()
 
 int hxc_media_read(unsigned long sector, unsigned char *buffer)
 {
-	int ret,retry;
 	direct_access_status_sector * dass;
 
 	dass= (direct_access_status_sector *)buffer;
 
 	hxc_printf(0,8*79,0,"%c",23);
-
-	ret=0;
 
 	do
 	{
@@ -205,9 +191,6 @@ int hxc_media_read(unsigned long sector, unsigned char *buffer)
 
 int hxc_media_write(unsigned long sector, unsigned char *buffer)
 {
-	int ret,retry;
-	direct_access_status_sector * dass;
-
 	hxc_printf(0,8*79,0,"%c",23);
 
 	if((sector-last_setlbabase)>=8)
@@ -792,19 +775,14 @@ void handle_emucfg(void)
 int main(int argc, char* argv[])
 {
 	unsigned short i;
-	unsigned char entrytype,bootdev,j;
+	unsigned char bootdev;
 	unsigned char c;
 	unsigned char colormode;
-	unsigned char fSelectorValid;
 	unsigned char slotnumber;
 	long key;
 
-	FILE *f;
-
 	UBYTE * bigmem_adr;
 	LONG    bigmem_len;
-
-	UWORD	nbPages;
 
 	init_display();
 
@@ -976,7 +954,7 @@ int main(int argc, char* argv[])
 			fli_sort();
 			fRepaginate_files=1;
 		} else {
-			hxc_printf(0,0,0,"key:%08lx!",key);
+			// hxc_printf(0,0,0,"key:%08lx!",key);
 		}
 	} while (1 || key == 0);
 

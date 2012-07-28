@@ -128,7 +128,7 @@ static unsigned short colortable[] = {
 
 void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short x, unsigned short y)
 {
-	unsigned short i,j,k,x_offset,p;
+	unsigned short i,j,k;
 	unsigned short *ptr_src;
 	unsigned short *ptr_dst;
 	ULONG          base_offset, l;
@@ -156,7 +156,7 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 void print_char8x8(unsigned char * membuffer, unsigned short x, unsigned short y,unsigned char c)
 {
 	bmaptype * font;
-	unsigned short j,k,c1;
+	unsigned short j,k;
 	unsigned char *ptr_src;
 	unsigned char *ptr_dst;
 	ULONG base_offset;
@@ -290,35 +290,19 @@ void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned sh
 
 
 
-/**
- * memset 8 horizontal lines to 0s (all bitplanes)
- */
-void clear_textline(unsigned short y_pos, unsigned short val)
-{
-	unsigned char * ptr_dst;
-
-	ptr_dst =  (UBYTE *)screen_addr;
-	ptr_dst += (ULONG) LINE_BYTES * y_pos;
-	memset(ptr_dst, 0, (ULONG) LINE_BYTES<<3);
-
-}
-
-
 
 /**
- * Clear the screen
+ * Clear the screen (all bitplanes)
  * @param integer add number of additional lines to clear. Allow to clear the status bar
  */
 void clear_list(unsigned char add)
 {
-	unsigned short y_pos,i;
+	unsigned char * ptr_dst;
 
-	y_pos=FILELIST_Y_POS;
-	for(i=0;i<NUMBER_OF_FILE_ON_DISPLAY+add;i++)
-	{
-		clear_textline(y_pos, 0);
-		y_pos += 8;
-	}
+	ptr_dst =  (UBYTE *)screen_addr;
+	ptr_dst += (ULONG) LINE_BYTES * FILELIST_Y_POS;
+	memset(ptr_dst, 0, (ULONG) ((UWORD)(LINE_BYTES)*(UWORD)((NUMBER_OF_FILE_ON_DISPLAY+add)<<3)));
+
 }
 
 
@@ -501,7 +485,6 @@ unsigned char set_color_scheme(unsigned char colorm)
 
 void init_display()
 {
-	unsigned short loop,yr;
 	unsigned short k,i;
 
 	screen_backup_isUsed = 0;

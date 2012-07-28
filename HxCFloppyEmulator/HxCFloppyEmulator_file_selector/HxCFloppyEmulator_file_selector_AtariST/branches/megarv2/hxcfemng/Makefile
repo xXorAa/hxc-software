@@ -51,22 +51,22 @@ $(EXEC):          libc/mStartupAsmC.o libc/mStartup.o quickersort.o fectrl.o fil
 	$(C)          $(LFLAGS)           $^ -o $@
 
 atari_hw.o:       atari_hw.c       atari_hw.h
-	$(C)          $(CFLAGS)        -c $< -o $@
+	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
 dir.o:            dir.c            filelist.h fat32/fat_access.h cfg_file.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h atari_hw.h fat32/fat_opts.h conf.h atari_hw.h fat32/fat_filelib.h
-	$(C)          $(CFLAGS)        -c $< -o $@
+	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
 gui_utils.o:      gui_utils.c      gui_utils.h atari_hw.h conf.h libc/snprintf/snprintf.h graphx/data_bmp_hxc2001logo_bmp.h graphx/data_bmp_font_bmp.h graphx/data_bmp_font8x8_bmp.h graphx/data_bmp_sdhxcfelogo_bmp.h
-	$(C)          $(CFLAGS)        -c $< -o $@
+	$(C)          $(CFLAGS)        -c $< -o $@ -Wall -Wno-missing-braces -Wno-unused-value
 
 fectrl.o:         fectrl.c         gui_utils.h conf.h cfg_file.h hxcfeda.h atari_hw.h fat32/fat_opts.h fat32/fat_misc.h fat32/fat_types.h fat32/fat_defs.h fat32/fat_filelib.h fat32/fat_access.h compiler_helper.h filelist.h dir.h gui_filelist.h
-	$(C)          $(CFLAGS)        -c $< -o $@
+	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
 filelist.o:       filelist.c       fat32/fat_access.h atari_hw.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h hxcfeda.h quickersort.h
-	$(C)          $(CFLAGS)        -c $< -o $@
+	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
 gui_filelist.o:   gui_filelist.c   gui_utils.h atari_hw.h conf.h libc/snprintf/snprintf.h cfg_file.h dir.h filelist.h  fat32/fat_access.h fat32/fat_defs.h fat32/fat_opts.h fat32/fat_types.h compiler_helper.h
-	$(C)          $(CFLAGS)        -c $< -o $@
+	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
 fat32/fat_misc.o: fat32/fat_misc.c fat32/fat_misc.h fat32/fat_defs.h compiler_helper.h
 	$(C)          $(CFLAGS)        -c $< -o $@
@@ -90,10 +90,10 @@ fat32/fat_cache.o: fat32/fat_cache.c     fat32/fat_cache.h
 	$(C)          $(CFLAGS)        -c $< -o $@
 
 libc/mStartup.o: libc/mStartup.c
-	$(C)          $(CFLAGS)        -c $< -o $@
+	$(C)          $(CFLAGS)        -c $< -o $@ -Wall -Wno-unused-value
 
 libc/snprintf/snprintf.o: libc/snprintf/snprintf.c libc/snprintf/snprintf.h
-	$(C)          $(CFLAGS)        -c $< -o $@
+	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
 libc/mStartupAsmC.o: libc/mStartupAsmC.s
 	$(VASMBIN)    $(VASMOPT)          $< -o $@

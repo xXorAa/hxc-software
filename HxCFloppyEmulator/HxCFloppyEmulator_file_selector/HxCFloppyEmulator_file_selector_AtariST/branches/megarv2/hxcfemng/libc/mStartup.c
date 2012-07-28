@@ -44,7 +44,7 @@ void* memset ( void * ptr, int value, size_t num )
 inline char *strcpy(char *dest, const char* src)
 {
 	char *ret = dest;
-	while (*dest++ = *src++) {
+	while ((*dest++ = *src++)) {
 	};
 
 	return ret;
@@ -192,7 +192,7 @@ char *strncpy(char *dest, const char *src, size_t n)
 	do {
 		if (!n--)
 			return ret;
-	} while (*dest++ = *src++);
+	} while ((*dest++ = *src++));
 	while (n--)
 		*dest++ = 0;
 	return ret;
@@ -213,7 +213,7 @@ char *strcat(char *dest, const char *src)
 	char *ret = dest;
 	while (*dest)
 		dest++;
-	while (*dest++ = *src++)
+	while ((*dest++ = *src++))
 		;
 	return ret;
 }
@@ -249,7 +249,7 @@ int memcmp(const void* s1, const void* s2,size_t n)
 		if( *p1 != *p2 )
 			return *p1 - *p2;
 		else
-			*p1++,*p2++;
+			p1++,p2++;
 	return 0;
 }
 
