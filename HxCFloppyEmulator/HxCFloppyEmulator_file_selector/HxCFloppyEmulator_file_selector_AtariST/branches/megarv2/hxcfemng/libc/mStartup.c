@@ -218,8 +218,10 @@ char *strcat(char *dest, const char *src)
 	return ret;
 }
 
+#if(0)
 /* from http://clc-wiki.net/wiki/strstr */
 /* uses memcmp, strlen */
+/* For 52 more bytes, an assembly optimized version is available in the .s file */
 char *strstr(const char *s1, const char *s2)
 {
 	size_t n = strlen(s2);
@@ -228,6 +230,7 @@ char *strstr(const char *s1, const char *s2)
 			return (char *) (s1-1);
 	return (char *)0;
 }
+#endif
 
 /* from http://clc-wiki.net/wiki/C_standard_library:string.h:strchr */
 char *strchr(const char *s, int c)
