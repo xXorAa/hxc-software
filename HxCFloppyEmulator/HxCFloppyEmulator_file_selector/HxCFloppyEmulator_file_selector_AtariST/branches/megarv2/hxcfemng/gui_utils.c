@@ -48,6 +48,7 @@
 
 #include "gui_utils.h"
 #include "atari_hw.h"
+#include "assembly.h"
 
 #include "conf.h"
 
@@ -301,7 +302,8 @@ void clear_list(unsigned char add)
 
 	ptr_dst =  (UBYTE *)screen_addr;
 	ptr_dst += (ULONG) LINE_BYTES * FILELIST_Y_POS;
-	memset(ptr_dst, 0, (ULONG) ((UWORD)(LINE_BYTES)*(UWORD)((NUMBER_OF_FILE_ON_DISPLAY+add)<<3)));
+	//memset(ptr_dst, 0, (ULONG) ((UWORD)(LINE_BYTES)*(UWORD)((NUMBER_OF_FILE_ON_DISPLAY+add)<<3)));
+	memsetword(ptr_dst, 0, (ULONG) (UWORD)(LINE_BYTES)*(UWORD)((NUMBER_OF_FILE_ON_DISPLAY+add)<<2));
 
 }
 
