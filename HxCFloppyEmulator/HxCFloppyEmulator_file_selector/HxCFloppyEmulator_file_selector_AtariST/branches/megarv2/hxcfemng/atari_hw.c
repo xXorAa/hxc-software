@@ -45,10 +45,14 @@
 static unsigned char floppydrive;
 static unsigned char datacache[512*9];
 static unsigned char valid_cache;
+static unsigned char _oldConterm;
 
 WORD fdcDmaMode = 0;
 
 #define CONTERM *((unsigned char *) 0x484)
+
+// extern
+extern unsigned char fExit;
 
 
 #ifdef __VBCC__
@@ -269,16 +273,25 @@ unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned c
 
 }
 
-void su_mutekeys(void)
+unsigned char su_getConterm()
 {
 	CONTERM &= 0xFA;                /* disable key sound and bell */
 	CONTERM |= 8;					/* enable keyboard function to return shift/alt/ctrl status */
+	return CONTERM;
+}
+void su_setConterm(unsigned char mode)
+{
+		CONTERM = mode;
 }
 
+void restore_atari_hw(void)
+{
+	my_Supexec((LONG *) su_setConterm);
+}
 
 void init_atari_hw(void)
 {
-	my_Supexec((LONG *) su_mutekeys);
+	_oldConterm = my_Supexec((LONG *) su_getConterm);
 }
 
 void init_atari_fdc(unsigned char drive)
@@ -306,8 +319,13 @@ unsigned char get_char()
 {
 	unsigned long key;
 
-	key=Cnecin();
-	if((key>>16) == 0x1C) return '\n';
+	key=Crawcin();
+	if ( (key>>16) == 0x42e ) { /* Ctrl C */
+		fExit=1;
+	}
+	if((key>>16) == 0x1C) {
+		return '\n';
+	}
 
 	return (unsigned char) key&0xff;
 }
@@ -315,9 +333,12 @@ unsigned char get_char()
 
 long wait_function_key()
 {
-	long keylong = Cnecin();
+	long key = Crawcin();
+	if ( (key>>16) == 0x42e ) { /* Ctrl C */
+		fExit=1;
+	}
 
-	return keylong;
+	return key;
 }
 
 

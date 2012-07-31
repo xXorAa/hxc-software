@@ -28,6 +28,7 @@
 //
 */
 
+void restore_atari_hw(void);
 void init_atari_hw(void);
 void init_atari_fdc(unsigned char drive);
 unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned char invalidate_cache);

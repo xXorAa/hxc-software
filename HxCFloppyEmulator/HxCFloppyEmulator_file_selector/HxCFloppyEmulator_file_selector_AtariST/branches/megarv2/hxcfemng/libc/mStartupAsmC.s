@@ -3,6 +3,7 @@
 
 REDIRECT_OUTPUT_TO_SERIAL   equ 0   ;0-output to console,1-output to serial port
 
+        xdef    _exit
         xdef    _memcpy
         xdef    _strlen
         xdef    _strcmp
@@ -26,9 +27,10 @@ start:
         add.l   #STACK_SIZE+BASEPAGE_SIZE,d0        ;length of stackpointer+basepage
         move.l  a5,d1                   ;address to basepage
         add.l   d0,d1                   ;end of program
-        and.b   #$f0,d1                 ;align stack
+;        and.b   #$f0,d1                 ;align stack
+        lea     basepage(pc),a0
+        move.l  a5,(a0)+
         move.l  d1,sp                   ;new stackspace
-
         move.l  d0,-(sp)                ;mshrink()
         pea     (a5)                    ;start of the block, note that ALL other implementations
                                         ;assume basepage = start of the block. That's wrong.
@@ -49,16 +51,23 @@ start:
 
         jsr _main
 
-exit:
+_exit:
 ;       move.w #1,-(sp)
 ;       trap #1
 ;       addq.l #2,sp
 
-        clr.w -(sp)
+        move.l  basepage(pc),a5         ;basepage
+        tst.l   $24(a5)
+        beq.s   .bootsector
+        clr.w   -(sp)                   ;Pterm
         trap #1
-
-;_basepage: ds.l    1
-;_len:  ds.l    1
+.bootsector:
+        clr.l   -(sp)
+        move.w  #$20,-(sp)
+        trap    #1
+        move.l  d0,sp                   ;restore the old stack
+        rts
+basepage:  dc.l 0
 
 ; --------------------------------------------------------------
 _memcpy:

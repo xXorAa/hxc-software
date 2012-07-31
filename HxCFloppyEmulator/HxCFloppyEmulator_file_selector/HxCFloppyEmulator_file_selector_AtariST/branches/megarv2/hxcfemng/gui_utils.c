@@ -57,6 +57,7 @@ unsigned char * screen_buffer_backup;
 unsigned char screen_backup_isUsed;
 unsigned char color;
 unsigned char highresmode;
+static short  _oldrez=0xff;
 
 unsigned char  NUMBER_OF_FILE_ON_DISPLAY;/* 19-5 //19 -240 */
 
@@ -452,23 +453,32 @@ void display_status()
 
 /**
  * Set the palette
- * @param int colorm the number of the palette, -1 to cycle
+ * @param int colorm the number of the palette, -1 to cycle, -2 to restore
  * @return int the new palette number
  */
 unsigned char set_color_scheme(unsigned char colorm)
 {
 	unsigned short * palette;
+	short tmpcolor;
 	int i,j;
 	int nbcols;
+	static UWORD initialpalette[4] = {0xffff, 0xffff, 0xffff, 0xffff};
 
 	if (0xff == colorm) {
+		// cycle
 		colorm = color+1;
+		if ( colorm >= (sizeof(colortable))>>3 ) {
+			// reset to first
+			colorm = 0;
+		}
 	}
-	if ( colorm >= (sizeof(colortable))>>3 ) {
-		colorm = 0;
+	if (0xfe == colorm) {
+		// restore
+		palette = initialpalette;
+	} else {
+		color = colorm;
+		palette = &colortable[color<<2];
 	}
-	color = colorm;
-	palette = &colortable[color<<2];
 	nbcols = 2<<(NB_PLANES-1);
 
 	for (i=0; i<4 && i<nbcols; i++) {
@@ -478,12 +488,26 @@ unsigned char set_color_scheme(unsigned char colorm)
 			// the last two colors may be pal[2] and pal[3] in 2 planes, or pal[14] and pal[15] in 4 planes
 			j = nbcols - 4 + i;
 		}
-		Setcolor(j, palette[i]);
+		tmpcolor = Setcolor(j, palette[i]);
+		if (0xffff == initialpalette[i]) {
+			initialpalette[i] = tmpcolor;
+		}
 	}
 
 	return color;
 }
 
+void restore_display()
+{
+	set_color_scheme(0xfe);
+
+	// Line-A : Showmouse
+	__asm__("dc.w 0xa009");
+
+	if (-1 != _oldrez) {
+		Setscreen((unsigned char *) -1, (unsigned char *) -1, _oldrez );
+	}
+}
 
 void init_display()
 {
@@ -504,6 +528,8 @@ void init_display()
 
 	if (V_X_MAX < 640) {
 		/*Blitmode(1) */;
+		_oldrez = Getrez();
+
 		if(highresmode)
 		{
 			Setscreen((unsigned char *) -1, (unsigned char *) -1, 2 );
@@ -534,8 +560,7 @@ void init_display()
 	}
 
 	// clear the screen
-	memset(screen_addr, 0, (ULONG) SCREEN_YRESOL * LINE_BYTES);
-
+	memsetword(screen_addr, 0, (ULONG) SCREEN_YRESOL * LINE_WORDS);
 
 	set_color_scheme(0);
 

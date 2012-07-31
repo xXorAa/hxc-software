@@ -69,21 +69,45 @@ static unsigned char sdfecfg_file[2048];
 static char filter[17];
 
 
-static unsigned char fRepaginate_files, fRedraw_status;
+static unsigned char fRepaginate_files;
+static unsigned char fRedraw_status;
 
 static disk_in_drive disks_slot_a[NUMBER_OF_SLOT];
 static disk_in_drive disks_slot_b[NUMBER_OF_SLOT];
 
 static struct fs_dir_list_status file_list_status;
 
+static UBYTE * _bigmem_adr;
+static LONG    _bigmem_len;
+
+
+// imported variables:
 extern unsigned short SCREEN_XRESOL;
 extern unsigned short SCREEN_YRESOL;
 extern DirectoryEntry * gfl_dirEntLSB_ptr;
+
+// exported variables:
+unsigned char fExit=0;					// set to 1 to exit
+
+
+void handle_exit()
+{
+	fl_shutdown();
+	free(_bigmem_adr);
+	restore_display();
+	restore_atari_hw();
+	exit(0);
+}
+
+
 
 void lockup()
 {
 	while(1) {
 		get_char();
+		if (fExit) {
+			handle_exit();
+		}
 	}
 }
 
@@ -781,16 +805,12 @@ int main(int argc, char* argv[])
 	unsigned char slotnumber;
 	long key;
 
-	UBYTE * bigmem_adr;
-	LONG    bigmem_len;
-
 	init_display();
 
-//
-	bigmem_len = (long)    malloc(-1L);
-	bigmem_adr = (UBYTE *) malloc(bigmem_len);
-	fli_init(bigmem_adr, bigmem_len);
-//
+	// malloc all the available memory
+	_bigmem_len = (long)    malloc(-1L);
+	_bigmem_adr = (UBYTE *) malloc(_bigmem_len);
+	fli_init(_bigmem_adr, _bigmem_len);
 
 	bootdev=0;/* argv[1][0]-'0'; */
 
@@ -956,8 +976,8 @@ int main(int argc, char* argv[])
 		} else {
 			// hxc_printf(0,0,0,"key:%08lx!",key);
 		}
-	} while (1 || key == 0);
+	} while (!fExit);
 
+	handle_exit();
 	return 0;
 }
-
