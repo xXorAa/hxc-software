@@ -3,5 +3,6 @@
 
 void ij_keyEvent(signed char key);
 UWORD ij_performSearch();
+void ij_clear();
 
 #endif

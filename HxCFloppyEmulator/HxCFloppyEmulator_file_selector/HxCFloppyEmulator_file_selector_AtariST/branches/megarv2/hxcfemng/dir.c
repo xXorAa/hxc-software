@@ -72,6 +72,25 @@ UWORD dir_getFirstFileForPage(UWORD page)
 	return _FilelistPages_tab[page];
 }
 
+/**
+ * Find the asked entry
+ * @returns page number
+ */
+UWORD dir_getPageForEntry(UWORD askedEntry)
+{
+	UWORD runPage;
+	UWORD entry;
+
+	for (runPage=_nbPages-1; runPage; runPage--) {
+		// TODO !!!
+		entry = _FilelistPages_tab[runPage];
+		if (entry <= askedEntry) {
+			break;
+		}
+	}
+	return runPage;
+}
+
 #if(0)
 int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 {
@@ -107,20 +126,6 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 }
 #endif
 
-
-/**
- * Find the asked entry, set the page number and the cursor position
- * @returns page<<16 | position
- */
-ULONG dir_goToEntry(UWORD askedEntry)
-{
-	UWORD runPage;
-
-	for (runPage=0; runPage<_nbPages; runPage++) {
-		// TODO !!!
-	}
-	return ((ULONG) runPage<<16) + 0;
-}
 
 /**
  * @returns integer number of pages

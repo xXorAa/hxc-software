@@ -55,6 +55,7 @@ extern unsigned short SCREEN_YRESOL;
 //
 static UWORD _currentPage = 0xffff;
 static UWORD _selectorPos;
+static UWORD _selectorToEntry = 0xffff;
 static signed short _invertedLine;
 static UBYTE _isLastPage;
 static UWORD _nbPages;
@@ -69,40 +70,12 @@ UWORD gfl_filelistCurrentPage_tab[MAXFILESPERPAGE];
 
 
 
-#if(0)
+
 void gfl_jumpToFile(UWORD askedFile)
 {
-	// regarde déjà si le fichier est déjà affiché
-	// si non, fait la recherche, en modifiant filelistCurrentPage
-	// dès qu'il est trouvé, faire gfl_showFilesForPage, avec forceRedraw
-
-	UWORD nbPages, runPage, runPos;
-	nbPages = dir_getNbPages();
-	struct fs_dir_ent dir_entry;
-
-	for (runPage=0; runPage<nbPages; runPage++)
-	{
-		curFile = dir_getFirstFileForPage(runPage);
-
-		for (runPos=0; runPos<NUMBER_OF_FILE_ON_DISPLAY; runPos++)
-		{
-			if ((curFile == askedFile) || (0xffff == curFile)) {
-				break;
-			}
-
-			do {
-				curFile++;
-				fli_getDirEntryMSB(curFile, &dir_entry);
-			} while (!dir_filter(&dir_entry));
-		} // for (runPos=0;
-
-		if (curFile == askedFile) {
-			gfl_showFilesForPage(runPage);
-		}
-
-	} // for (runPage=0;
+	_currentPage = dir_getPageForEntry(askedFile);
+	_selectorToEntry = askedFile;
 }
-#endif
 
 
 
@@ -110,6 +83,7 @@ void gfl_jumpToFile(UWORD askedFile)
 void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 {
 	static UWORD _oldPage = 0xffff;
+	UWORD curFile;
 	UWORD i;
 	UWORD y_pos;
 	UBYTE fForceRedraw=0;
@@ -124,7 +98,6 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 
 	if ( (_oldPage != _currentPage) || fForceRedraw || fForceRedrawAll )
 	{
-		UWORD curFile;
 		unsigned char fCached;
 		struct fs_dir_ent dir_entry;
 
@@ -196,6 +169,21 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 	} // if ( (newPage != _currentPage) || (0xffff == _currentPage) )
 
 
+
+	if (0xffff != _selectorToEntry)
+	{
+		// the page just has been shown, so it is now cached
+		for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; i++)
+		{
+			curFile = gfl_filelistCurrentPage_tab[i];
+			if (curFile >= _selectorToEntry) {
+				// this is the asked entry (or >, to handle filter)
+				_selectorPos = i;
+				break;
+			}
+		}
+		_selectorToEntry = 0xffff;
+	}
 
 
 	if (_invertedLine != _selectorPos) {

@@ -8,6 +8,7 @@ void mystrlwr(char *string);
 void dir_paginateAndPrefillCurrentPage();
 UWORD dir_getNbPages();
 UWORD dir_getFirstFileForPage(UWORD page);
+UWORD dir_getPageForEntry(UWORD askedEntry);
 int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab);
 void dir_setFilter(char *filter);
 char * dir_getFilter();

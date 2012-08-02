@@ -890,6 +890,7 @@ int main(int argc, char* argv[])
 
 		UBYTE isDir = (gfl_dirEntLSB_ptr->attributes&0x10);
 		UWORD keylow = key>>16;
+		char clear_instajump = 1;
 
 		if (keylow == 0) {
 		} else if (isDir && (keylow==0x1c || keylow==0x52 || keylow==0x47 || keylow==0x2b) ) {
@@ -983,9 +984,19 @@ int main(int argc, char* argv[])
 //			fli_sort();
 //			fRepaginate_files=1;
 		} else {
-			hxc_printf(0,0,0,"key:%08lx!",key);
-			ij_keyEvent((char) key);
-			ij_performSearch();
+			// hxc_printf(0,0,0,"key:%08lx!",key);
+			if ((char) key >= ' ')
+			{
+				clear_instajump = 0;
+				ij_keyEvent((char) key);
+				i = ij_performSearch();
+				if (i != 0xffff) {
+					gfl_jumpToFile(i);
+				}
+			}
+		}
+		if (clear_instajump) {
+			ij_clear();
 		}
 	} while (!fExit);
 
