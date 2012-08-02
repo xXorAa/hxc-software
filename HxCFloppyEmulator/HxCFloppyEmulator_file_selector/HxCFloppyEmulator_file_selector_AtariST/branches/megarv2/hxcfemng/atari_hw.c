@@ -378,6 +378,7 @@ void reboot()
 	my_Supexec((LONG *)su_reboot);
 }
 
+#if(0)
 unsigned long read_long_odd(unsigned char * adr)
 {
 	unsigned long ret = 0;
@@ -394,3 +395,4 @@ void write_long_odd(unsigned char * adr, unsigned long value)
 	*(adr+2) = (value >>  8) & 0xff;
 	*(adr+3) = (value      ) & 0xff;
 }
+#endif

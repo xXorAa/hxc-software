@@ -89,8 +89,10 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 {
 	UWORD i, currentFile;
 
+	more_busy();
 	currentFile = _FilelistPages_tab[page & 0x1ff];
 	if (0xffff == currentFile) {
+		less_busy();
 		return FALSE;
 	}
 
@@ -112,6 +114,7 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 		}
 	}
 
+	less_busy();
 	return TRUE;
 }
 #endif
@@ -135,6 +138,11 @@ void dir_paginateAndPrefillCurrentPage()
 	UWORD currentPage;
 	UWORD currentFile;
 	UBYTE currentFileInPage;
+
+	more_busy();
+
+	// sort the directory
+	fli_sort();
 
 	// erase all pages
 	memset(_FilelistPages_tab, 0xff, 2*512);
@@ -172,6 +180,7 @@ void dir_paginateAndPrefillCurrentPage()
 	//hxc_printf(2,0,0, "dir_paginate(): %ld seconds/100", time);
 
 	_nbPages = currentPage+1;
+	less_busy();
 }
 
 
@@ -191,6 +200,8 @@ int dir_scan(char *path)
 {
 	UWORD nbFiles;
 
+	more_busy();
+
 	// reset the file list
 	fli_clear();
 
@@ -202,6 +213,7 @@ int dir_scan(char *path)
 		nbFiles++;
 	}
 
+	less_busy();
 	return nbFiles;
 }
 

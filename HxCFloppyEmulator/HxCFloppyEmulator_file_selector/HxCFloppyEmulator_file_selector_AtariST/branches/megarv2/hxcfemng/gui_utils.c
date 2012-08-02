@@ -57,7 +57,8 @@ unsigned char * screen_buffer_backup;
 unsigned char screen_backup_isUsed;
 unsigned char color;
 unsigned char highresmode;
-static short  _oldrez=0xff;
+static short  _oldrez = 0xffff;
+static UWORD  _business = 0;
 
 unsigned char  NUMBER_OF_FILE_ON_DISPLAY;/* 19-5 //19 -240 */
 
@@ -426,7 +427,7 @@ int display_credits(int i)
 	i++;
 	hxc_printf(1,0,HELP_Y_POS+(i*8), "(c) 2006-2012 HxC2001 / Jean-Francois DEL NERO");
 	i++;
-	hxc_printf(1,0,HELP_Y_POS+(i*8), "Fast Loader by Gilles Bouthenot");
+	hxc_printf(1,0,HELP_Y_POS+(i*8), "and Megar / Gilles Bouthenot");
 	i++;
 	hxc_printf(1,0,HELP_Y_POS+(i*8), "Check for updates on :");
 	i++;
@@ -450,6 +451,22 @@ void display_status()
 
 	hxc_printf(1,0,SCREEN_YRESOL-(48+20)+24,">>>Press HELP key for the function key list<<<");
 }
+
+void more_busy()
+{
+	_business++;
+	hxc_printf(0,8*(LINE_CHARS-1),0,"%c",23);
+}
+void less_busy()
+{
+	if (_business) {
+		_business--;
+		if (!_business) {
+			hxc_printf(0,8*(LINE_CHARS-1),0," ",23);
+		}
+	}
+}
+
 
 /**
  * Set the palette
@@ -504,7 +521,7 @@ void restore_display()
 	// Line-A : Showmouse
 	__asm__("dc.w 0xa009");
 
-	if (-1 != _oldrez) {
+	if (0xffff != _oldrez) {
 		Setscreen((unsigned char *) -1, (unsigned char *) -1, _oldrez );
 	}
 }

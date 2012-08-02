@@ -31,6 +31,8 @@ void get_char_restore_box(void);
 void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,char * chaine, ...);
 void hxc_printf_box(unsigned char mode,char * chaine, ...);
 void restore_box();
+void more_busy();
+void less_busy();
 
 void h_line(unsigned short y_pos, unsigned short val);
 void invert_line(unsigned short y_pos);
@@ -43,6 +45,6 @@ void display_status();
 int  display_credits();
 unsigned char set_color_scheme(unsigned char color);
 
-#define VERSIONCODE "2.0 alpha 1"
-#define DATECODE "2012-07-21"
+#define VERSIONCODE "2.0 alpha 2"
+#define DATECODE "2012-07-28"
 #endif
