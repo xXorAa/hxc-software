@@ -28,6 +28,7 @@
 //
 */
 
+void mystrlwr(char *string);
 void restore_atari_hw(void);
 void init_atari_hw(void);
 void init_atari_fdc(unsigned char drive);
@@ -35,6 +36,7 @@ unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned c
 unsigned char writesector(unsigned char sectornum,unsigned char * data);
 unsigned char Keyboard();
 void flush_char();
+unsigned long get_hz200();
 unsigned char get_char();
 long wait_function_key();
 void jumptotrack0();

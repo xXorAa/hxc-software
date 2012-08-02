@@ -47,18 +47,6 @@ extern unsigned short SCREEN_YRESOL;
 extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
 extern UWORD gfl_filelistCurrentPage_tab[];
 
-void mystrlwr(char *string)
-{
-	while(*string)
-	{
-		if ( *string >= 'A' && *string <= 'Z' )
-		{
-			 *string = *string + 32;
-		}
-		string++;
-	}
-}
-
 
 int dir_filter(struct fs_dir_ent *dir_entry)
 {
@@ -119,6 +107,20 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 }
 #endif
 
+
+/**
+ * Find the asked entry, set the page number and the cursor position
+ * @returns page<<16 | position
+ */
+ULONG dir_goToEntry(UWORD askedEntry)
+{
+	UWORD runPage;
+
+	for (runPage=0; runPage<_nbPages; runPage++) {
+		// TODO !!!
+	}
+	return ((ULONG) runPage<<16) + 0;
+}
 
 /**
  * @returns integer number of pages

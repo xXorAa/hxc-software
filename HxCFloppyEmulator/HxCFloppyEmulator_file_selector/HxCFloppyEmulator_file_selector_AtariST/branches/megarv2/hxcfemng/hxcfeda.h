@@ -1,5 +1,6 @@
 #ifndef __HXCFEDA_H__
 #define __HXCFEDA_H__
+
 /*
 //
 // Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
@@ -26,6 +27,8 @@
 // Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 //
 */
+
+#include "compiler_helper.h"
 
 STRUCT_PACK_BEGIN
 typedef struct STRUCT_PACK direct_access_status_sector_

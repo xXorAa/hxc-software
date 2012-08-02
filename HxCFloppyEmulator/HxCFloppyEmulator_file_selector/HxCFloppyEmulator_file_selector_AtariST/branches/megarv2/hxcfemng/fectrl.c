@@ -45,6 +45,7 @@
 #include "dir.h"
 #include "filelist.h"
 #include "gui_filelist.h"
+#include "instajump.h"
 
 
 #include "atari_hw.h"
@@ -982,7 +983,9 @@ int main(int argc, char* argv[])
 //			fli_sort();
 //			fRepaginate_files=1;
 		} else {
-			//hxc_printf(0,0,0,"key:%08lx!",key);
+			hxc_printf(0,0,0,"key:%08lx!",key);
+			ij_keyEvent((char) key);
+			ij_performSearch();
 		}
 	} while (!fExit);
 

@@ -62,6 +62,18 @@ void asm_nop(void) = "\tnop\n";
 #endif
 
 
+void mystrlwr(char *string)
+{
+	while(*string)
+	{
+		if ( *string >= 'A' && *string <= 'Z' )
+		{
+			 *string = *string + 32;
+		}
+		string++;
+	}
+}
+
 void su_fdcRegSet(WORD reg, WORD data)
 {
 	DMA->control = reg | fdcDmaMode;
@@ -356,7 +368,6 @@ unsigned char get_vid_mode()
 	return (unsigned char) my_Supexec((LONG *) su_get_vid_mode);
 }
 
-#if(0)
 unsigned long su_get_hz200()
 {
 	return *_hz_200;
@@ -365,7 +376,6 @@ unsigned long get_hz200()
 {
 	return	(unsigned long) my_Supexec((LONG *) su_get_hz200);
 }
-#endif
 
 void su_reboot()
 {

@@ -7,6 +7,7 @@
 UBYTE * _base;
 LONG    _length;
 UWORD   _nbEntries;
+UWORD   _firstFile;     // 0xfffe: not yet computed, 0xffff: no file
 UBYTE * _endAdr;
 
 /*
@@ -24,14 +25,15 @@ puis les direntryVar, qui commencent à la fin du bloc.
 */
 
 
-// A enlever:
-#include "gui_utils.h"
+// Only for debug:
+//#include "gui_utils.h"
 
 
 void fli_clear(void)
 {
     _nbEntries = 0;
     _endAdr      = _base + _length;
+    _firstFile = 0xfffe;
 }
 
 int fli_init(void * base, LONG length)
@@ -88,6 +90,44 @@ int fli_push(struct fs_dir_ent * dir_entry) {
     return TRUE;
 }
 
+/**
+ * Returns the number of entries in the file list
+ */
+UWORD fli_getNbEntries(void)
+{
+    return _nbEntries;
+}
+
+/**
+ * Returns the entry of the first non-dir entry
+ * @returns integer or 0xffff if there are no files (only dirs)
+ */
+UWORD fli_getFirstFile(void)
+{
+    UWORD i;
+
+    UBYTE **ptr;
+    UBYTE *newAdr;
+
+    ptr = (UBYTE **) _base;
+
+    if (0xfffe == _firstFile) {
+        // not yet computed
+        for (i=0; i<_nbEntries; i++, ptr++) {
+            newAdr = *ptr;
+
+            if (*(newAdr+8) == 2) {
+                _firstFile = i;
+                return i;
+            }
+        }
+
+        // no file
+        _firstFile = 0xffff;
+    }
+
+    return _firstFile;
+}
 
 #if(0)
 UWORD fli_next(UWORD current)
@@ -172,6 +212,10 @@ int fli_getDirEntryLSB(UWORD number, DirectoryEntry * dir_entry)
 }
 
 
+/**
+ * Sort the entries.
+ * This function actually only sorts the pointers to the data, it is quite fast.
+ */
 void fli_sort(void)
 {
     //unsigned long time = get_hz200();
