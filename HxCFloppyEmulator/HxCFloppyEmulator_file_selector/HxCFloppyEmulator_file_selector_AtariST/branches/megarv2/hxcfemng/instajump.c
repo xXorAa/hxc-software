@@ -25,12 +25,20 @@
 //
 */
 
+
+//#define IJ_DEBUG
+
+
+
 #include <string.h>
 
 #include "atari_hw.h"
 #include "hxcfeda.h"
 
-//#include "gui_utils.h" // DEBUG ONLY !
+#ifdef IJ_DEBUG
+	#include "gui_utils.h" // DEBUG ONLY !
+	static int debug_line=0;
+#endif
 
 
 //#include "cfg_file.h"
@@ -53,8 +61,6 @@ static unsigned long _lastTime = 0;
 static char _searchString[IJ_MAXLEN+1];
 static unsigned char _isValid;						// previous search matched
 
-static int debug_line=0;
-
 // interval:
 static UWORD _mini;						// low, inclusive
 static UWORD _maxi;						// high, exclusive
@@ -74,6 +80,21 @@ void ij_keyEvent(signed char key)
 
 	time = get_hz200();
 	if ( (time - _lastTime) < (IJ_TIMEOUT / 5)  ) {
+		if ('\0' == key) {
+			_mini++;
+			key = _searchString[len-1];
+			_searchString[0] = '\0';
+			len = 0;
+			_phase--;
+			if (!_phase) {
+				_maxi    = firstFile;
+			} else {
+				_maxi    = fli_getNbEntries();
+			}
+			if (_mini < _maxi) {
+				_isValid = 1;
+			}
+		}
 	} else {
 		firstFile = fli_getFirstFile();
 
@@ -81,6 +102,7 @@ void ij_keyEvent(signed char key)
 		len = 0;
 		_isValid = 1;
 		_mini    = 0;
+
 		if (0 == firstFile) {
 			_phase   = 1;		// files
 			_maxi    = fli_getNbEntries();
@@ -88,7 +110,9 @@ void ij_keyEvent(signed char key)
 			_phase   = 0;		// directories
 			_maxi    = firstFile;
 		}
-		debug_line = 0;
+		#ifdef IJ_DEBUG
+			debug_line = 0;
+		#endif
 	}
 
 	if (_isValid && (len < IJ_MAXLEN)) {
@@ -114,6 +138,7 @@ UWORD ij_performSearch()
 	UWORD curFile;
 	UWORD lastok = 0xffff;
 	UWORD lastmaxi;
+	UWORD backupmini;
 	struct fs_dir_ent dir_entry;
 	int cmp;
 
@@ -121,9 +146,12 @@ UWORD ij_performSearch()
 		return 0xffff;
 	}
 
+	backupmini = _mini;
 	lastmaxi = _maxi;
 
-	//hxc_printf(0, 0, 8*(debug_line++), "searching for %s in [%d;%d[", _searchString, _mini, _maxi);
+	#ifdef IJ_DEBUG
+		hxc_printf(0, 0, 8*(debug_line++), "searching for %s in [%d;%d[", _searchString, _mini, _maxi);
+	#endif
 
 	do {
 		curFile = (_mini + _maxi) >> 1;
@@ -132,7 +160,9 @@ UWORD ij_performSearch()
 		mystrlwr(dir_entry.filename);
 		cmp = strncmp(dir_entry.filename, _searchString, strlen(_searchString));
 
-		//hxc_printf(0, 0, 8*(debug_line++), "try p=%d in [%d;%d[ index %d (%d):%s", _phase, _mini, _maxi, curFile, cmp, dir_entry.filename);
+		#ifdef IJ_DEBUG
+			hxc_printf(0, 0, 8*(debug_line++), "try p=%d in [%d;%d[ index %d (%d):%s", _phase, _mini, _maxi, curFile, cmp, dir_entry.filename);
+		#endif
 
 		if (curFile == _mini) {
 			//last
@@ -144,14 +174,21 @@ UWORD ij_performSearch()
 				// found
 				_mini = curFile;
 				_maxi = lastmaxi;
-				//hxc_printf(0, 0, 8*(debug_line++), "Found at %d in [%d;%d[", curFile, _mini, _maxi);
+				#ifdef IJ_DEBUG
+					hxc_printf(0, 0, 8*(debug_line++), "Found at %d in [%d;%d[", curFile, _mini, _maxi);
+				#endif
 				return curFile;
 			}
 
 			// not found
 			_phase++; // files
-			_mini    = fli_getFirstFile();
-			_maxi    = fli_getNbEntries();
+			if (1 == _phase) {
+				_mini    = fli_getFirstFile();
+				_maxi    = fli_getNbEntries();
+				lastmaxi = _maxi;
+			} else {
+				_mini = backupmini;
+			}
 		} else {
 			if ( cmp < 0) {
 				_mini = curFile;
@@ -169,7 +206,9 @@ UWORD ij_performSearch()
 		curFile++;
 	} while (_phase < 2);
 
-	//hxc_printf(0, 0, 8*(debug_line++), "Not found");
+	#ifdef IJ_DEBUG
+		hxc_printf(0, 0, 8*(debug_line++), "Not found in [%d;%d[", _mini, _maxi);
+	#endif
 	_isValid = 0;
 	return 0xffff;
 }

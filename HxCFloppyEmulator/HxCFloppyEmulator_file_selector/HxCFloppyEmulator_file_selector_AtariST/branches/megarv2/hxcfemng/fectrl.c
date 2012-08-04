@@ -992,6 +992,13 @@ int main(int argc, char* argv[])
 				i = ij_performSearch();
 				if (i != 0xffff) {
 					gfl_jumpToFile(i);
+				} else {
+					// not found: retry
+					ij_keyEvent('\0');
+					i = ij_performSearch();
+					if (i != 0xffff) {
+						gfl_jumpToFile(i);
+					}
 				}
 			}
 		}
