@@ -690,103 +690,78 @@ void handle_emucfg(void)
 	cfgfile * cfgfile_ptr;
 	int i;
 	unsigned char c;
+	signed char direct;
 
 	clear_list(5);
 	cfgfile_ptr=(cfgfile * )cfgfile_header;
 
+	UWORD ypos = HELP_Y_POS;
+
 	i=0;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "SD HxC Floppy Emulator settings:");
+	hxc_printf(0,0,ypos, "SD HxC Floppy Emulator settings:");
+
+	ypos += 16;
+	hxc_printf(0,0,ypos, "Track step sound :");
+	hxc_printf(0,SCREEN_XRESOL/2,ypos, "%s ",cfgfile_ptr->step_sound?"on":"off");
+
+	ypos += 8;
+	hxc_printf(0,0,ypos, "User interface sound:");
+	hxc_printf(0,SCREEN_XRESOL/2,ypos, "%d  ",cfgfile_ptr->buzzer_duty_cycle);
+
+	ypos += 8;
+	hxc_printf(0,0,ypos, "LCD Backlight standby:");
+	hxc_printf(0,SCREEN_XRESOL/2,ypos, "%d s",cfgfile_ptr->back_light_tmr);
+
+	ypos += 8;
+	hxc_printf(0,0,ypos, "SDCard Standby:");
+	hxc_printf(0,SCREEN_XRESOL/2,ypos, "%d s",cfgfile_ptr->standby_tmr);
+
+	ypos += 16;
+	hxc_printf(1,0,ypos, "---Press Esc to exit---");
 
 	i=2;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "Track step sound :");
-	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%s ",cfgfile_ptr->step_sound?"on":"off");
-
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "User interface sound:");
-	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d  ",cfgfile_ptr->buzzer_duty_cycle);
-
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "LCD Backlight standby:");
-	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s",cfgfile_ptr->back_light_tmr);
-
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "SDCard Standby:");
-	hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s",cfgfile_ptr->standby_tmr);
-
-	i=i+2;
-	hxc_printf(1,0,HELP_Y_POS+(i*8), "---Press Esc to exit---");
-
-	i=2;
-	invert_line(HELP_Y_POS+(i*8));
 	do
 	{
-		c=wait_function_key();
-		switch(c)
-		{
-			case 0x48: /* Up */
-				invert_line(HELP_Y_POS+(i*8));
-				if(i>2) i--;
-				invert_line(HELP_Y_POS+(i*8));
-			break;
-			case 0x50: /* Down */
-				invert_line(HELP_Y_POS+(i*8));
-				if(i<5) i++;
-				invert_line(HELP_Y_POS+(i*8));
-			break;
-			case 0x4b: /* Left */
-				invert_line(HELP_Y_POS+(i*8));
-				switch(i)
-				{
-				case 2:
-					cfgfile_ptr->step_sound=~cfgfile_ptr->step_sound;
-					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%s ",cfgfile_ptr->step_sound?"on":"off");
-				break;
-				case 3:
-					if(cfgfile_ptr->buzzer_duty_cycle) cfgfile_ptr->buzzer_duty_cycle--;
-					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d  ",cfgfile_ptr->buzzer_duty_cycle);
-					if(!cfgfile_ptr->buzzer_duty_cycle) cfgfile_ptr->ihm_sound=0x00;
-					break;
-				case 4:
-					if(cfgfile_ptr->back_light_tmr) cfgfile_ptr->back_light_tmr--;
-					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->back_light_tmr);
-				break;
+		invert_line(i);
+		c=wait_function_key()>>16;
+		invert_line(i);
+		ypos = HELP_Y_POS+(i<<3);
 
-				case 5:
-					if(cfgfile_ptr->standby_tmr) cfgfile_ptr->standby_tmr--;
-					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->standby_tmr);
-				break;
+		if (0x48 ==c && i>2) { /* Up */
+			i--;
+		} else if (0x50 ==c && i<5) { /* Down */
+			i++;
+		} else if ((0x4b == c) || (0x4d == c)) { /* Left, Right */
+			direct = -1;
+			if (0x4d == c) {
+				direct = 1;
+			}
+			switch(i)
+			{
+			case 2:
+				cfgfile_ptr->step_sound =~ cfgfile_ptr->step_sound;
+				hxc_printf(0, SCREEN_XRESOL/2, ypos, "%s ", cfgfile_ptr->step_sound?"on":"off");
+			break;
+			case 3:
+				cfgfile_ptr->buzzer_duty_cycle += direct;
+				if (cfgfile_ptr->buzzer_duty_cycle >= 0x80) {
+					cfgfile_ptr->buzzer_duty_cycle = 0x7f;
 				}
-				invert_line(HELP_Y_POS+(i*8));
-
+				hxc_printf(0, SCREEN_XRESOL/2, ypos, "%d  ", cfgfile_ptr->buzzer_duty_cycle);
+				if(!cfgfile_ptr->buzzer_duty_cycle) { cfgfile_ptr->ihm_sound=0x00; }
+				else {cfgfile_ptr->ihm_sound=0xff;}
+				break;
+			case 4:
+				cfgfile_ptr->back_light_tmr += direct;
+				hxc_printf(0, SCREEN_XRESOL/2, ypos, "%d s  ", cfgfile_ptr->back_light_tmr);
 			break;
-			case 0x4d: /* Right */
-				invert_line(HELP_Y_POS+(i*8));
-				switch(i)
-				{
-				case 2:
-					cfgfile_ptr->step_sound=~cfgfile_ptr->step_sound;
-					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%s ",cfgfile_ptr->step_sound?"on":"off");
-					break;
-				case 3:
-					if(cfgfile_ptr->buzzer_duty_cycle<0x80) cfgfile_ptr->buzzer_duty_cycle++;
-					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d  ",cfgfile_ptr->buzzer_duty_cycle);
-					cfgfile_ptr->ihm_sound=0xFF;
-				break;
-				case 4:
-					if(cfgfile_ptr->back_light_tmr<0xFF) cfgfile_ptr->back_light_tmr++;
-					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->back_light_tmr);
-
-				break;
-				case 5:
-					if(cfgfile_ptr->standby_tmr<0xFF) cfgfile_ptr->standby_tmr++;
-					hxc_printf(0,SCREEN_XRESOL/2,HELP_Y_POS+(i*8), "%d s ",cfgfile_ptr->standby_tmr);
-				break;
-				}
-				invert_line(HELP_Y_POS+(i*8));
+			case 5:
+				cfgfile_ptr->standby_tmr += direct;
+				hxc_printf(0, SCREEN_XRESOL/2, ypos, "%d s  ", cfgfile_ptr->standby_tmr);
 			break;
-
+			}
 		}
-	}while(c!=0x01); /* Esc */
+	}while(c!=0x01 && !fExit); /* Esc */
 
 }
 
