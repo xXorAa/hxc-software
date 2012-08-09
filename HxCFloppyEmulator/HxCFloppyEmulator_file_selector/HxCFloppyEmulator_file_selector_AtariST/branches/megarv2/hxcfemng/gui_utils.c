@@ -166,7 +166,12 @@ void print_char8x8(unsigned char * membuffer, unsigned short x, unsigned short y
 
 	font = bitmap_font8x8_bmp;
 
-	ptr_dst=(unsigned char*)membuffer;
+	if (0 == membuffer) {
+		ptr_dst = screen_addr;
+	} else {
+		ptr_dst=(unsigned char*)membuffer;
+	}
+
 	ptr_src=(unsigned char*)&font->data[0];
 
 	k=((c>>4)*(8*8*2))+(c&0xF);

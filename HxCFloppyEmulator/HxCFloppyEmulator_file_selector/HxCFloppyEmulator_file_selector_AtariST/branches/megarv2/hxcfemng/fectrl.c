@@ -46,6 +46,7 @@
 #include "filelist.h"
 #include "gui_filelist.h"
 #include "instajump.h"
+#include "viewer.h"
 
 
 #include "atari_hw.h"
@@ -659,8 +660,7 @@ void handle_help()
 
 	i=0;
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "Function Keys (2/2):");
-
-	i=2;
+	i++;
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "F1              : Filter files in the current folder");
 	i++;
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "                  Type the word to search then enter");
@@ -669,7 +669,9 @@ void handle_help()
 	i++;
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "F2              : Change color");
 	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "F3              : Settings menu");
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "F3              : View the current file");
+	i++;
+	hxc_printf(0,0,HELP_Y_POS+(i*8), "F4              : Settings menu");
 	i++;
 	hxc_printf(0,0,HELP_Y_POS+(i*8), "F8              : Reboot");
 	i++;
@@ -935,7 +937,10 @@ int main(int argc, char* argv[])
 			fRepaginate_files=1;
 		} else if (keylow==0x3c) { /* F2: Change palette */
 			cfgfile_header[256+128] = set_color_scheme(0xff);
-		} else if (keylow==0x3d) { /* F3: Emuconfig */
+		} else if (keylow==0x3d) { /* F3: View */
+			viewer(currentPath, gfl_dirEntLSB_ptr, 1);
+			fRedraw_status = 1;
+		} else if (keylow==0x3e) { /* F4: Emuconfig */
 			handle_emucfg();
 			fRedraw_status = 1;
 		} else if (keylow==0x42) { /* F8: Reboot */

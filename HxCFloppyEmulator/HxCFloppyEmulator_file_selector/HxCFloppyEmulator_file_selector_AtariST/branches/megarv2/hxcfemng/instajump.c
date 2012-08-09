@@ -78,6 +78,7 @@ void ij_keyEvent(signed char key)
 	int len = strlen(_searchString);
 	UWORD firstFile;
 
+	firstFile = fli_getFirstFile();
 	time = get_hz200();
 	if ( (time - _lastTime) < (IJ_TIMEOUT / 5)  ) {
 		if ('\0' == key) {
@@ -96,8 +97,6 @@ void ij_keyEvent(signed char key)
 			}
 		}
 	} else {
-		firstFile = fli_getFirstFile();
-
 		// init a new search
 		len = 0;
 		_isValid = 1;
