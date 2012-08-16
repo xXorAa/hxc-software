@@ -53,136 +53,225 @@
 extern unsigned char NUMBER_OF_FILE_ON_DISPLAY;
 extern unsigned short SCREEN_XRESOL;
 extern unsigned short SCREEN_YRESOL;
+extern unsigned char fExit;
+
+
+FL_FILE *_file;
 
 
 
-void viewer(char *currentPath, DirectoryEntry *gfl_dirEntLSB_ptr, char fHex)
+/**
+ * @return 1 at EOF
+ */
+int _hexviewer(unsigned long offsetIn, unsigned long *offsetOut)
 {
-	char buffer[512];
+	UWORD curX=0, curY=0, i;
+	int bytesRead;
+	char buffer[96];
+	char *lineStart = buffer + 16;
+	char *lineHex   = buffer + 16 + 11;
+	char *lineAscii = buffer + 16 + 63;
+	unsigned char curChar;
+	unsigned char c;
+
+	fl_fseek(_file, offsetIn, SEEK_SET);
+
+	*offsetOut = offsetIn;
+	memset(lineHex, ' ', 79-11);
+
+	do { // fill the buffer
+		bytesRead = fl_fread(buffer, 1, 16 , _file);
+
+		if (bytesRead<=0) {
+			return 1;
+		}
+
+		plp_snprintf(lineStart, 80, "%08lx : ", (unsigned long)*offsetOut);
+// "12345678 : 00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff     0123456789abcdef"
+
+		for (curX=0,i=0; curX<16 && curX<bytesRead; curX++, i++) {
+			curChar = buffer[curX];
+			lineAscii[curX] = (curChar) ? (curChar) : (' ');
+			c = curChar>>4;
+			c += (c<10) ? ('0') : ('a'-10);
+			lineHex[i++] = c;
+
+			c = curChar&0xf;
+			c += (c<10) ? ('0') : ('a'-10);
+			lineHex[i++] = c;
+		}
+		lineAscii[curX] = '\0';
+
+		print_str(0, lineStart , 0, curY + VIEWER_Y_POS);
+		*offsetOut += 16;
+		curY += 8;
+	} while ( curY < ((NUMBER_OF_FILE_ON_DISPLAY+4)<<3) );
+	return 0;
+}
+
+
+
+/**
+ * @return 1 at EOF
+ */
+int _textviewer(unsigned long offsetIn, unsigned long *offsetOut)
+{
+	UWORD curX=0, curY=0;
+	int bytesRead;
 	int bufUsed   = 0;
 	int bufOffset = 0;
-	FL_FILE *file;
-	char filename[2*LFN_MAX_SIZE+2];
+	char buffer[512];
+	unsigned char curChar;
+
+	fl_fseek(_file, offsetIn, SEEK_SET);
+
+	*offsetOut = offsetIn;
+
+	do { // fill the buffer
+		// discard the already shown bytes
+		memcpy(buffer, buffer + bufOffset, bufUsed - bufOffset);
+		bufUsed -= bufOffset;
+		bufOffset = 0;
+
+		// fill the buffer
+		bytesRead = fl_fread(buffer + bufUsed, 1, 512 - bufUsed , _file);
+
+		if (bytesRead>=0) {
+			bufUsed += bytesRead;
+		}
+
+		do {
+			curChar = buffer[bufOffset];
+
+			if (10 == curChar) {
+				curX = 0xffff;
+				if (13 == buffer[bufOffset+1]) {
+					// LFCR
+					bufOffset++;
+					(*offsetOut)++;
+				}
+			} else if (13 == curChar) {
+				curX = 0xffff;
+				if (10 == buffer[bufOffset+1]) {
+					// CRLF
+					bufOffset++;
+					(*offsetOut)++;
+				}
+			} else {
+				print_char8x8(0, curX, VIEWER_Y_POS + curY, curChar);
+				curX +=8;
+			}
+
+			bufOffset++;
+			(*offsetOut)++;
+
+			if (curX >= SCREEN_XRESOL) {
+				curX = 0;
+				curY += 8;
+				if ( curY >= ((NUMBER_OF_FILE_ON_DISPLAY+4)<<3) ) {
+					return 0; // not at eof
+				}
+			}
+		} while ( (    ( (bytesRead>=0) && (bufOffset<(bufUsed-2)) ) // reserve 2 chars for CRLF handling
+		            || ( (bytesRead <0) && (bufOffset<(bufUsed)) )   // last chunk, still some chars to be done
+		          )
+		        );	// -1 for CRLF handling
+	} while (bytesRead>=0);	// fill the buffer
+
+	// eof
+	return 1;
+}
+
+
+/**
+ * View the selected file
+ * @param currentPath
+ * @param gfl_dirEntLSB_ptr
+ * @param fHex initial display: 0:ascii 1:Hex
+ */
+void viewer(char *currentPath, DirectoryEntry *gfl_dirEntLSB_ptr, char fHex)
+{
+	char filename[5*LFN_MAX_SIZE+2];
+	unsigned short anykey=0;
+	unsigned long offset = 0;
+	unsigned long offset2 = 0;
+	unsigned long pageOffset = 0;
+	unsigned long filelen;
+
+	filelen = read_long_lsb(&gfl_dirEntLSB_ptr->size_b1);
+
+	if (!filelen) {
+		display_statusl(0, 1, "File has 0 length !");
+		get_char();
+		return;
+	} else {
+		display_statusl(0, 1, "Opening file length = %ld bytes ($%lx)", (unsigned long)filelen, (unsigned long)filelen);
+	}
 
 	strcpy(filename, currentPath);
 	filename[strlen(filename)+1] = '\0';
 	filename[strlen(filename)]   = '/';
 	strcat(filename, (const char *)gfl_dirEntLSB_ptr->longName);
 
-	file = fl_fopen(filename, "r");
-	if (!file) {
+	_file = fl_fopen(filename, "r");
+	if (!_file) {
 		get_char();
 		return;
 	}
 
+	int isEof = 0;
 
-	UWORD curX, curY, i;
-	unsigned char curChar;
-	unsigned char c;
-	int bytesRead;
+	do {
+		// clear the screen
+		clear_list(4);
+		if (fHex) {
+			isEof = _hexviewer(offset, &offset2);
+		} else {
+			isEof = _textviewer(offset, &offset2);
+		}
 
-	// clear the screen
-	clear_list(5);
-	curX = 0; curY = 0;
 
-	if (fHex) {
-		// hex viewer
+		if (offset2 - offset > pageOffset) {
+			// the larger page offset
+			pageOffset = offset2 - offset;
+		}
 
-		char *lineStart = buffer + 18;
-		char *lineHex   = buffer + 18 + 11;
-		char *lineAscii = buffer + 18 + 63;
-		unsigned long offset = 0;
+		// ensure that this line is shown (even if the first chunk is the last one)
+		display_statusl(0, 0, "space/[ctrl/shift]Up/Down:navigate   F2:Text/Hex display   Esc/F3:Quit");
+		if (isEof) {
+			display_statusl(0, 0, "End of file                       ");
+		}
 
-		do {
-			// fill the buffer
-			bytesRead = fl_fread(buffer, 1, 16 , file);
-			memset(lineHex, ' ', 79-11);
+		anykey = wait_function_key()>>16;
+		if (0x3c == anykey) { // F2: toggle hex/ascii
+			fHex = 1-fHex;
+			pageOffset = 0;
+			isEof = 0;
+		} else if (!isEof && (0x50==anykey || 0x39==anykey)) { // down,space: next page
+			offset = offset2;
+		} else if (0x48==anykey) { // up: "previous" page
+			if (pageOffset > offset) {offset = 0;}
+			else {offset -= pageOffset; }
+			isEof = 0;
+		} else if (0x448==anykey) { // ctrl+up: go to start
+			offset = 0;
+			isEof = 0;
+		} else if (0x450==anykey) { // ctrl+down: go to end
+			offset = filelen-(pageOffset>>2);
+			isEof = 0;
+		} else if (0x148==anykey || 0x248==anykey) { // shift+up: up 8 pages
+			if ((pageOffset<<3) > offset) {offset = 0;}
+			else {offset -= (pageOffset<<3); }
+			isEof = 0;
+		} else if (0x150==anykey || 0x250==anykey) { // shift+down: down 8 pages
+			if (offset + (pageOffset<<3) >= filelen) {offset = filelen-(pageOffset>>2);}
+			else {offset += (pageOffset<<3); }
+			isEof = 0;
+		}
+		//hxc_printf(0,0,0,"key:%08lx ", anykey);
+	} while (anykey!=1 && anykey!=0x3d && !fExit);
 
-			if (bytesRead>0) {
-				plp_snprintf(lineStart, 80, "%08lx : ", (unsigned long)offset);
-// "12345678 : 00 11 22 33 44 55 66 77 88 99 aa bb cc dd ee ff     0123456789abcdef"
-
-				for (curX=0,i=0; curX<16 && curX<bytesRead; curX++, i++) {
-					curChar = buffer[curX];
-					lineAscii[curX] = (curChar) ? (curChar) : (' ');
-					c = curChar>>4;
-					c += (c<10) ? ('0') : ('a'-10);
-					lineHex[i++] = c;
-
-					c = curChar&0xf;
-					c += (c<10) ? ('0') : ('a'-10);
-					lineHex[i++] = c;
-				}
-				lineAscii[curX] = '\0';
-
-				print_str(0, lineStart , 0, curY + VIEWER_Y_POS);
-				curY += 8;
-
-				if ( curY >= ((NUMBER_OF_FILE_ON_DISPLAY+5)<<3) ) {
-					get_char();
-					clear_list(5);
-					curX = 0;
-					curY = 0;
-				}
-			}
-			offset += 16;
-		} while (bytesRead>0);
-
-	} else {
-		// text view
-		do
-		{
-			// discard the already shown bytes
-			memcpy(buffer, buffer + bufOffset, bufUsed - bufOffset);
-			bufUsed -= bufOffset;
-			bufOffset = 0;
-
-			// fill the buffer
-			bytesRead = fl_fread(buffer + bufUsed, 1, 512 - bufUsed , file);
-
-			if (bytesRead>=0) {
-				bufUsed += bytesRead;
-
-				do {
-					curChar = buffer[bufOffset];
-
-					if (10 == curChar) {
-						curX = 0xffff;
-						if (13 == buffer[bufOffset+1]) {
-							// LFCR
-							bufOffset++;
-						}
-					} else if (13 == curChar) {
-						curX = 0xffff;
-						if (10 == buffer[bufOffset+1]) {
-							// CRLF
-							bufOffset++;
-						}
-					} else {
-						print_char8x8(0, curX, VIEWER_Y_POS + curY, curChar);
-						curX +=8;
-					}
-
-					if (curX >= SCREEN_XRESOL) {
-						curX = 0;
-						curY += 8;
-						if ( curY >= ((NUMBER_OF_FILE_ON_DISPLAY+5)<<3) ) {
-							get_char();
-							clear_list(5);
-							curX = 0;
-							curY = 0;
-						}
-					}
-					bufOffset++;
-				} while (    (bytesRead>0 && bufOffset<(bufUsed-1))         // reserve 1 char for CRLF handling
-				          || ((0xffff == bytesRead) && bufOffset<(bufUsed))	// last chunk
-				        );	// -1 for CRLF handling
-			}
-		} while (bytesRead>0);
-	} // text viewer
-
-	get_char();
-	fl_fclose(file);
+	fl_fclose(_file);
 }
 
 

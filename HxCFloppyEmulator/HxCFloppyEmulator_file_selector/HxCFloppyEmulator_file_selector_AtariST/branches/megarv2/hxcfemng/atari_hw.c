@@ -398,6 +398,17 @@ unsigned long read_long_odd(unsigned char * adr)
 	ret |= ((unsigned long) *(adr+3));
 	return ret;
 }
+#endif
+unsigned long read_long_lsb(unsigned char * adr)
+{
+	unsigned long ret = 0;
+	ret |= ((unsigned long) *(adr++));
+	ret |= ((unsigned long) *(adr++)<<8);
+	ret |= ((unsigned long) *(adr++)<<16);
+	ret |= ((unsigned long) *(adr)<<24);
+	return ret;
+}
+#if(0)
 void write_long_odd(unsigned char * adr, unsigned long value)
 {
 	*(adr)   = (value >> 24) & 0xff;

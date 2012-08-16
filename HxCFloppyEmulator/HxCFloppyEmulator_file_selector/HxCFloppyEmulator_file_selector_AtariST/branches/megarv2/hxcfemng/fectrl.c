@@ -856,7 +856,7 @@ int main(int argc, char* argv[])
 
 		if (fRedraw_status)
 		{
-			display_status();
+			redraw_statusl();
 			display_slot(slotnumber);
 			displayFolder();
 			fRedraw_status=0;
@@ -938,7 +938,7 @@ int main(int argc, char* argv[])
 		} else if (keylow==0x3c) { /* F2: Change palette */
 			cfgfile_header[256+128] = set_color_scheme(0xff);
 		} else if (keylow==0x3d) { /* F3: View */
-			viewer(currentPath, gfl_dirEntLSB_ptr, 1);
+			viewer(currentPath, gfl_dirEntLSB_ptr, 0);
 			fRedraw_status = 1;
 		} else if (keylow==0x3e) { /* F4: Emuconfig */
 			handle_emucfg();

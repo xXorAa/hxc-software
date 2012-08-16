@@ -73,6 +73,7 @@ unsigned short CHUNK_WORDS;                 /* number of words for a 16-    */
                                             /* pixel chunk =2*NB_PLANES     */
 unsigned short PLANES_ALIGNDEC;             /* number of left shifts to
                                                transform nbChucks to Bytes  */
+unsigned short STATUSL_YPOS;                /* status line y position */
 
 __LINEA *__aline;
 __FONT  **__fonts;
@@ -415,7 +416,7 @@ void display_welcome()
 	i=0;
 	i = display_credits(i);
 
-	display_status();
+	redraw_statusl();
 
 	// line just above the logos
 	h_line(SCREEN_YRESOL-34,0xFFFF) ;
@@ -446,7 +447,24 @@ int display_credits(int i)
 	return i;
 }
 
-void display_status()
+
+void display_statusl(unsigned char mode, unsigned char clear, char * text, ...)
+{
+	char temp_buffer[256];
+
+	va_list marker;
+	va_start( marker, text );
+
+	if (clear) {
+		memsetword(screen_addr + STATUSL_YPOS*(LINE_WORDS<<1), 0, LINE_WORDS<<3);
+	}
+
+	vsnprintf(temp_buffer,256,text,marker);
+	hxc_printf(mode, 0, STATUSL_YPOS, temp_buffer);
+	va_end(marker);
+}
+
+void redraw_statusl()
 {
 	// line just above the statusbar
 	h_line(SCREEN_YRESOL-48-24-2,0xFFFF) ;
@@ -454,8 +472,9 @@ void display_status()
 	// line just under the statusbar
 	h_line(SCREEN_YRESOL-48+2,0xFFFF) ;
 
-	hxc_printf(1,0,SCREEN_YRESOL-(48+20)+24,">>>Press HELP key for the function key list<<<");
+	display_statusl(1, 0, ">>>Press HELP key for the function key list<<<");
 }
+
 
 void more_busy()
 {
@@ -564,6 +583,7 @@ void init_display()
 
 	SCREEN_XRESOL = V_X_MAX;
 	SCREEN_YRESOL = V_Y_MAX;
+	STATUSL_YPOS  = SCREEN_YRESOL-(48+20)+24;
 	LINE_BYTES    = V_BYTES_LIN;
 	LINE_WORDS    = V_BYTES_LIN/2;
 	LINE_CHARS    = SCREEN_XRESOL/8;

@@ -43,7 +43,8 @@ void clear_line(unsigned short y_pos, unsigned short val);
 void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned short y_p2,unsigned short fillval,unsigned char fill);
 void init_display();
 void restore_display();
-void display_status();
+void display_statusl(unsigned char mode, unsigned char clear, char * text, ...);
+void redraw_statusl();
 int  display_credits();
 unsigned char set_color_scheme(unsigned char color);
 

@@ -42,6 +42,7 @@ long wait_function_key();
 void jumptotrack0();
 void reboot();
 unsigned long read_long_odd(unsigned char * adr);
+unsigned long read_long_lsb(unsigned char * adr);
 void write_long_odd(unsigned char * adr, unsigned long value);
 
 unsigned char get_vid_mode();
