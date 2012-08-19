@@ -62,17 +62,18 @@ static UWORD  _business = 0;
 unsigned char  NUMBER_OF_FILE_ON_DISPLAY;/* 19-5 //19 -240 */
 
 unsigned short SCREEN_YRESOL;				/* screen X resolution (pixels) */
-unsigned short SCREEN_XRESOL;               /* screen Y resolution (pixels) */
-unsigned short LINE_BYTES;                  /* number of bytes per line     */
-unsigned short LINE_WORDS;                  /* number of words per line     */
-unsigned short LINE_CHARS;                  /* number of 8x8 chars per line */
-unsigned short NB_PLANES;                   /* number of planes (1:2 colors */
-                                            /*  4:16 colors, 8: 256 colors) */
-unsigned short CHUNK_WORDS;                 /* number of words for a 16-    */
-                                            /* pixel chunk =2*NB_PLANES     */
-unsigned short PLANES_ALIGNDEC;             /* number of left shifts to
-                                               transform nbChucks to Bytes  */
-unsigned short STATUSL_YPOS;                /* status line y position */
+unsigned short SCREEN_XRESOL;				/* screen Y resolution (pixels) */
+unsigned short LINE_BYTES;					/* number of bytes per line     */
+unsigned short LINE_WORDS;					/* number of words per line     */
+unsigned short LINE_CHARS;					/* number of 8x8 chars per line */
+unsigned short NB_PLANES;					/* number of planes (1:2 colors */
+											/*  4:16 colors, 8: 256 colors) */
+unsigned short CHUNK_WORDS;					/* number of words for a 16-    */
+											/* pixel chunk =2*NB_PLANES     */
+unsigned short PLANES_ALIGNDEC;				/* number of left shifts to
+											   transform nbChucks to Bytes  */
+unsigned short STATUSL_YPOS;				/* status line y position       */
+unsigned short BOX_YPOS;					/* box y position               */
 
 __LINEA *__aline;
 __FONT  **__fonts;
@@ -348,7 +349,7 @@ void restore_box()
 {
 	if (screen_backup_isUsed) {
 		if (1 == screen_backup_isUsed) {
-			memcpy(&screen_addr[LINE_BYTES*70], screen_buffer_backup, 8000L);
+			memcpy(&screen_addr[(unsigned long) LINE_BYTES*BOX_YPOS], screen_buffer_backup, 3*8*LINE_BYTES);
 		}
 		screen_backup_isUsed--;
 	}
@@ -358,10 +359,10 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 {
 	char temp_buffer[1024];
 	int str_size;
-	unsigned short i;
+	unsigned short i, xpos, xpos_ori;
 
 	if (!screen_backup_isUsed) {
-		memcpy(screen_buffer_backup,&screen_addr[LINE_BYTES*70], 8000L);
+		memcpy(screen_buffer_backup,&screen_addr[(unsigned long) LINE_BYTES*BOX_YPOS], 3*8*LINE_BYTES);
 	}
 	screen_backup_isUsed++;
 
@@ -370,31 +371,30 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 
 	vsnprintf(temp_buffer,1024,chaine,marker);
 
-	str_size=strlen(temp_buffer) * 8;
-	str_size=str_size+(4*8);
+	// compute box width
+	str_size=strlen(temp_buffer) + 4;
 
-	for(i=0;i< str_size;i=i+8)
+	xpos_ori = (SCREEN_XRESOL-(str_size*8))/2;
+	xpos = xpos_ori;
+
+	print_char8x8(xpos, BOX_YPOS,    2);					// top left
+	print_char8x8(xpos, BOX_YPOS+8,  6);					// left
+	print_char8x8(xpos, BOX_YPOS+16, 4);					// bottom left
+	xpos += 8;
+
+	for(i=1;i< str_size-1;i++)
 	{
-		print_char8x8(((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS-8, 8);
-	}
-	print_char8x8(((SCREEN_XRESOL-str_size)/2)+(i-8), LINE_CHARS-8, 3);
-	print_char8x8(((SCREEN_XRESOL-str_size)/2),       LINE_CHARS-8, 2);
-
-	for(i=0;i< str_size;i=i+8)
-	{
-		print_char8x8(((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS, ' ');
+		print_char8x8(xpos,     BOX_YPOS,    8);			// top line
+		print_char8x8(xpos,     BOX_YPOS+8,  ' ');        	// clear the main line
+		print_char8x8(xpos,     BOX_YPOS+16, 9);			// bottom line
+		xpos += 8;
 	}
 
-	print_str(temp_buffer,((SCREEN_XRESOL-str_size)/2)+(2*8),LINE_CHARS);
-	print_char8x8(((SCREEN_XRESOL-str_size)/2)+(i-8), LINE_CHARS,   7);
-	print_char8x8(((SCREEN_XRESOL-str_size)/2),       LINE_CHARS,   6);
+	print_char8x8(xpos, BOX_YPOS,    3);					// top right
+	print_char8x8(xpos, BOX_YPOS+8,  7);					// right
+	print_char8x8(xpos, BOX_YPOS+16, 5);					// bottom right
 
-	for(i=0;i< str_size;i=i+8)
-	{
-		print_char8x8(((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS+8, 9);
-	}
-	print_char8x8(((SCREEN_XRESOL-str_size)/2)+(i-8),     LINE_CHARS+8, 5);
-	print_char8x8(((SCREEN_XRESOL-str_size)/2),           LINE_CHARS+8, 4);
+	print_str(temp_buffer, xpos_ori + 2*8, BOX_YPOS+8);		// text
 
 	va_end( marker );
 }
@@ -540,7 +540,7 @@ void restore_display()
 	set_color_scheme(0xfe);
 
 	// Line-A : Showmouse
-	__asm__("dc.w 0xa009");
+	linea9();
 
 	if (0xffff != _oldrez) {
 		Setscreen((unsigned char *) -1, (unsigned char *) -1, _oldrez );
@@ -556,11 +556,8 @@ void init_display()
 	linea0();
 
 	// Line-A : Hidemouse
-	__asm__("dc.w 0xa00a");
-
-	screen_addr = (unsigned char *) Physbase();
-
-	screen_buffer_backup=(unsigned char*)malloc(8000L);
+	// do not do : __asm__("dc.w 0xa00a"); (it clobbers registry)
+	lineaa();
 
 	if (V_X_MAX < 640) {
 		/*Blitmode(1) */;
@@ -574,6 +571,7 @@ void init_display()
 	LINE_BYTES    = V_BYTES_LIN;
 	LINE_WORDS    = V_BYTES_LIN/2;
 	LINE_CHARS    = SCREEN_XRESOL/8;
+	BOX_YPOS      = SCREEN_YRESOL/2-48;
 	NB_PLANES     = __aline->_VPLANES;
 	CHUNK_WORDS   = NB_PLANES<<1;
 
@@ -581,6 +579,11 @@ void init_display()
 
 	for (i=NB_PLANES, k=0; i!=0; i>>=1, k++);
 	PLANES_ALIGNDEC = k;
+
+	// get screen address
+	// malloc a temp buffer used for saving screen data under printf_box
+	screen_addr = (unsigned char *) Physbase();
+	screen_buffer_backup=(unsigned char*)malloc(3*8*LINE_BYTES);
 
 	// clear the screen
 	memsetword(screen_addr, 0, (ULONG) SCREEN_YRESOL * LINE_WORDS);
