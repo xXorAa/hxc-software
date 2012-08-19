@@ -25,7 +25,7 @@
 //
 */
 
-#define NUMBER_OF_SLOT 16
+#define NUMBER_OF_SLOT 16       // must be 4-multiple
 #define MAXFILESPERPAGE 120
 
 #define FILELIST_Y_POS 12

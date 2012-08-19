@@ -63,19 +63,15 @@
 static unsigned short y_pos;
 static unsigned long last_setlbabase;
 static unsigned char sector[512];
-static unsigned char cfgfile_header[512];
 
 unsigned char currentPath[4*256] = {"\\"};
 
-static unsigned char sdfecfg_file[2048];
+static unsigned char sdfecfg_file[1024 + NUMBER_OF_SLOT * 128];
 static char filter[17];
 
 
 static unsigned char fRepaginate_files;
 static unsigned char fRedraw_status;
-
-static disk_in_drive disks_slot_a[NUMBER_OF_SLOT];
-static disk_in_drive disks_slot_b[NUMBER_OF_SLOT];
 
 static struct fs_dir_list_status file_list_status;
 
@@ -257,45 +253,26 @@ int bios_media_write(unsigned long sector, unsigned char *buffer)
 
 char read_cfg_file()
 {
-	unsigned char number_of_slot;
-	unsigned short i;
-	cfgfile * cfgfile_ptr;
 	FL_FILE *file;
 
-	memset((void*)&disks_slot_a,0,sizeof(disk_in_drive)*NUMBER_OF_SLOT);
-	memset((void*)&disks_slot_b,0,sizeof(disk_in_drive)*NUMBER_OF_SLOT);
+	// clear the buffer
+	memset(sdfecfg_file, 0, 1024 + 128*NUMBER_OF_SLOT);
 
 	file = fl_fopen("/HXCSDFE.CFG", "r");
 	if (file)
 	{
-		cfgfile_ptr=(cfgfile * )cfgfile_header;
+		// read the file
+		fl_fread(sdfecfg_file, 1, 1024 + 128*NUMBER_OF_SLOT, file);
 
-		fl_fread(cfgfile_header, 1, 512 , file);
-		number_of_slot=cfgfile_ptr->number_of_slot;
-
-		fl_fseek(file , 1024 , SEEK_SET);
-
-		fl_fread(sdfecfg_file, 1, 512 , file);
-		i=1;
-		do
-		{
-			if(!(i&3))
-			{
-				fl_fread(sdfecfg_file, 1, 512 , file);
-			}
-
-			memcpy(&disks_slot_a[i],&sdfecfg_file[(i&3)*128],sizeof(disk_in_drive));
-			memcpy(&disks_slot_b[i],&sdfecfg_file[((i&3)*128)+64],sizeof(disk_in_drive));
-
-			i++;
-		}while(i<number_of_slot);
+		// ignore that: use the compile-time one instead
+		// number_of_slot=cfgfile_ptr->number_of_slot;
 
 		fl_fclose(file);
 
 		// apply color mode
-		if(cfgfile_header[256+128]!=0xFF)
+		if(sdfecfg_file[256+128]!=0xFF)
 		{
-			set_color_scheme(cfgfile_header[256+128]);
+			set_color_scheme(sdfecfg_file[256+128]);
 		}
 
 		return 0;
@@ -308,94 +285,33 @@ char read_cfg_file()
 
 char save_cfg_file()
 {
-	unsigned char number_of_slot,slot_index;
-	unsigned char i,sect_nb,ret;
-	cfgfile * cfgfile_ptr;
-	unsigned short  floppyselectorindex;
+	unsigned char ret;
 	FL_FILE *file;
 
 	ret=0;
+
+	// open the file for reading. Actual write will use fl_fswrite to write sectors, but we need the file handle
 	file = fl_fopen("/HXCSDFE.CFG", "r");
 	if (file)
 	{
-		number_of_slot=1;
-		slot_index=1;
-		i=1;
-
-		floppyselectorindex=128;                      /* First slot offset */
-		memset( sdfecfg_file,0,512);                  /* Clear the sector */
-		sect_nb=2;                                    /* Slots Sector offset */
-
-		do
-		{
-			if( disks_slot_a[i].DirEnt.name[0] )            /* Valid slot found */
-			{
-				// Copy it to the actual file sector
-				memcpy(&sdfecfg_file[floppyselectorindex],&disks_slot_a[i],sizeof(disk_in_drive));
-				memcpy(&sdfecfg_file[floppyselectorindex+64],&disks_slot_b[i],sizeof(disk_in_drive));
-
-				//Next slot...
-				number_of_slot++;
-				floppyselectorindex=(floppyselectorindex+128)&0x1FF;
-
-				if(!(number_of_slot&0x3))                /* Need to change to the next sector */
-				{
-					/* Save the sector */
-					if (fl_fswrite((unsigned char*)sdfecfg_file, 1,sect_nb, file) != 1)
-					{
-						hxc_printf_box(0,"ERROR: Write file failed!");
-						get_char_restore_box();
-						ret=1;
-					}
-					/* Next sector */
-					sect_nb++;
-					memset( sdfecfg_file,0,512);                  /* Clear the next sector */
-				}
-			}
-
-			i++;
-		}while(i<NUMBER_OF_SLOT);
-
-		if(number_of_slot&0x3)
-		{
-			if (fl_fswrite((unsigned char*)sdfecfg_file, 1,sect_nb, file) != 1)
-			{
-				hxc_printf_box(0,"ERROR: Write file failed!");
-				get_char_restore_box();
-				ret=1;
-			}
-		}
-
-		if(slot_index>=number_of_slot)
-		{
-			slot_index=number_of_slot-1;
-		}
-
-		fl_fseek(file , 0 , SEEK_SET);
-
-		/* Update the file header */
-		/* fl_fread(sdfecfg_file, 1, 512 , file); */
-
-		cfgfile_ptr=(cfgfile * )cfgfile_header;/* sdfecfg_file; */
-		cfgfile_ptr->number_of_slot=number_of_slot;
-		cfgfile_ptr->slot_index=slot_index;
-
-		if (fl_fswrite((unsigned char*)cfgfile_header, 1,0, file) != 1)
+		/* Save the sectors */
+		if (fl_fswrite((unsigned char*)sdfecfg_file, 2 + NUMBER_OF_SLOT/4, 0, file) != 2 + NUMBER_OF_SLOT/4)
 		{
 			hxc_printf_box(0,"ERROR: Write file failed!");
 			get_char_restore_box();
 			ret=1;
 		}
 
+		/* Close file */
+		fl_fclose(file);
 	}
 	else
 	{
+		// this should never happens, since the HXCSDFE.CFG file is mandatory
 		hxc_printf_box(0,"ERROR: Create file failed!");
 		get_char_restore_box();
 		ret=1;
 	}
-	/* Close file */
-	fl_fclose(file);
 
 	return ret;
 }
@@ -435,7 +351,7 @@ void _printslotstatus(disk_in_drive * disks_a,  disk_in_drive * disks_b)
 
 void display_slot()
 {
-	_printslotstatus((disk_in_drive *) &disks_slot_a[_slotnumber], (disk_in_drive *) &disks_slot_b[_slotnumber]) ;
+	_printslotstatus((void *) sdfecfg_file + 1024 + _slotnumber*128, (void *) sdfecfg_file + 1024 + _slotnumber*128 + 64) ;
 }
 
 
@@ -455,22 +371,16 @@ void next_slot(unsigned char slotnumber, signed char increment)
 
 void clear_slot()
 {
-	memset((void*)&disks_slot_a[_slotnumber],0,sizeof(disk_in_drive));
-	memset((void*)&disks_slot_b[_slotnumber],0,sizeof(disk_in_drive));
+	memset((void*) sdfecfg_file + 1024 + _slotnumber*128,     0, 2*64);
 }
 
 void insert_in_slot(unsigned char drive)
 {
-	if (0 == drive)
-	{
-		memset((void*)&disks_slot_a[_slotnumber], 0, sizeof(disk_in_drive));
-		memcpy((void*)&disks_slot_a[_slotnumber], gfl_dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
-	}
-	else
-	{
-		memset((void*)&disks_slot_b[_slotnumber], 0, sizeof(disk_in_drive));
-		memcpy((void*)&disks_slot_b[_slotnumber], gfl_dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
-	}
+	void *diskslot_ptr;
+	diskslot_ptr = sdfecfg_file + 1024 + _slotnumber*128 + drive*64;
+
+	memset(diskslot_ptr, 0, sizeof(disk_in_drive));
+	memcpy(diskslot_ptr, gfl_dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
 	display_slot();
 }
 
@@ -583,27 +493,23 @@ void handle_show_all_slots(void)
 	#define ALLSLOTS_Y_POS 16
 	char tmp_str[17];
 	int i;
+	void *diskslot_ptr;
+
+	diskslot_ptr = (void *) sdfecfg_file + 1024 + 1*128;	// start at slot 1
 
 	clear_list(5);
 
 	for ( i = 1; i < NUMBER_OF_SLOT; i++ )
 	{
-		if( disks_slot_a[i].DirEnt.name[0] || disks_slot_b[i].DirEnt.name[0] )
-		{
-			memcpy(tmp_str,&disks_slot_a[i].DirEnt.longName,16);
-			tmp_str[16]=0;
-			hxc_printf(0,0,ALLSLOTS_Y_POS + (i*8),"Slot %02d - A : %s", i, tmp_str);
+		memcpy(tmp_str, ((disk_in_drive *) diskslot_ptr)->DirEnt.longName, 16);
+		tmp_str[16]=0;
+		hxc_printf(0,0,ALLSLOTS_Y_POS + (i*8),"Slot %02d - A : %s", i, tmp_str);
+		diskslot_ptr += 64;
 
-			memcpy(tmp_str,&disks_slot_b[i].DirEnt.longName,16);
-			tmp_str[16]=0;
-			hxc_printf(0,40*8,ALLSLOTS_Y_POS + (i*8),"B : %s", tmp_str);
-
-		}
-		else
-		{
-			hxc_printf(0,0,ALLSLOTS_Y_POS + (i*8),"Slot %02d - A :", i);
-			hxc_printf(0,40*8,ALLSLOTS_Y_POS + (i*8),"B :", i);
-		}
+		memcpy(tmp_str, ((disk_in_drive *) diskslot_ptr)->DirEnt.longName, 16);
+		tmp_str[16]=0;
+		hxc_printf(0,40*8,ALLSLOTS_Y_POS + (i*8),"B : %s", tmp_str);
+		diskslot_ptr += 64;
 	}
 
 	hxc_printf(1,0,ALLSLOTS_Y_POS + NUMBER_OF_SLOT*8 + 1,"---Press any key---");
@@ -676,7 +582,7 @@ void handle_emucfg(void)
 	signed char direct;
 
 	clear_list(5);
-	cfgfile_ptr=(cfgfile * )cfgfile_header;
+	cfgfile_ptr=(cfgfile * )sdfecfg_file;
 
 	UWORD ypos = HELP_Y_POS;
 
@@ -917,7 +823,7 @@ int main(int argc, char* argv[])
 			mystrlwr(filter);
 			fRepaginate_files=1;
 		} else if (keylow==0x3c) { /* F2: Change palette */
-			cfgfile_header[256+128] = set_color_scheme(0xff);
+			sdfecfg_file[256+128] = set_color_scheme(0xff);
 		} else if (keylow==0x3d) { /* F3: View */
 			viewer(0);
 			fRedraw_status = 1;
