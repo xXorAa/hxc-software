@@ -67,6 +67,7 @@ static unsigned char sector[512];
 unsigned char currentPath[4*256] = {"\\"};
 
 static unsigned char sdfecfg_file[1024 + NUMBER_OF_SLOT * 128];
+static unsigned char sdfecfg_fileBackup[1024 + NUMBER_OF_SLOT * 128];
 static char filter[17];
 
 
@@ -275,6 +276,7 @@ char read_cfg_file()
 			set_color_scheme(sdfecfg_file[256+128]);
 		}
 
+		memcpy(sdfecfg_fileBackup, sdfecfg_file, 1024 + NUMBER_OF_SLOT * 128);
 		return 0;
 	}
 
@@ -299,6 +301,9 @@ char save_cfg_file()
 		{
 			hxc_printf_box(0,"ERROR: Write file failed!");
 			get_char_restore_box();
+
+			// mark the config file has not modified
+			memcpy(sdfecfg_fileBackup, sdfecfg_file, 1024 + NUMBER_OF_SLOT * 128);
 			ret=1;
 		}
 
@@ -523,48 +528,51 @@ void handle_show_all_slots(void)
 void handle_help()
 {
 	int i;
+
+	//remember to reflect changes to the for loop
 	char *help1[] = {
-		"Function Keys (1/2):",
+		"Keys:",
 		"",
-		"Up/Down         : Browse the SDCard files (Shift:page, Ctrl:first/last page)",
-		"Left/Right      : Browse the slots (Ctrl:first/last)",
-		"Insert          : Insert the selected file in the current slot to A:",
-		"                  Enter a subfolder",
-		"Clr Home        : Insert the selected file in the current slot to B:",
-		"Pipe            : Insert the selected file in the current slot to A: and",
-		"                  select the next slot",
-		"F7              : Insert the selected file in the slot to 1 and restart the",
-		"                  computer with this disk.",
+		"Up/Down         : Browse files",
+		"Left/Right      : Browse slots",
+		"Return          : Enter subfolder",
+		"Insert          : Insert file in current slot A:",
+		"Clr Home        : Insert file in current slot B:",
+		"Ctrl S          : Save",
+		"Esc             : Quit",
 		"Undo            : Revert changes",
-//		"Backspace       : Clear the current slot",
-		"Delete          : Clear the current slot",
-		"TAB             : Show all slots selections",
-		"",
-		"---Any key to continue---"
-	};
-	char *help2[] = {
-		"Function Keys (2/2):",
-		"F1              : Filter files in the current folder",
-		"                  Type the word to search then enter",
-		"                  Type the word to search then enter",
-		"                  Enter blank to abort the filter",
+		"Delete          : Clear current slot",
+		"TAB             : Show slots",
+		"F1              : Filter files in current folder",
 		"F2              : Change color",
-		"F3              : View the current file",
-		"F4              : Settings menu",
-		"F8              : Reboot",
-		"F9              : Save",
-		"F10             : Save and Reboot"
+		"F3              : File viewer",
+		"F4              : Hardware settings",
+		"(more...)"
+	};
+
+	//remember to reflect changes to the for loop
+	char *help2[] = {
+		"General tips:",
+		"",
+		"While browsing the files, the slots, or inside the file viewer, you can",
+		"press Shift to go quicker, or Ctrl to go to first/last.",
+		"",
+		"To find a file, you can type the first chars, the cursor will jump to it. You",
+		"can also use the Filter facility to find a file containing a word: hit F1,",
+		"then your search. Enter blank to abort the filter.",
+        "",
+        "The HxC can emulate both A: & B: floppies by adding a jumper."
 	};
 
 	clear_list(5);
-	for (i=0; i<16; i++) {
+	for (i=0; i<17; i++) {
 		hxc_printf(0,0,HELP_Y_POS+(i*8), help1[i]);
 	}
 
 	wait_function_key();
 
 	clear_list(5);
-	for (i=0; i<11; i++) {
+	for (i=0; i<10; i++) {
 		hxc_printf(0,0,HELP_Y_POS+(i*8), help2[i]);
 	}
 	display_credits(++i);
@@ -660,7 +668,39 @@ void handle_emucfg(void)
 
 
 
+void handle_quit_menu()
+{
+	char fIsModified;
+	char fIsLoader;
+	unsigned long key;
 
+	fIsLoader = (Fgetdta()==0);
+	fIsModified = memcmp(sdfecfg_file, sdfecfg_fileBackup, 1024 + NUMBER_OF_SLOT*128);
+	if (fIsModified) {
+		hxc_printf_box(0, "Quit without saving ?");
+		key = wait_function_key();
+		restore_box();
+		if ( ((key>>16)&0xff) != 0x15) {
+			return;
+		}
+	}
+
+	if (fIsLoader) {
+		hxc_printf_box(0, "Push R to reboot, other to cancel");
+	} else {
+		hxc_printf_box(0, "Push R to reboot, Q to quit, other to cancel");
+	}
+
+	key = get_char() | 0x20;
+	restore_box();
+	if (key == 'r') {
+			hxc_printf_box(0, ">>>>>Rebooting...<<<<<");
+			jumptotrack0();
+			reboot();
+	} else if (key =='q' && !fIsLoader) {
+		handle_exit();
+	}
+}
 
 
 
@@ -756,7 +796,7 @@ int main(int argc, char* argv[])
 		char clear_instajump = 1;
 
 		if (keylow == 0) {
-		} else if (isDir && (keylow==0x1c || keylow==0x52 || keylow==0x47 || keylow==0x2b) ) {
+		} else if (isDir && (keylow==0x1c || keylow==0x52 || keylow==0x47) ) {
 			enter_sub_dir();
 		} else if (keylow == 0x4d) { /* Right: Next slot */
 			next_slot(_slotnumber, +1);
@@ -775,19 +815,6 @@ int main(int argc, char* argv[])
 			insert_in_slot(0);
 		} else if (keylow==0x47) {  /* ClrHome: Insert Drive B */
 			insert_in_slot(1);
-		} else if (keylow==0x2b) {  /* Pipe: Insert, Next slot */
-			insert_in_slot(0);
-			next_slot(_slotnumber, +1);
-		} else if (keylow==0x41) {  /* F7: Insert, Select, Reboot */
-			_slotnumber = 1;
-			insert_in_slot(0);
-			hxc_printf_box(0,"Saving selection and restart...");
-			save_cfg_file();
-			restore_box();
-			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
-			/* sleep(1); */
-			jumptotrack0();
-			reboot();
 		} else if (keylow==0x62) { /* Help */
 			handle_help();
 			fRedraw_status = 1;
@@ -830,28 +857,17 @@ int main(int argc, char* argv[])
 		} else if (keylow==0x3e) { /* F4: Emuconfig */
 			handle_emucfg();
 			fRedraw_status = 1;
-		} else if (keylow==0x42) { /* F8: Reboot */
-			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
-			/* sleep(1); */
-			jumptotrack0();
-			reboot();
-		} else if (keylow==0x43) { /* F9: Save */
+		} else if (keylow==0x41f) { /* Ctrl+S: Save */
 			hxc_printf_box(0,"Saving selection...");
 			save_cfg_file();
 			restore_box();
-		} else if (keylow==0x44) { /* F10: Save, Reboot */
-			hxc_printf_box(0,"Saving selection and restart...");
-			save_cfg_file();
-			restore_box();
-			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
-			/* sleep(1); */
-			jumptotrack0();
-			reboot();
+		} else if (keylow==0x01) { /* Esc: Quit menu */
+			handle_quit_menu();
 //		} else if (keylow==0x1f) { /* S: Sort */
 //			fli_sort();
 //			fRepaginate_files=1;
 		} else {
-			// hxc_printf(0,0,0,"key:%08lx!",key);
+//			hxc_printf(0,0,0,"key:%08lx!",key);
 			if ((char) key >= ' ')
 			{
 				clear_instajump = 0;
