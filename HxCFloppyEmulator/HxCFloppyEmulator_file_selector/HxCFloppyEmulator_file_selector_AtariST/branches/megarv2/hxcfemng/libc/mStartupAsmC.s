@@ -56,17 +56,44 @@ _exit:
 ;       trap #1
 ;       addq.l #2,sp
 
+;check if the dta exists. If yes, it means that the program was loaded normally, otherwise,
+;it means that the program was loaded with the bootloader.
+;If loaded normally, exits normally
+;If loaded with bootloader, try to execute the bootsector.
+
         move.l  basepage(pc),a5         ;basepage
-        tst.l   $24(a5)
+        tst.l   $24(a5)                 ;dta exists ?
         beq.s   .bootsector
         clr.w   -(sp)                   ;Pterm
         trap #1
 .bootsector:
+        pea     (a5)                    ;mfree the block
+        move.w  #$49,-(sp)
+        trap    #1
+        addq.l  #6,sp
+
         clr.l   -(sp)
         move.w  #$20,-(sp)
         trap    #1
         move.l  d0,sp                   ;restore the old stack
-        rts
+
+        move.l  $4c6.w,a3               ;a3: adress to load boot sector to
+        move.w  $446.w,-(sp)            ;dev: _bootdev
+        pea     $10000                  ;recno=0, count=1
+        pea     (a3)                    ;buf
+        pea     $40000                  ;mode=0, rwabs
+        trap    #13                     ;rwabs
+        lea     14(sp),sp
+
+        moveq   #0,d0
+        move    #512/2-1,d1
+.chksum:add.w   (a3)+,d0
+        dbra    d1,.chksum
+        cmp.w   #$1234,d0
+        bne.s   .noexe
+        jmp     -512(a3)                ;jump, so the rts of the bootsector will return to TOS
+
+.noexe:    rts
 basepage:  dc.l 0
 
 ; --------------------------------------------------------------

@@ -45,11 +45,8 @@
 static unsigned char floppydrive;
 static unsigned char datacache[512*9];
 static unsigned char valid_cache;
-static unsigned char _oldConterm;
 
 WORD fdcDmaMode = 0;
-
-#define CONTERM *((unsigned char *) 0x484)
 
 // extern
 extern unsigned char fExit;
@@ -285,25 +282,28 @@ unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned c
 
 }
 
-unsigned char su_getConterm()
+void su_toggleConterm()
 {
-	CONTERM &= 0xFA;                /* disable key sound and bell */
-	CONTERM |= 8;					/* enable keyboard function to return shift/alt/ctrl status */
-	return CONTERM;
-}
-void su_setConterm(unsigned char mode)
-{
-		CONTERM = mode;
+	#define CONTERM *((unsigned char *) 0x484)
+
+	static unsigned char oldconterm = 0xff;
+	if (0xff == oldconterm) {
+		oldconterm = CONTERM;
+		CONTERM &= 0xFA;                /* disable key sound and bell */
+		CONTERM |= 8;					/* enable keyboard function to return shift/alt/ctrl status */
+	} else {
+		CONTERM = oldconterm;
+	}
 }
 
 void restore_atari_hw(void)
 {
-	my_Supexec((LONG *) su_setConterm);
+	my_Supexec((LONG *) su_toggleConterm);
 }
 
 void init_atari_hw(void)
 {
-	_oldConterm = my_Supexec((LONG *) su_getConterm);
+	my_Supexec((LONG *) su_toggleConterm);
 }
 
 void init_atari_fdc(unsigned char drive)

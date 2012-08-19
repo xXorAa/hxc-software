@@ -551,6 +551,8 @@ void restore_display()
 	if (0xffff != _oldrez) {
 		Setscreen((unsigned char *) -1, (unsigned char *) -1, _oldrez );
 	}
+
+	free(screen_buffer_backup);
 }
 
 void init_display()

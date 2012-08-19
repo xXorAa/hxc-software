@@ -289,6 +289,11 @@ char save_cfg_file()
 {
 	unsigned char ret;
 	FL_FILE *file;
+	cfgfile *cfgfile_ptr = (cfgfile *)sdfecfg_file;
+
+	cfgfile_ptr->number_of_slot = NUMBER_OF_SLOT;
+	cfgfile_ptr->slot_index     = 1;	// tell the emulator to load the slot 1
+	cfgfile_ptr->update_cnt++;
 
 	ret=0;
 
@@ -302,10 +307,11 @@ char save_cfg_file()
 			hxc_printf_box(0,"ERROR: Write file failed!");
 			get_char_restore_box();
 
-			// mark the config file has not modified
-			memcpy(sdfecfg_fileBackup, sdfecfg_file, 1024 + NUMBER_OF_SLOT * 128);
 			ret=1;
 		}
+
+		// mark the config file as not modified
+		memcpy(sdfecfg_fileBackup, sdfecfg_file, 1024 + NUMBER_OF_SLOT * 128);
 
 		/* Close file */
 		fl_fclose(file);
@@ -680,7 +686,7 @@ void handle_quit_menu()
 	}
 
 	if (fIsLoader) {
-		hxc_printf_box(0, "Push R to reboot, other to cancel");
+		hxc_printf_box(0, "Push R to reboot, F to Fastboot, other to cancel");
 	} else {
 		hxc_printf_box(0, "Push R to reboot, Q to quit, other to cancel");
 	}
@@ -688,10 +694,16 @@ void handle_quit_menu()
 	key = get_char() | 0x20;
 	restore_box();
 	if (key == 'r') {
-			hxc_printf_box(0, ">>>>>Rebooting...<<<<<");
-			jumptotrack0();
-			reboot();
-	} else if (key =='q' && !fIsLoader) {
+		hxc_printf_box(0, ">>>>>Rebooting...<<<<<");
+		jumptotrack0();
+		reboot();
+	} else if ((key =='q' && !fIsLoader)) {
+		hxc_printf_box(0, ">>>>>Exiting...<<<<<");
+		jumptotrack0();
+		handle_exit();
+	} else if ((key =='f' && fIsLoader)) {
+		hxc_printf_box(0, ">>>>>Fastbooting...<<<<<");
+		jumptotrack0();
 		handle_exit();
 	}
 }
