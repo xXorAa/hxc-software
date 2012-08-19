@@ -255,6 +255,7 @@ int bios_media_write(unsigned long sector, unsigned char *buffer)
 char read_cfg_file()
 {
 	FL_FILE *file;
+	cfgfile *cfgfile_ptr;
 
 	// clear the buffer
 	memset(sdfecfg_file, 0, 1024 + 128*NUMBER_OF_SLOT);
@@ -276,6 +277,15 @@ char read_cfg_file()
 			set_color_scheme(sdfecfg_file[256+128]);
 		}
 
+		cfgfile_ptr = (cfgfile *) sdfecfg_file;
+		_slotnumber = cfgfile_ptr->slot_index;
+
+		// the current slot number must be at least 1, even if slot 1 is empty
+		if (0 == _slotnumber) {
+			_slotnumber = 1;
+		}
+
+		// store a backup copy
 		memcpy(sdfecfg_fileBackup, sdfecfg_file, 1024 + NUMBER_OF_SLOT * 128);
 		return 0;
 	}
@@ -285,15 +295,51 @@ char read_cfg_file()
 	return 1;
 }
 
+
 char save_cfg_file()
 {
-	unsigned char ret;
+	unsigned char ret, i;
+	unsigned char validSlotsNumber, newSlotNumber;
 	FL_FILE *file;
 	cfgfile *cfgfile_ptr = (cfgfile *)sdfecfg_file;
+	void *diskslotIn_ptr, *diskslotOut_ptr;
 
-	cfgfile_ptr->number_of_slot = NUMBER_OF_SLOT;
-	cfgfile_ptr->slot_index     = 1;	// tell the emulator to load the slot 1
-	cfgfile_ptr->update_cnt++;
+	// remove the empty slots, so they are not saved
+	validSlotsNumber = 1;	// the slot0 is always valid
+	newSlotNumber    = _slotnumber;
+
+	diskslotIn_ptr  = (void *) sdfecfg_file + 1024 + 1*128;	// start at slot 1
+	diskslotOut_ptr = diskslotIn_ptr;
+
+	for ( i = 1; i < NUMBER_OF_SLOT; i++ )
+	{
+		if ( ((disk_in_drive *) diskslotIn_ptr)->DirEnt.name[0] || ((disk_in_drive *) (diskslotIn_ptr+64))->DirEnt.name[0]) {
+			// slot is valid
+			if (diskslotOut_ptr != diskslotIn_ptr) {
+				// move it
+				memcpy(diskslotOut_ptr, diskslotIn_ptr, 128);
+				memset(diskslotIn_ptr, 0, 128);
+			}
+			diskslotOut_ptr += 128;
+			validSlotsNumber++;
+		} else {
+			// slot is not valid
+			if (i <= _slotnumber){
+				// the slot will not be saved. Eventually, move the slot number down to reflect the change
+				newSlotNumber--;
+			}
+		}
+		diskslotIn_ptr += 128;
+	}
+
+	// the current slot number must be at least 1, even if slot 1 is empty
+	if (0 == newSlotNumber) {
+		newSlotNumber = 1;
+	}
+	_slotnumber = newSlotNumber;
+	cfgfile_ptr->number_of_slot = validSlotsNumber;
+	cfgfile_ptr->slot_index     = _slotnumber;			// tell the emulator to load the select slot
+	cfgfile_ptr->update_cnt     = 0;					// reset update count
 
 	ret=0;
 
@@ -867,6 +913,7 @@ int main(int argc, char* argv[])
 			hxc_printf_box(0,"Saving selection...");
 			save_cfg_file();
 			restore_box();
+			display_slot();	// saving may modify the slots, so redraw
 		} else if (keylow==0x01) { /* Esc: Quit menu */
 			handle_quit_menu();
 //		} else if (keylow==0x1f) { /* S: Sort */
