@@ -65,7 +65,7 @@ static unsigned long last_setlbabase;
 static unsigned char sector[512];
 static unsigned char cfgfile_header[512];
 
-static unsigned char currentPath[4*256] = {"\\"};
+unsigned char currentPath[4*256] = {"\\"};
 
 static unsigned char sdfecfg_file[2048];
 static char filter[17];
@@ -81,6 +81,7 @@ static struct fs_dir_list_status file_list_status;
 
 static UBYTE * _bigmem_adr;
 static LONG    _bigmem_len;
+static unsigned char _slotnumber;
 
 
 // imported variables:
@@ -406,11 +407,11 @@ char save_cfg_file()
 
 
 
-void _printslotstatus(unsigned char slotnumber,  disk_in_drive * disks_a,  disk_in_drive * disks_b)
+void _printslotstatus(disk_in_drive * disks_a,  disk_in_drive * disks_b)
 {
 	char tmp_str[17];
 
-	hxc_printf(0,0,SLOT_Y_POS,"Slot %02d:", slotnumber);
+	hxc_printf(0,0,SLOT_Y_POS,"Slot %02d:", _slotnumber);
 
 	/* clear_line(SLOT_Y_POS+8,0); */
 	hxc_printf(0,0,SLOT_Y_POS+8,"Drive A:                 ");
@@ -432,13 +433,13 @@ void _printslotstatus(unsigned char slotnumber,  disk_in_drive * disks_a,  disk_
 	}
 }
 
-void display_slot(unsigned char slotnumber)
+void display_slot()
 {
-	_printslotstatus(slotnumber, (disk_in_drive *) &disks_slot_a[slotnumber], (disk_in_drive *) &disks_slot_b[slotnumber]) ;
+	_printslotstatus((disk_in_drive *) &disks_slot_a[_slotnumber], (disk_in_drive *) &disks_slot_b[_slotnumber]) ;
 }
 
 
-unsigned char next_slot(unsigned char slotnumber, signed char increment)
+void next_slot(unsigned char slotnumber, signed char increment)
 {
 	slotnumber += increment;
 	if(slotnumber>(NUMBER_OF_SLOT-1))
@@ -448,29 +449,29 @@ unsigned char next_slot(unsigned char slotnumber, signed char increment)
 	{
 		slotnumber = NUMBER_OF_SLOT-1;
 	}
-	display_slot(slotnumber);
-	return slotnumber;
+	_slotnumber = slotnumber;
+	display_slot();
 }
 
-void clear_slot(int slotnumber)
+void clear_slot()
 {
-	memset((void*)&disks_slot_a[slotnumber],0,sizeof(disk_in_drive));
-	memset((void*)&disks_slot_b[slotnumber],0,sizeof(disk_in_drive));
+	memset((void*)&disks_slot_a[_slotnumber],0,sizeof(disk_in_drive));
+	memset((void*)&disks_slot_b[_slotnumber],0,sizeof(disk_in_drive));
 }
 
-void insert_in_slot(DirectoryEntry *gfl_dirEntLSB_ptr, unsigned char slotnumber, unsigned char drive)
+void insert_in_slot(unsigned char drive)
 {
 	if (0 == drive)
 	{
-		memset((void*)&disks_slot_a[slotnumber], 0, sizeof(disk_in_drive));
-		memcpy((void*)&disks_slot_a[slotnumber], gfl_dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
+		memset((void*)&disks_slot_a[_slotnumber], 0, sizeof(disk_in_drive));
+		memcpy((void*)&disks_slot_a[_slotnumber], gfl_dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
 	}
 	else
 	{
-		memset((void*)&disks_slot_b[slotnumber], 0, sizeof(disk_in_drive));
-		memcpy((void*)&disks_slot_b[slotnumber], gfl_dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
+		memset((void*)&disks_slot_b[_slotnumber], 0, sizeof(disk_in_drive));
+		memcpy((void*)&disks_slot_b[_slotnumber], gfl_dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
 	}
-	display_slot(slotnumber);
+	display_slot();
 }
 
 
@@ -499,7 +500,7 @@ void displayFolder()
 
 
 
-void enter_sub_dir(DirectoryEntry *gfl_dirEntLSB_ptr)
+void enter_sub_dir()
 {
 	int currentPathLength;
 	unsigned char folder[LFN_MAX_SIZE];
@@ -569,7 +570,7 @@ void enter_sub_dir(DirectoryEntry *gfl_dirEntLSB_ptr)
 		currentPath[old_index]=0;
 		displayFolder();
 	} else {
-		dir_scan((char *)currentPath);
+		dir_scan();
 		fRepaginate_files = 1;
 	}
 	less_busy();
@@ -616,71 +617,51 @@ void handle_show_all_slots(void)
 void handle_help()
 {
 	int i;
+	char *help1[] = {
+		"Function Keys (1/2):",
+		"",
+		"Up/Down         : Browse the SDCard files (Shift:page, Ctrl:first/last page)",
+		"Left/Right      : Browse the slots (Ctrl:first/last)",
+		"Insert          : Insert the selected file in the current slot to A:",
+		"                  Enter a subfolder",
+		"Clr Home        : Insert the selected file in the current slot to B:",
+		"Pipe            : Insert the selected file in the current slot to A: and",
+		"                  select the next slot",
+		"F7              : Insert the selected file in the slot to 1 and restart the",
+		"                  computer with this disk.",
+		"Undo            : Revert changes",
+//		"Backspace       : Clear the current slot",
+		"Delete          : Clear the current slot",
+		"TAB             : Show all slots selections",
+		"",
+		"---Any key to continue---"
+	};
+	char *help2[] = {
+		"Function Keys (2/2):",
+		"F1              : Filter files in the current folder",
+		"                  Type the word to search then enter",
+		"                  Type the word to search then enter",
+		"                  Enter blank to abort the filter",
+		"F2              : Change color",
+		"F3              : View the current file",
+		"F4              : Settings menu",
+		"F8              : Reboot",
+		"F9              : Save",
+		"F10             : Save and Reboot"
+	};
+
 	clear_list(5);
-
-	i=0;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "Function Keys (1/2):");
-
-	i=2;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "Up/Down         : Browse the SDCard files (Shift:page, Ctrl:first/last page)");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "Left/Right      : Browse the slots (Ctrl:first/last)");
-	i++;
-//	hxc_printf(0,0,HELP_Y_POS+(i*8), "Caps Lock       : Go back to the top of the folder");
-//	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "Insert          : Insert the selected file in the current slot to A:");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "                  Enter a subfolder");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "Clr Home        : Insert the selected file in the current slot to B:");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "Pipe            : Insert the selected file in the current slot to A: and ");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "                  select the next slot");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "F7              : Insert the selected file in the slot to 1 and restart the");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "                  computer with this disk.");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "Undo            : Revert changes");
-	i++;
-//	hxc_printf(0,0,HELP_Y_POS+(i*8), "Backspace       : Clear the current slot");
-//	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "Delete          : Clear the current slot");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "TAB             : Show all slots selections");
-
-	i=i+2;
-
-	hxc_printf(1,0,HELP_Y_POS+(i*8), "---Any key to continue---");
+	for (i=0; i<16; i++) {
+		hxc_printf(0,0,HELP_Y_POS+(i*8), help1[i]);
+	}
 
 	wait_function_key();
 
 	clear_list(5);
-
-	i=0;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "Function Keys (2/2):");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "F1              : Filter files in the current folder");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "                  Type the word to search then enter");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "                  Enter blank to abort the filter");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "F2              : Change color");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "F3              : View the current file");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "F4              : Settings menu");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "F8              : Reboot");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "F9              : Save");
-	i++;
-	hxc_printf(0,0,HELP_Y_POS+(i*8), "F10             : Save and Reboot");
-
-	i=i+2;
-	i = display_credits(i);
+	for (i=0; i<11; i++) {
+		hxc_printf(0,0,HELP_Y_POS+(i*8), help2[i]);
+	}
+	display_credits(++i);
 
 	wait_function_key();
 }
@@ -784,7 +765,6 @@ int main(int argc, char* argv[])
 	unsigned short i;
 	unsigned char bootdev;
 	unsigned char c;
-	unsigned char slotnumber;
 	long key;
 
 	init_display();
@@ -835,13 +815,13 @@ int main(int argc, char* argv[])
 
 	strcpy((char *)currentPath, "/" );
 
-	slotnumber=1;
+	_slotnumber=1;
 
 //	selectorpos=0;
 //	page_number=0;
 
 	// get all the files in the dir
-	dir_scan((char *)currentPath);
+	dir_scan();
 	dir_setFilter(filter);
 
 	fRepaginate_files = 1;
@@ -857,7 +837,7 @@ int main(int argc, char* argv[])
 		if (fRedraw_status)
 		{
 			redraw_statusl();
-			display_slot(slotnumber);
+			display_slot();
 			displayFolder();
 			fRedraw_status=0;
 		}
@@ -871,31 +851,32 @@ int main(int argc, char* argv[])
 
 		if (keylow == 0) {
 		} else if (isDir && (keylow==0x1c || keylow==0x52 || keylow==0x47 || keylow==0x2b) ) {
-			enter_sub_dir(gfl_dirEntLSB_ptr);
+			enter_sub_dir();
 		} else if (keylow == 0x4d) { /* Right: Next slot */
-			slotnumber = next_slot(slotnumber, +1);
+			next_slot(_slotnumber, +1);
 		} else if (keylow == 0x474) { /* Ctrl Right: Last slot */
-			slotnumber = next_slot(0,0); // slot 0 is invalid, will be replacedd by last slot
+			next_slot(0,0); // slot 0 is invalid, will be replacedd by last slot
 		} else if (keylow == 0x4b) { /* Left: Previous slot */
-			slotnumber = next_slot(slotnumber, -1);
+			next_slot(_slotnumber, -1);
 		} else if (keylow == 0x473) { /* Ctrl Left: First slot */
-			slotnumber = next_slot(1,0); // slot 1 is always the first usable slot (slot 0 reserved for autoboot)
+			next_slot(1,0); // slot 1 is always the first usable slot (slot 0 reserved for autoboot)
 		} else if (keylow == 0x61) { /* Undo : revert all changes */
 			hxc_printf_box(0,"Reloading HXCSDFE.CFG ...");
 			read_cfg_file();
 			restore_box();
-			display_slot(slotnumber);
+			display_slot();
 		} else if (keylow==0x52) {  /* Insert: Insert Drive A */
-			insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 0);
+			insert_in_slot(0);
 		} else if (keylow==0x47) {  /* ClrHome: Insert Drive B */
-			insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 1);
+			insert_in_slot(1);
 		} else if (keylow==0x2b) {  /* Pipe: Insert, Next slot */
-			insert_in_slot(gfl_dirEntLSB_ptr, slotnumber, 0);
-			slotnumber = next_slot(slotnumber, +1);
+			insert_in_slot(0);
+			next_slot(_slotnumber, +1);
 		} else if (keylow==0x41) {  /* F7: Insert, Select, Reboot */
-			insert_in_slot(gfl_dirEntLSB_ptr, 1, 0);
+			_slotnumber = 1;
+			insert_in_slot(0);
 			hxc_printf_box(0,"Saving selection and restart...");
-			save_cfg_file(sdfecfg_file);
+			save_cfg_file();
 			restore_box();
 			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
 			/* sleep(1); */
@@ -908,27 +889,27 @@ int main(int argc, char* argv[])
 			handle_show_all_slots();
 			fRedraw_status = 1;
 //		} else if (keylow==0x0e) { /* Backspace: Clear slot */
-//			clear_slot(slotnumber);
-//			display_slot(slotnumber);
+//			clear_slot();
+//			display_slot();
 		} else if (keylow==0x53) { /* Delete: Clear SLot*/
-			clear_slot(slotnumber);
-			display_slot(slotnumber);
+			clear_slot();
+			display_slot();
 		} else if (keylow==0x3b) { /* F1: Filter */
 			for(i=FILTER_X_POS+13*8; i<SCREEN_XRESOL; i=i+8) {
 				hxc_printf(0, i, FILTER_Y_POS, " ");
 			}
-			flush_char();
+//			flush_char();
 			i=0;
 			do
 			{
 				filter[i]=0;
 				c=get_char();
-				if(c!='\n')
+				if(c!='\n' && c>=' ')
 				{
 					filter[i]=c;
 					hxc_printf(0, FILTER_X_POS+13*8+(8*i), FILTER_Y_POS, "%c", c);
+					i++;
 				}
-				i++;
 			}while(c!='\n' && i<16);
 			filter[i]=0;
 
@@ -938,7 +919,7 @@ int main(int argc, char* argv[])
 		} else if (keylow==0x3c) { /* F2: Change palette */
 			cfgfile_header[256+128] = set_color_scheme(0xff);
 		} else if (keylow==0x3d) { /* F3: View */
-			viewer(currentPath, gfl_dirEntLSB_ptr, 0);
+			viewer(0);
 			fRedraw_status = 1;
 		} else if (keylow==0x3e) { /* F4: Emuconfig */
 			handle_emucfg();
@@ -950,11 +931,11 @@ int main(int argc, char* argv[])
 			reboot();
 		} else if (keylow==0x43) { /* F9: Save */
 			hxc_printf_box(0,"Saving selection...");
-			save_cfg_file(sdfecfg_file);
+			save_cfg_file();
 			restore_box();
 		} else if (keylow==0x44) { /* F10: Save, Reboot */
 			hxc_printf_box(0,"Saving selection and restart...");
-			save_cfg_file(sdfecfg_file);
+			save_cfg_file();
 			restore_box();
 			hxc_printf_box(0,">>>>>Rebooting...<<<<<");
 			/* sleep(1); */

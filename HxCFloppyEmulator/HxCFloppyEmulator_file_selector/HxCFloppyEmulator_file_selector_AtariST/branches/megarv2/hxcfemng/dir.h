@@ -13,6 +13,6 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab);
 void dir_setFilter(char *filter);
 char * dir_getFilter();
 int dir_filter(struct fs_dir_ent *dir_entry);
-int dir_scan(char *path);
+int dir_scan();
 
 #endif

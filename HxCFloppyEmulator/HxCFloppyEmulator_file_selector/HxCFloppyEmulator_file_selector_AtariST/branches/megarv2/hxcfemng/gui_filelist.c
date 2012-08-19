@@ -132,10 +132,13 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 			fCached = 0;
 		}
 
-		fli_getDirEntryMSB(curFile, &dir_entry);
+		int res;
 
-		for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; )
+		res = fli_getDirEntryMSB(curFile, &dir_entry);
+
+		for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY && res; )
 		{
+
 			hxc_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(' '), dir_entry.filename);
 			y_pos=y_pos+8;
 
@@ -146,21 +149,15 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 			{
 				// filelist has already been processed
 				curFile = gfl_filelistCurrentPage_tab[i];
-				if (!fli_getDirEntryMSB(curFile, &dir_entry)) {
-					i = NUMBER_OF_FILE_ON_DISPLAY;
-					break;
-				}
+				res = fli_getDirEntryMSB(curFile, &dir_entry);
 			}
 			else
 			{
 				// find the next file to display
 				do {
 					curFile++;
-					if (!fli_getDirEntryMSB(curFile, &dir_entry)) {
-						i = NUMBER_OF_FILE_ON_DISPLAY;
-						break;
-					}
-				} while (!dir_filter(&dir_entry));
+					res = fli_getDirEntryMSB(curFile, &dir_entry);
+				} while (res && !dir_filter(&dir_entry));
 			}
 		}
 
@@ -169,7 +166,7 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 	} // if ( (newPage != _currentPage) || (0xffff == _currentPage) )
 
 
-
+	// a selector has been specified, so select the asked file
 	if (0xffff != _selectorToEntry)
 	{
 		// the page just has been shown, so it is now cached

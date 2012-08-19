@@ -313,19 +313,25 @@ void init_atari_fdc(unsigned char drive)
 	my_Supexec((LONG *) su_headinit);
 }
 
+#if(0)
 unsigned char Keyboard()
 {
 	return 0;
 }
+#endif
 
+#if(0)
 int kbhit()
 {
 	return 0;
 }
+#endif
 
+#if(0)
 void flush_char()
 {
 }
+#endif
 
 unsigned char get_char()
 {
@@ -353,20 +359,6 @@ long wait_function_key()
 	return key;
 }
 
-
-
-unsigned char su_get_vid_mode()
-{
-	if( *((unsigned char *) 0xFFFA01 ) & 0x80 )
-		return 0;
-	else
-		return 1;
-}
-
-unsigned char get_vid_mode()
-{
-	return (unsigned char) my_Supexec((LONG *) su_get_vid_mode);
-}
 
 unsigned long su_get_hz200()
 {

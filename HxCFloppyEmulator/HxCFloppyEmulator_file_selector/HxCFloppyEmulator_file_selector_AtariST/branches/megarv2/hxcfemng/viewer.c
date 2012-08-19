@@ -54,6 +54,8 @@ extern unsigned char NUMBER_OF_FILE_ON_DISPLAY;
 extern unsigned short SCREEN_XRESOL;
 extern unsigned short SCREEN_YRESOL;
 extern unsigned char fExit;
+extern DirectoryEntry * gfl_dirEntLSB_ptr;
+extern unsigned char currentPath[4*256];
 
 
 FL_FILE *_file;
@@ -102,7 +104,7 @@ int _hexviewer(unsigned long offsetIn, unsigned long *offsetOut)
 		}
 		lineAscii[curX] = '\0';
 
-		print_str(0, lineStart , 0, curY + VIEWER_Y_POS);
+		print_str(lineStart , 0, curY + VIEWER_Y_POS);
 		*offsetOut += 16;
 		curY += 8;
 	} while ( curY < ((NUMBER_OF_FILE_ON_DISPLAY+4)<<3) );
@@ -158,7 +160,7 @@ int _textviewer(unsigned long offsetIn, unsigned long *offsetOut)
 					(*offsetOut)++;
 				}
 			} else {
-				print_char8x8(0, curX, VIEWER_Y_POS + curY, curChar);
+				print_char8x8(curX, VIEWER_Y_POS + curY, curChar);
 				curX +=8;
 			}
 
@@ -185,11 +187,9 @@ int _textviewer(unsigned long offsetIn, unsigned long *offsetOut)
 
 /**
  * View the selected file
- * @param currentPath
- * @param gfl_dirEntLSB_ptr
  * @param fHex initial display: 0:ascii 1:Hex
  */
-void viewer(char *currentPath, DirectoryEntry *gfl_dirEntLSB_ptr, char fHex)
+void viewer(char fHex)
 {
 	char filename[5*LFN_MAX_SIZE+2];
 	unsigned short anykey=0;
@@ -208,7 +208,7 @@ void viewer(char *currentPath, DirectoryEntry *gfl_dirEntLSB_ptr, char fHex)
 		display_statusl(0, 1, "Opening file length = %ld bytes ($%lx)", (unsigned long)filelen, (unsigned long)filelen);
 	}
 
-	strcpy(filename, currentPath);
+	strcpy(filename, (char *)currentPath);
 	filename[strlen(filename)+1] = '\0';
 	filename[strlen(filename)]   = '/';
 	strcat(filename, (const char *)gfl_dirEntLSB_ptr->longName);

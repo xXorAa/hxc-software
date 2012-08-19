@@ -56,7 +56,6 @@ unsigned char * screen_addr;
 unsigned char * screen_buffer_backup;
 unsigned char screen_backup_isUsed;
 unsigned char color;
-unsigned char highresmode;
 static short  _oldrez = 0xffff;
 static UWORD  _business = 0;
 
@@ -157,7 +156,7 @@ void display_sprite(unsigned char * membuffer, bmaptype * sprite,unsigned short 
 }
 
 
-void print_char8x8(unsigned char * membuffer, unsigned short x, unsigned short y,unsigned char c)
+void print_char8x8(unsigned short x, unsigned short y,unsigned char c)
 {
 	bmaptype * font;
 	unsigned short j,k;
@@ -167,12 +166,7 @@ void print_char8x8(unsigned char * membuffer, unsigned short x, unsigned short y
 
 	font = bitmap_font8x8_bmp;
 
-	if (0 == membuffer) {
-		ptr_dst = screen_addr;
-	} else {
-		ptr_dst=(unsigned char*)membuffer;
-	}
-
+	ptr_dst = screen_addr;
 	ptr_src=(unsigned char*)&font->data[0];
 
 	k=((c>>4)*(8*8*2))+(c&0xF);
@@ -189,7 +183,7 @@ void print_char8x8(unsigned char * membuffer, unsigned short x, unsigned short y
 }
 
 
-void print_str(unsigned char * membuffer,char * buf,unsigned short x_pos,unsigned short y_pos)
+void print_str(char * buf,unsigned short x_pos,unsigned short y_pos)
 {
 	unsigned short i;
 	i=0;
@@ -198,7 +192,7 @@ void print_str(unsigned char * membuffer,char * buf,unsigned short x_pos,unsigne
 	{
 		if(x_pos<=(SCREEN_XRESOL-8))
 		{
-			print_char8x8(membuffer, x_pos, y_pos, buf[i]);
+			print_char8x8(x_pos, y_pos, buf[i]);
 			x_pos=x_pos+8;
 		}
 		i++;
@@ -224,13 +218,13 @@ void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,cha
 	switch(mode)
 	{
 		case 0:
-			print_str(screen_addr,temp_buffer,x_pos,y_pos);
+			print_str(temp_buffer,x_pos,y_pos);
 		break;
 		case 1:
-			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8))/2,y_pos);
+			print_str(temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8))/2,y_pos);
 		break;
 		case 2:
-			print_str(screen_addr,temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8)),y_pos);
+			print_str(temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8)),y_pos);
 		break;
 	}
 
@@ -381,26 +375,26 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_addr, ((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS-8, 8);
+		print_char8x8(((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS-8, 8);
 	}
-	print_char8x8(screen_addr,     ((SCREEN_XRESOL-str_size)/2)+(i-8), LINE_CHARS-8, 3);
-	print_char8x8(screen_addr,     ((SCREEN_XRESOL-str_size)/2),       LINE_CHARS-8, 2);
+	print_char8x8(((SCREEN_XRESOL-str_size)/2)+(i-8), LINE_CHARS-8, 3);
+	print_char8x8(((SCREEN_XRESOL-str_size)/2),       LINE_CHARS-8, 2);
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_addr, ((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS, ' ');
+		print_char8x8(((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS, ' ');
 	}
 
-	print_str(screen_addr,temp_buffer,((SCREEN_XRESOL-str_size)/2)+(2*8),LINE_CHARS);
-	print_char8x8(screen_addr,     ((SCREEN_XRESOL-str_size)/2)+(i-8), LINE_CHARS,   7);
-	print_char8x8(screen_addr,     ((SCREEN_XRESOL-str_size)/2),       LINE_CHARS,   6);
+	print_str(temp_buffer,((SCREEN_XRESOL-str_size)/2)+(2*8),LINE_CHARS);
+	print_char8x8(((SCREEN_XRESOL-str_size)/2)+(i-8), LINE_CHARS,   7);
+	print_char8x8(((SCREEN_XRESOL-str_size)/2),       LINE_CHARS,   6);
 
 	for(i=0;i< str_size;i=i+8)
 	{
-		print_char8x8(screen_addr, ((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS+8, 9);
+		print_char8x8(((SCREEN_XRESOL-str_size)/2)+i,     LINE_CHARS+8, 9);
 	}
-	print_char8x8(screen_addr, ((SCREEN_XRESOL-str_size)/2)+(i-8),     LINE_CHARS+8, 5);
-	print_char8x8(screen_addr, ((SCREEN_XRESOL-str_size)/2),           LINE_CHARS+8, 4);
+	print_char8x8(((SCREEN_XRESOL-str_size)/2)+(i-8),     LINE_CHARS+8, 5);
+	print_char8x8(((SCREEN_XRESOL-str_size)/2),           LINE_CHARS+8, 4);
 
 	va_end( marker );
 }
@@ -427,20 +421,23 @@ void display_welcome()
 
 }
 
+
 int display_credits(int i)
 {
-	hxc_printf(1,0,HELP_Y_POS+(i*8), "SDCard HxC Floppy Emulator file selector for Atari ST");
-	i++;
-	hxc_printf(1,0,HELP_Y_POS+(i*8), "(c) 2006-2012 HxC2001 / Jean-Francois DEL NERO");
-	i++;
-	hxc_printf(1,0,HELP_Y_POS+(i*8), "and Megar / Gilles Bouthenot");
-	i++;
-	hxc_printf(1,0,HELP_Y_POS+(i*8), "Check for updates on :");
-	i++;
-	hxc_printf(1,0,HELP_Y_POS+(i*8), "http://www.hxc2001.com/");
-	i++;
-	hxc_printf(1,0,HELP_Y_POS+(i*8), "Email : hxc2001@hxc2001.com");
-	i++;
+	int j;
+	char *strings[] = {
+		"SDCard HxC Floppy Emulator file selector for Atari ST",
+		"(c) 2006-2012 HxC2001 / Jean-Francois DEL NERO",
+		"and Megar / Gilles Bouthenot",
+		"Check for updates on :",
+		"http://www.hxc2001.com/",
+		"Email : hxc2001@hxc2001.com"
+	};
+
+	for (j=0; j<6; i++, j++) {
+		hxc_printf(1,0,HELP_Y_POS+(i*8), strings[j]);
+	}
+
 	hxc_printf(1,0,HELP_Y_POS+(i*8), "V%s - %s",VERSIONCODE,DATECODE);
 	i++;
 
@@ -556,8 +553,6 @@ void init_display()
 
 	screen_backup_isUsed = 0;
 
-	highresmode=get_vid_mode();
-
 	linea0();
 
 	// Line-A : Hidemouse
@@ -570,15 +565,7 @@ void init_display()
 	if (V_X_MAX < 640) {
 		/*Blitmode(1) */;
 		_oldrez = Getrez();
-
-		if(highresmode)
-		{
-			Setscreen((unsigned char *) -1, (unsigned char *) -1, 2 );
-		}
-		else
-		{
-			Setscreen((unsigned char *) -1, (unsigned char *) -1, 1 );
-		}
+		Setscreen((unsigned char *) -1, (unsigned char *) -1, 1 );
 	}
 
 	SCREEN_XRESOL = V_X_MAX;
@@ -594,12 +581,6 @@ void init_display()
 
 	for (i=NB_PLANES, k=0; i!=0; i>>=1, k++);
 	PLANES_ALIGNDEC = k;
-
-	if (1 == NB_PLANES) {
-		highresmode = 1;
-	} else {
-		highresmode = 0;
-	}
 
 	// clear the screen
 	memsetword(screen_addr, 0, (ULONG) SCREEN_YRESOL * LINE_WORDS);

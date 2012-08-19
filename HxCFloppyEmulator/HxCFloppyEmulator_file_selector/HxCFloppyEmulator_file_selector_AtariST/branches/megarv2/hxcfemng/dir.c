@@ -46,6 +46,7 @@ static UWORD _nbPages = 0xffff;
 extern unsigned short SCREEN_YRESOL;
 extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
 extern UWORD gfl_filelistCurrentPage_tab[];
+extern unsigned char *currentPath[4*256];
 
 
 int dir_filter(struct fs_dir_ent *dir_entry)
@@ -82,7 +83,6 @@ UWORD dir_getPageForEntry(UWORD askedEntry)
 	UWORD entry;
 
 	for (runPage=_nbPages-1; runPage; runPage--) {
-		// TODO !!!
 		entry = _FilelistPages_tab[runPage];
 		if (entry <= askedEntry) {
 			break;
@@ -203,7 +203,7 @@ void dir_setFilter(char *filter)
 
 
 
-int dir_scan(char *path)
+int dir_scan()
 {
 	UWORD nbFiles;
 
@@ -214,7 +214,7 @@ int dir_scan(char *path)
 
 	// get all the files in the dir
 	nbFiles = 0;
-	fl_list_opendir(path, &_file_list_status);
+	fl_list_opendir((char *)currentPath, &_file_list_status);
 	while( fl_list_readdir(&_file_list_status, &_dir_entry) ) {
 		fli_push(&_dir_entry);
 		nbFiles++;
