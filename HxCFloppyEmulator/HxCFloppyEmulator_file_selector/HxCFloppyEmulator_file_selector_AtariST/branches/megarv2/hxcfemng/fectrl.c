@@ -530,52 +530,46 @@ void handle_help()
 	int i;
 
 	//remember to reflect changes to the for loop
-	char *help1[] = {
-		"Keys:",
-		"",
-		"Up/Down         : Browse files",
-		"Left/Right      : Browse slots",
-		"Return          : Enter subfolder",
-		"Insert          : Insert file in current slot A:",
-		"Clr Home        : Insert file in current slot B:",
-		"Ctrl S          : Save",
-		"Esc             : Quit",
-		"Undo            : Revert changes",
-		"Delete          : Clear current slot",
-		"TAB             : Show slots",
-		"F1              : Filter files in current folder",
-		"F2              : Change color",
-		"F3              : File viewer",
-		"F4              : Hardware settings",
-		"(more...)"
-	};
+	char help1[] = "\
+KEYS:\n\
+Up/Down    : Browse files\n\
+Left/Right : Browse slots\n\
+Return     : Enter subfolder\n\
+Insert     : Insert file in current slot A:\n\
+Clr Home   : Insert file in current slot B:\n\
+Ctrl S     : Save\n\
+Esc        : Quit\n\
+Undo       : Revert changes\n\
+Delete     : Clear current slot\n\
+TAB        : Show slots\n\
+F1         : Filter files in current folder\n\
+F2         : Change color\n\
+F3         : File viewer\n\
+F4         : Hardware settings\n\
+(more...)";
 
 	//remember to reflect changes to the for loop
-	char *help2[] = {
-		"General tips:",
-		"",
-		"While browsing the files, the slots, or inside the file viewer, you can",
-		"press Shift to go quicker, or Ctrl to go to first/last.",
-		"",
-		"To find a file, you can type the first chars, the cursor will jump to it. You",
-		"can also use the Filter facility to find a file containing a word: hit F1,",
-		"then your search. Enter blank to abort the filter.",
-        "",
-        "The HxC can emulate both A: & B: floppies by adding a jumper."
-	};
+	char *help2 = "\
+TIPS:\n\
+While browsing the files, the slots, or inside the file viewer, press\n\
+Shift to go quicker, or Ctrl to go to first/last.\n\
+\n\
+To find a file, type the first chars, the cursor will jump to it. You can also\n\
+use the Filter facility to find a file containing a word: hit F1, then your\n\
+search. Enter blank to abort the filter.\n\
+\n\
+The HxC can emulate both A: & B: floppies by adding a jumper.\n\
+\n\
+Slots are useful to handle multiple disk: use the HxC hardware left/right\n\
+buttons to browse slots, and the middle button to return to the Autoboot slot.\n";
 
 	clear_list(5);
-	for (i=0; i<17; i++) {
-		hxc_printf(0,0,HELP_Y_POS+(i*8), help1[i]);
-	}
-
+	print_str(help1, 0, HELP_Y_POS, 1);
 	wait_function_key();
 
 	clear_list(5);
-	for (i=0; i<10; i++) {
-		hxc_printf(0,0,HELP_Y_POS+(i*8), help2[i]);
-	}
-	display_credits(++i);
+	i = print_str(help2, 0, HELP_Y_POS, 1);
+	display_credits(i/8);
 
 	wait_function_key();
 }

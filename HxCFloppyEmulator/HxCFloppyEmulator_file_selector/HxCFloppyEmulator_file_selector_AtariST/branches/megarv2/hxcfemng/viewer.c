@@ -104,7 +104,7 @@ int _hexviewer(unsigned long offsetIn, unsigned long *offsetOut)
 		}
 		lineAscii[curX] = '\0';
 
-		print_str(lineStart , 0, curY + VIEWER_Y_POS);
+		print_str(lineStart , 0, curY + VIEWER_Y_POS, 0);
 		*offsetOut += 16;
 		curY += 8;
 	} while ( curY < ((NUMBER_OF_FILE_ON_DISPLAY+4)<<3) );

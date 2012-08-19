@@ -31,7 +31,7 @@ void get_char_restore_box(void);
 void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,char * chaine, ...);
 void hxc_printf_box(unsigned char mode,char * chaine, ...);
 void print_char8x8(unsigned short x, unsigned short y,unsigned char c);
-void print_str(char * buf,unsigned short x_pos,unsigned short y_pos);
+unsigned short print_str(char * buf,unsigned short x_pos,unsigned short y_pos, char fHandleCR);
 void restore_box();
 void more_busy();
 void less_busy();

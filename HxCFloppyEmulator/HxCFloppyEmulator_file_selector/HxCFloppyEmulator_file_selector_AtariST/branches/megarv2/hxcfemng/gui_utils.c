@@ -184,20 +184,28 @@ void print_char8x8(unsigned short x, unsigned short y,unsigned char c)
 }
 
 
-void print_str(char * buf,unsigned short x_pos,unsigned short y_pos)
+/**
+ * print a string. Handle \n. The next line start at the same x_pos
+ * @return UWORD last y_pos
+ */
+unsigned short print_str(char * buf,unsigned short x_pos,unsigned short y_pos, char fHandleCR)
 {
-	unsigned short i;
-	i=0;
+	unsigned short x;
+	char c;
 
-	while(buf[i])
+	x = x_pos;
+	while( (c=*(buf++)) && x_pos<=(SCREEN_XRESOL-8) )
 	{
-		if(x_pos<=(SCREEN_XRESOL-8))
-		{
-			print_char8x8(x_pos, y_pos, buf[i]);
-			x_pos=x_pos+8;
+		if ('\n'==c && fHandleCR) {
+			x = x_pos;
+			y_pos += 8;
+		} else {
+			print_char8x8(x, y_pos, c);
+			x += 8;
 		}
-		i++;
 	}
+
+	return y_pos;
 }
 
 /**
@@ -219,13 +227,13 @@ void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,cha
 	switch(mode)
 	{
 		case 0:
-			print_str(temp_buffer,x_pos,y_pos);
+			print_str(temp_buffer,x_pos,y_pos, 0);
 		break;
 		case 1:
-			print_str(temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8))/2,y_pos);
+			print_str(temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8))/2,y_pos, 0);
 		break;
 		case 2:
-			print_str(temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8)),y_pos);
+			print_str(temp_buffer,(SCREEN_XRESOL-(strlen(temp_buffer)*8)),y_pos, 0);
 		break;
 	}
 
@@ -394,7 +402,7 @@ void hxc_printf_box(unsigned char mode,char * chaine, ...)
 	print_char8x8(xpos, BOX_YPOS+8,  7);					// right
 	print_char8x8(xpos, BOX_YPOS+16, 5);					// bottom right
 
-	print_str(temp_buffer, xpos_ori + 2*8, BOX_YPOS+8);		// text
+	print_str(temp_buffer, xpos_ori + 2*8, BOX_YPOS+8, 0);	// text
 
 	va_end( marker );
 }
@@ -427,14 +435,12 @@ int display_credits(int i)
 	int j;
 	char *strings[] = {
 		"SDCard HxC Floppy Emulator file selector for Atari ST",
-		"(c) 2006-2012 HxC2001 / Jean-Francois DEL NERO",
-		"and Megar / Gilles Bouthenot",
-		"Check for updates on :",
-		"http://www.hxc2001.com/",
-		"Email : hxc2001@hxc2001.com"
+		"(c) 2006-2012 Jean-Francois DEL NERO (HxC2001) / Gilles Bouthenot",
+		"Official website: http://www.hxc2001.com/",
+		"Email: hxc2001@hxc2001.com"
 	};
 
-	for (j=0; j<6; i++, j++) {
+	for (j=0; j<4; i++, j++) {
 		hxc_printf(1,0,HELP_Y_POS+(i*8), strings[j]);
 	}
 
