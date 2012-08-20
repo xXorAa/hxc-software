@@ -544,33 +544,87 @@ void enter_sub_dir()
 }
 
 
+#define ALLSLOTS_Y_POS 12
 
-void handle_show_all_slots(void)
+void _show_all_slots()
 {
-	#define ALLSLOTS_Y_POS 16
 	char tmp_str[17];
-	int i;
+	int currentSlot;
 	void *diskslot_ptr;
+	unsigned short ypos;
 
 	diskslot_ptr = (void *) sdfecfg_file + 1024 + 1*128;	// start at slot 1
 
 	clear_list(5);
 
-	for ( i = 1; i < NUMBER_OF_SLOT; i++ )
+	ypos = ALLSLOTS_Y_POS + 8;
+	for ( currentSlot = 1; currentSlot < NUMBER_OF_SLOT; currentSlot++ )
 	{
 		memcpy(tmp_str, ((disk_in_drive *) diskslot_ptr)->DirEnt.longName, 16);
 		tmp_str[16]=0;
-		hxc_printf(0,0,ALLSLOTS_Y_POS + (i*8),"Slot %02d - A : %s", i, tmp_str);
+		hxc_printf(0, 0, ypos, "Slot %02d - A : %s", currentSlot, tmp_str);
 		diskslot_ptr += 64;
 
 		memcpy(tmp_str, ((disk_in_drive *) diskslot_ptr)->DirEnt.longName, 16);
 		tmp_str[16]=0;
-		hxc_printf(0,40*8,ALLSLOTS_Y_POS + (i*8),"B : %s", tmp_str);
+		hxc_printf(0, 40*8, ypos, "B : %s", tmp_str);
 		diskslot_ptr += 64;
+
+		ypos += 8;
 	}
 
-	hxc_printf(1,0,ALLSLOTS_Y_POS + NUMBER_OF_SLOT*8 + 1,"---Press any key---");
-	wait_function_key();
+	ypos += 8;
+	hxc_printf(1, 0, ypos, "Keys: Delete, Insert, Ctrl X:cut, Ctrl C:copy, Ctrl V:paste");
+}
+
+void handle_show_all_slots(void)
+{
+	int currentSlot;
+	unsigned short keylow;
+
+	// for copy/cut/paste:
+	unsigned char tmpBuffer[128];
+	unsigned char fBufferIsUsed = 0;
+
+	_show_all_slots();
+
+	currentSlot = _slotnumber;
+	do
+	{
+		invert_line(currentSlot);
+		keylow = wait_function_key()>>16;
+		invert_line(currentSlot);
+
+		if (0x48 == keylow && currentSlot>1) { /* Up */
+			currentSlot--;
+		} else if (0x50 == keylow && currentSlot<NUMBER_OF_SLOT-1) { /* Down */
+			currentSlot++;
+		} else if (0x48 == (unsigned char) keylow) { /* Shift Up, Control Up */
+			currentSlot = 1;
+		} else if (0x50 == (unsigned char) keylow) { /* Shift Down, Control Down */
+			currentSlot = NUMBER_OF_SLOT-1;
+		} else if (0x53 == keylow) { /* delete */
+			memcpy(sdfecfg_file + 1024 + currentSlot*128, sdfecfg_file + 1024 + currentSlot*128 + 128, (NUMBER_OF_SLOT - currentSlot -1) * 128);
+			memset(sdfecfg_file + 1024 + (NUMBER_OF_SLOT-1)*128, 0, 128);
+			_show_all_slots();
+		} else if (0x52 == keylow) { /* insert */
+			memmove(sdfecfg_file + 1024 + currentSlot*128 + 128, sdfecfg_file + 1024 + currentSlot*128, (NUMBER_OF_SLOT - currentSlot -1) * 128);
+			memset(sdfecfg_file + 1024 + (currentSlot)*128, 0, 128);
+			_show_all_slots();
+		} else if (0x42d == keylow) { /* Ctrl X : cut */
+			memcpy(tmpBuffer, sdfecfg_file + 1024 + currentSlot*128, 128);
+			memset(sdfecfg_file + 1024 + currentSlot*128, 0, 128);
+			_show_all_slots();
+		} else if (0x42e == keylow) { /* Ctrl C : copy */
+			memcpy(tmpBuffer, sdfecfg_file + 1024 + currentSlot*128, 128);
+			fBufferIsUsed = 1;
+		} else if (0x42f == keylow && fBufferIsUsed) { /* Ctrl V : paste */
+			memcpy(sdfecfg_file + 1024 + currentSlot*128, tmpBuffer, 128);
+			_show_all_slots();
+		}
+	}while(keylow!=0x01 && keylow!=0x0f && !fExit); /* Esc */
+
+	_slotnumber = currentSlot;
 }
 
 

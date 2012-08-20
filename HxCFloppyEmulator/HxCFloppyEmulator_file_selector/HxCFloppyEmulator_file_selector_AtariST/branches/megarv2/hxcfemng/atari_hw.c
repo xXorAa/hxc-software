@@ -352,7 +352,7 @@ unsigned char get_char()
 long wait_function_key()
 {
 	long key = Crawcin();
-	if ( (key>>16) == 0x42e ) { /* Ctrl C */
+	if ( (key>>16) == 0x83e ) { /* Alt F4 */
 		fExit=1;
 	}
 
