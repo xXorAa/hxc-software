@@ -48,6 +48,6 @@ void redraw_statusl();
 int  display_credits();
 unsigned char set_color_scheme(unsigned char color);
 
-#define VERSIONCODE "2.0 alpha 3"
+#define VERSIONCODE "2.0 alpha 4"
 #define DATECODE "2012-08-19"
 #endif

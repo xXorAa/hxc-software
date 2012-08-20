@@ -194,7 +194,7 @@ unsigned short print_str(char * buf,unsigned short x_pos,unsigned short y_pos, c
 	char c;
 
 	x = x_pos;
-	while( (c=*(buf++)) && x_pos<=(SCREEN_XRESOL-8) )
+	while( (c=*(buf++)) && x<=(SCREEN_XRESOL-8) )
 	{
 		if ('\n'==c && fHandleCR) {
 			x = x_pos;

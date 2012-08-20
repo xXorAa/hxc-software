@@ -338,7 +338,7 @@ unsigned char get_char()
 	unsigned long key;
 
 	key=Crawcin();
-	if ( (key>>16) == 0x42e ) { /* Ctrl C */
+	if ( (key>>16) == 0x83e ) { /* Alt F4 */
 		fExit=1;
 	}
 	if((key>>16) == 0x1C) {
