@@ -250,12 +250,45 @@ int bios_media_write(unsigned long sector, unsigned char *buffer)
 
 
 
+/**
+ * Apply the cfg file. Revert to the backup one if fRevert
+ * This set the colors, slot number, etc.
+ */
+void _apply_cfg_file(unsigned char fRevert)
+{
+	cfgfile *cfgfile_ptr;
+
+	if (fRevert) {
+		memcpy(sdfecfg_file, sdfecfg_fileBackup, 1024 + NUMBER_OF_SLOT * 128);
+	}
+
+	// apply color mode
+	if(sdfecfg_file[256+128]!=0xFF)
+	{
+		set_color_scheme(sdfecfg_file[256+128]);
+	}
+
+	cfgfile_ptr = (cfgfile *) sdfecfg_file;
+	_slotnumber = cfgfile_ptr->slot_index;
+
+	// the current slot number must be at least 1, even if slot 1 is empty
+	if (0 == _slotnumber) {
+		_slotnumber = 1;
+	}
+
+	// store a backup copy
+	memcpy(sdfecfg_fileBackup, sdfecfg_file, 1024 + NUMBER_OF_SLOT * 128);
+}
 
 
+/**
+ * Read the config file in memory
+ * you should call _apply_cfg_file(0) after that
+ * @returns 0 on success
+ */
 char read_cfg_file()
 {
 	FL_FILE *file;
-	cfgfile *cfgfile_ptr;
 
 	// clear the buffer
 	memset(sdfecfg_file, 0, 1024 + 128*NUMBER_OF_SLOT);
@@ -271,22 +304,6 @@ char read_cfg_file()
 
 		fl_fclose(file);
 
-		// apply color mode
-		if(sdfecfg_file[256+128]!=0xFF)
-		{
-			set_color_scheme(sdfecfg_file[256+128]);
-		}
-
-		cfgfile_ptr = (cfgfile *) sdfecfg_file;
-		_slotnumber = cfgfile_ptr->slot_index;
-
-		// the current slot number must be at least 1, even if slot 1 is empty
-		if (0 == _slotnumber) {
-			_slotnumber = 1;
-		}
-
-		// store a backup copy
-		memcpy(sdfecfg_fileBackup, sdfecfg_file, 1024 + NUMBER_OF_SLOT * 128);
 		return 0;
 	}
 
@@ -553,43 +570,52 @@ void fastboot()
 	}
 }
 
+unsigned char _is_modified()
+{
+	cfgfile *cfgfile_ptr = (cfgfile *)sdfecfg_file;
+	cfgfile_ptr->slot_index     = _slotnumber;			// tell the emulator to load the select slot
+
+	return memcmp(sdfecfg_file, sdfecfg_fileBackup, 1024 + NUMBER_OF_SLOT*128);
+}
+
 void handle_quit_menu()
 {
-	char fIsModified;
 	unsigned long key;
 
-	fIsModified = memcmp(sdfecfg_file, sdfecfg_fileBackup, 1024 + NUMBER_OF_SLOT*128);
-	if (fIsModified) {
-		hxc_printf_box(0, "Quit without saving ?");
-		key = wait_function_key();
-		restore_box();
-		if ( ((key>>16)&0xff) != 0x15) {
-			return;
+	do {
+		char tmpLine[80] = "R:reboot, \0";
+		// loop so that undo is handled
+		if (_fIsLoader) {
+			strcat(tmpLine, "F:Fastboot");
+		} else {
+			strcat(tmpLine, "Q:Quit");
 		}
-	}
 
-	if (_fIsLoader) {
-		hxc_printf_box(0, "Push R to reboot, F to Fastboot, other to cancel");
-	} else {
-		hxc_printf_box(0, "Push R to reboot, Q to quit, other to cancel");
-	}
+		if (_is_modified()) {
+			strcat(tmpLine, " -- Changes will be saved (UNDO:revert)");
+		}
 
-	key = get_char() | 0x20;
-	restore_box();
+		hxc_printf_box(0, tmpLine);
 
-	if (key == 'r') {
-		hxc_printf_box(0, ">>>>>Rebooting...<<<<<");
-		jumptotrack0();
-		reboot();
-	} else if ((key =='q' && !_fIsLoader)) {
-		hxc_printf_box(0, ">>>>>Exiting...<<<<<");
-		jumptotrack0();
-		handle_exit();
-	} else if ((key =='f' && _fIsLoader)) {
-		hxc_printf_box(0, ">>>>>Fastbooting...<<<<<");
-		jumptotrack0();
-		handle_exit();
-	}
+		key = wait_function_key() | 0x20;
+		restore_box();
+
+		if ('r' == (char)key) {
+			hxc_printf_box(0, ">>>>>Rebooting...<<<<<");
+			jumptotrack0();
+			reboot();
+		} else if (('q' == (char)key && !_fIsLoader)) {
+			hxc_printf_box(0, ">>>>>Exiting...<<<<<");
+			jumptotrack0();
+			handle_exit();
+		} else if (('f' == (char)key && _fIsLoader)) {
+			hxc_printf_box(0, ">>>>>Fastbooting...<<<<<");
+			jumptotrack0();
+			handle_exit();
+		} else if (0x61 == (key>>16)) {
+			_apply_cfg_file(1);
+		}
+	} while (0x61 == (key>>16));
 }
 
 
@@ -618,7 +644,7 @@ F1         : Filter files in current folder\n\
 F2         : Change color\n\
 F3         : File viewer\n\
 F4         : Hardware settings\n\
-F7         : Quick boot: insert, save & reboot\n\
+F7         : Quick boot: insert selected file in slot 1 A:, save & reboot\n\
 (more...)";
 
 	//remember to reflect changes to the for loop
@@ -813,10 +839,8 @@ void handle_show_all_slots(void)
 		} else if (0x42f == keylow && fBufferIsUsed) { /* Ctrl V : paste */
 			memcpy(slot_ptr, tmpBuffer, 128);
 			_show_all_slots();
-					} else if (keylow == 0x61) { /* Undo : revert all changes */
-			hxc_printf_box(0,"Reloading HXCSDFE.CFG ...");
-			read_cfg_file();
-			restore_box();
+		} else if (keylow == 0x61) { /* Undo : revert all changes */
+			_apply_cfg_file(1);
 			_show_all_slots();	// saving may modify the slots, so redraw
 		} else if (keylow==0x41f) { /* Ctrl+S: Save */
 			hxc_printf_box(0,"Saving selection...");
@@ -900,6 +924,7 @@ int main(int argc, char* argv[])
 
 	hxc_printf_box(0,"Reading HXCSDFE.CFG ...");
 	read_cfg_file();
+	_apply_cfg_file(0);
 	restore_box();
 
 	strcpy((char *)currentPath, "/" );
@@ -948,9 +973,7 @@ int main(int argc, char* argv[])
 		} else if (keylow == 0x473) { /* Ctrl Left: First slot */
 			next_slot(1,0); // slot 1 is always the first usable slot (slot 0 reserved for autoboot)
 		} else if (keylow == 0x61) { /* Undo : revert all changes */
-			hxc_printf_box(0,"Reloading HXCSDFE.CFG ...");
-			read_cfg_file();
-			restore_box();
+			_apply_cfg_file(1);
 			display_slot();
 		} else if (keylow==0x52) {  /* Insert: Insert Drive A */
 			insert_in_slot(0);

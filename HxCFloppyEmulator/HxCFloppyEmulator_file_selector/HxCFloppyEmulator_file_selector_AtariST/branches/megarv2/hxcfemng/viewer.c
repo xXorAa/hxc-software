@@ -235,17 +235,18 @@ void viewer()
 	int isEof = 0;
 
 	do {
-		// clear the screen
 		if (offsetLast != offset || fHexLast != fHex) {
+			// redraw
 			offsetLast = offset;
 			fHexLast = fHex;
+
+			// clear the screen
 			clear_list(4);
 			if (fHex) {
 				isEof = _hexviewer(offset, &offsetEnd);
 			} else {
 				isEof = _textviewer(offset, &offsetEnd);
 			}
-				hxc_printf(0,0,0,"eof=%d", isEof);
 
 			if (offsetEnd - offset > pageOffset) {
 				// the larger page offset
