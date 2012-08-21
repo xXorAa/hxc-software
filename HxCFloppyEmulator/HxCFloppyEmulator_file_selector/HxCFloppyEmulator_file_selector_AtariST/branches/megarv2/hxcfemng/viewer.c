@@ -187,16 +187,20 @@ int _textviewer(unsigned long offsetIn, unsigned long *offsetOut)
 
 /**
  * View the selected file
- * @param fHex initial display: 0:ascii 1:Hex
  */
-void viewer(char fHex)
+void viewer()
 {
 	char filename[5*LFN_MAX_SIZE+2];
 	unsigned short anykey=0;
 	unsigned long offset = 0;
-	unsigned long offset2 = 0;
+	unsigned long offsetEnd = 0;
+	unsigned long offsetLast = 1;
 	unsigned long pageOffset = 0;
 	unsigned long filelen;
+	unsigned char fHex;
+	unsigned char fHexLast = 2;
+	char tmpBuf[512];			// used to check wethever the hex/text viewer should be fired first
+	unsigned short i;
 
 	filelen = read_long_lsb(&gfl_dirEntLSB_ptr->size_b1);
 
@@ -219,54 +223,61 @@ void viewer(char fHex)
 		return;
 	}
 
+	// guess if file is text or hex
+	int bytesRead = fl_fread(tmpBuf, 1, sizeof(tmpBuf), _file);
+	fHex = 0;
+	for (i=0; i<bytesRead; i++) {
+		if (tmpBuf[i]<10) {
+			fHex = 1;	// any char whose ascii code <10 (LF) will trigger the hex viewer
+		}
+	}
+
 	int isEof = 0;
 
 	do {
 		// clear the screen
-		clear_list(4);
-		if (fHex) {
-			isEof = _hexviewer(offset, &offset2);
-		} else {
-			isEof = _textviewer(offset, &offset2);
-		}
+		if (offsetLast != offset || fHexLast != fHex) {
+			offsetLast = offset;
+			fHexLast = fHex;
+			clear_list(4);
+			if (fHex) {
+				isEof = _hexviewer(offset, &offsetEnd);
+			} else {
+				isEof = _textviewer(offset, &offsetEnd);
+			}
+				hxc_printf(0,0,0,"eof=%d", isEof);
 
+			if (offsetEnd - offset > pageOffset) {
+				// the larger page offset
+				pageOffset = offsetEnd - offset;
+			}
 
-		if (offset2 - offset > pageOffset) {
-			// the larger page offset
-			pageOffset = offset2 - offset;
-		}
-
-		// ensure that this line is shown (even if the first chunk is the last one)
-		display_statusl(0, 0, "space/[ctrl/shift]Up/Down:navigate   F2:Text/Hex display   Esc/F3:Quit");
-		if (isEof) {
-			display_statusl(0, 0, "End of file                       ");
+			// ensure that this line is shown (even if the first chunk is the last one)
+			display_statusl(0, 0, "space/[ctrl/shift]Up/Down:navigate   F2:Text/Hex display   Esc/F3:Quit");
+			if (isEof) {
+				display_statusl(0, 0, "End of file                       ");
+			}
 		}
 
 		anykey = wait_function_key()>>16;
 		if (0x3c == anykey) { // F2: toggle hex/ascii
-			fHex = 1-fHex;
+			fHex = fHex^1;
 			pageOffset = 0;
-			isEof = 0;
 		} else if (!isEof && (0x50==anykey || 0x39==anykey)) { // down,space: next page
-			offset = offset2;
+			offset = offsetEnd;
 		} else if (0x48==anykey) { // up: "previous" page
 			if (pageOffset > offset) {offset = 0;}
 			else {offset -= pageOffset; }
-			isEof = 0;
 		} else if (0x448==anykey) { // ctrl+up: go to start
 			offset = 0;
-			isEof = 0;
 		} else if (0x450==anykey) { // ctrl+down: go to end
 			offset = filelen-(pageOffset>>2);
-			isEof = 0;
 		} else if (0x148==anykey || 0x248==anykey) { // shift+up: up 8 pages
 			if ((pageOffset<<3) > offset) {offset = 0;}
 			else {offset -= (pageOffset<<3); }
-			isEof = 0;
 		} else if (0x150==anykey || 0x250==anykey) { // shift+down: down 8 pages
 			if (offset + (pageOffset<<3) >= filelen) {offset = filelen-(pageOffset>>2);}
 			else {offset += (pageOffset<<3); }
-			isEof = 0;
 		}
 		//hxc_printf(0,0,0,"key:%08lx ", anykey);
 	} while (anykey!=1 && anykey!=0x3d && !fExit);

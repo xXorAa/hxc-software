@@ -1013,8 +1013,8 @@ int main(int argc, char* argv[])
 //			fRepaginate_files=1;
 		} else {
 //			hxc_printf(0,0,0,"key:%08lx!",key);
-			if ((char) key >= ' ')
-			{
+			if ((char) key >= ' ' && strlen(filter) == 0)
+			{ // disable instajump when filter is active
 				clear_instajump = 0;
 				ij_keyEvent((char) key);
 				i = ij_performSearch();
