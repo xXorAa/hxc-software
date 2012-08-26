@@ -227,8 +227,8 @@ void viewer()
 	int bytesRead = fl_fread(tmpBuf, 1, sizeof(tmpBuf), _file);
 	fHex = 0;
 	for (i=0; i<bytesRead; i++) {
-		if (tmpBuf[i]<10) {
-			fHex = 1;	// any char whose ascii code <10 (LF) will trigger the hex viewer
+		if (tmpBuf[i]<9) {
+			fHex = 1;	// any char whose ascii code <9 (TAB) will trigger the hex viewer
 		}
 	}
 

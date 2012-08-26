@@ -311,13 +311,22 @@ char read_cfg_file()
 }
 
 
-char save_cfg_file()
+/**
+ * save the changes to the cfgfile
+ * @param boolean fShowMessage : hxc_printf_box("Saving selection...") and restore_box
+
+ **/
+char save_cfg_file(unsigned char fShowMessage)
 {
 	unsigned char ret, i;
 	unsigned char validSlotsNumber, newSlotNumber;
 	FL_FILE *file;
 	cfgfile *cfgfile_ptr = (cfgfile *)sdfecfg_file;
 	void *diskslotIn_ptr, *diskslotOut_ptr;
+
+	if (fShowMessage) {
+		hxc_printf_box("Saving selection...");
+	}
 
 	// remove the empty slots, so they are not saved
 	validSlotsNumber = 1;	// the slot0 is always valid
@@ -381,6 +390,10 @@ char save_cfg_file()
 		// this should never happens, since the HXCSDFE.CFG file is mandatory
 		error("Create file failed");
 		ret=1;
+	}
+
+	if (fShowMessage) {
+		restore_box();
 	}
 
 	return ret;
@@ -556,7 +569,7 @@ void enter_sub_dir(unsigned char fGoParent)
 void fastboot()
 {
 	hxc_printf_box("Insert & Boot...");
-	save_cfg_file();
+	save_cfg_file(0);
 
 	if (_fIsLoader) {
 		handle_exit(0);
@@ -597,12 +610,15 @@ void handle_quit_menu()
 		restore_box();
 
 		if ('r' == (char)key) {
+			save_cfg_file(1);
 			hxc_printf_box(">>>>>Rebooting...<<<<<");
 			handle_exit(1);
 		} else if (('q' == (char)key && !_fIsLoader)) {
+			save_cfg_file(1);
 			hxc_printf_box(">>>>>Exiting...<<<<<");
 			handle_exit(0);
 		} else if (('f' == (char)key && _fIsLoader)) {
+			save_cfg_file(1);
 			hxc_printf_box(">>>>>Fastbooting...<<<<<");
 			handle_exit(0);
 		} else if (0x61 == (UWORD) (key>>16)) { /* Undo */
@@ -836,9 +852,7 @@ void handle_show_all_slots(void)
 			_apply_cfg_file(1);
 			_show_all_slots();	// saving may modify the slots, so redraw
 		} else if (keylow==0x41f) { /* Ctrl+S: Save */
-			hxc_printf_box("Saving selection...");
-			save_cfg_file();
-			restore_box();
+			save_cfg_file(1);
 			_show_all_slots();	// saving may modify the slots, so redraw
 		} else if (keylow==0x3c) { /* F2: Change palette */
 			sdfecfg_file[256+128] = set_color_scheme(0xff);
@@ -1011,9 +1025,7 @@ int main(int argc, char* argv[])
 			handle_emucfg();
 			fRedraw_status = 1;
 		} else if (keylow==0x41f) { /* Ctrl+S: Save */
-			hxc_printf_box("Saving selection...");
-			save_cfg_file();
-			restore_box();
+			save_cfg_file(1);
 			display_slot();	// saving may modify the slots, so redraw
 		} else if (!isDir && keylow==0x41) { /* F7: Fast insert&boot */
 			_slotnumber = 1;
