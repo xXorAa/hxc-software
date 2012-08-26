@@ -90,29 +90,43 @@ extern DirectoryEntry * gfl_dirEntLSB_ptr;
 unsigned char fExit=0;					// set to 1 to exit
 
 
-void handle_exit()
+void handle_exit(unsigned char fReboot)
 {
+	restore_atari_hw();
+	if (fReboot) {
+		my_Supexec((LONG *)su_reboot);
+	}
 	fl_shutdown();
 	free(_bigmem_adr);
 	restore_display();
-	restore_atari_hw();
 	exit(0);
 }
 
 
-
-void lockup()
+void _lockup()
 {
 	while(1) {
 		get_char();
 		if (fExit) {
-			handle_exit();
+			handle_exit(0);
 		}
 	}
 }
 
+void fatal(char *msg)
+{
+	hxc_printf_box("FATAL ERROR: %s! Alt-F4 to quit", msg);
+	_lockup();
+}
 
-int setlbabase(unsigned long lba)
+void error(char *msg)
+{
+	hxc_printf_box("ERROR: %s", msg);
+	get_char();
+	restore_box();
+}
+
+void _setlbabase(unsigned long lba)
 {
 	int ret;
 	direct_access_cmd_sector * dacs;
@@ -132,11 +146,8 @@ int setlbabase(unsigned long lba)
 	ret=writesector( 0,(unsigned char *)&sector);
 	if(!ret)
 	{
-		hxc_printf_box(0,"FATAL ERROR: Write CTRL ERROR !");
-		lockup();
+		fatal("Write CTRL error");
 	}
-
-	return 0;
 }
 
 
@@ -145,36 +156,26 @@ int setlbabase(unsigned long lba)
  * Display Firmware version
  * @return 0 on failure, 1 on success
  */
-int hxc_media_init()
+void hxc_media_init()
 {
-	unsigned char ret;
 	unsigned char sector[512];
 	direct_access_status_sector * dass;
 
 	last_setlbabase=0xFFFFF000;
-	ret=readsector(0,(unsigned char*)&sector,1);
-
-	if(ret)
-	{
-		dass=(direct_access_status_sector *)sector;
-		if(!strcmp(dass->DAHEADERSIGNATURE,"HxCFEDA"))
-		{
-			hxc_printf(0,0,SCREEN_YRESOL-30,"Firmware %s" ,dass->FIRMWAREVERSION);
-
-			dass= (direct_access_status_sector *)sector;
-			last_setlbabase=0;
-			setlbabase(last_setlbabase);
-
-			return 1;
-		}
-
-		hxc_printf_box(0,"FATAL ERROR: HxC Floppy Emulator not found!");
-
-		return 0;
+	if (!readsector(0,(unsigned char*)&sector,1)) {
+		fatal("Floppy Access error");
 	}
-	hxc_printf_box(0,"FATAL ERROR: Floppy Access error!  [%d]",ret);
 
-	return 0;
+	dass=(direct_access_status_sector *)sector;
+	if(strcmp(dass->DAHEADERSIGNATURE,"HxCFEDA")) {
+		fatal("HxC Floppy Emulator not found");
+	}
+
+	hxc_printf(0,0,SCREEN_YRESOL-30,"Firmware %s" ,dass->FIRMWAREVERSION);
+
+	dass= (direct_access_status_sector *)sector;
+	last_setlbabase=0;
+	_setlbabase(last_setlbabase);
 }
 
 int hxc_media_read(unsigned long sector, unsigned char *buffer)
@@ -189,13 +190,12 @@ int hxc_media_read(unsigned long sector, unsigned char *buffer)
 	{
 		if((sector-last_setlbabase)>=8)
 		{
-			setlbabase(sector);
+			_setlbabase(sector);
 		}
 
 		if(!readsector(0,buffer,0))
 		{
-			hxc_printf_box(0,"ERROR: Read ERROR ! fsector %d",(sector-last_setlbabase)+1);
-			get_char_restore_box();
+			error("Read error");
 		}
 		last_setlbabase=L_INDIAN(dass->lba_base);
 
@@ -204,8 +204,8 @@ int hxc_media_read(unsigned long sector, unsigned char *buffer)
 
 	if(!readsector((sector-last_setlbabase)+1,buffer,0))
 	{
-		hxc_printf_box(0,"FATAL ERROR: Read ERROR ! fsector %d",(sector-last_setlbabase)+1);
-		lockup();
+		//hxc_printf(0, 0, 0, "fsector=%d", (sector-last_setlbabase)+1));
+		fatal("Read error");
 	}
 
 	less_busy();
@@ -220,13 +220,12 @@ int hxc_media_write(unsigned long sector, unsigned char *buffer)
 	if((sector-last_setlbabase)>=8)
 	{
 		last_setlbabase=sector;
-		setlbabase(sector);
+		_setlbabase(sector);
 	}
 
 	if(!writesector((sector-last_setlbabase)+1,buffer))
 	{
-		hxc_printf_box(0,"FATAL ERROR: Write sector ERROR !");
-		lockup();
+		fatal("Write sector error");
 	}
 
 	less_busy();
@@ -307,8 +306,7 @@ char read_cfg_file()
 		return 0;
 	}
 
-	hxc_printf_box(0,"ERROR: Access HXCSDFE.CFG file failed!");
-	get_char_restore_box();
+	error("Access HXCSDFE.CFG file failed");
 	return 1;
 }
 
@@ -367,8 +365,7 @@ char save_cfg_file()
 		/* Save the sectors */
 		if (fl_fswrite((unsigned char*)sdfecfg_file, 2 + NUMBER_OF_SLOT/4, 0, file) != 2 + NUMBER_OF_SLOT/4)
 		{
-			hxc_printf_box(0,"ERROR: Write file failed!");
-			get_char_restore_box();
+			error("Write file failed");
 
 			ret=1;
 		}
@@ -382,8 +379,7 @@ char save_cfg_file()
 	else
 	{
 		// this should never happens, since the HXCSDFE.CFG file is mandatory
-		hxc_printf_box(0,"ERROR: Create file failed!");
-		get_char_restore_box();
+		error("Create file failed");
 		ret=1;
 	}
 
@@ -559,14 +555,13 @@ void enter_sub_dir(unsigned char fGoParent)
 
 void fastboot()
 {
-	hxc_printf_box(0,"Insert & Boot...");
+	hxc_printf_box("Insert & Boot...");
 	save_cfg_file();
 
-	jumptotrack0();
 	if (_fIsLoader) {
-		handle_exit();
+		handle_exit(0);
 	} else {
-		reboot();
+		handle_exit(1);
 	}
 }
 
@@ -581,9 +576,10 @@ unsigned char _is_modified()
 void handle_quit_menu()
 {
 	unsigned long key;
+	char tmpLine[80];
 
 	do {
-		char tmpLine[80] = "R:reboot, \0";
+		strcpy(tmpLine, "R:reboot, \0");
 		// loop so that undo is handled
 		if (_fIsLoader) {
 			strcat(tmpLine, "F:Fastboot");
@@ -595,27 +591,24 @@ void handle_quit_menu()
 			strcat(tmpLine, " -- Changes will be saved (UNDO:revert)");
 		}
 
-		hxc_printf_box(0, tmpLine);
+		hxc_printf_box(tmpLine);
 
-		key = wait_function_key() | 0x20;
+		key = get_char() | 0x20;
 		restore_box();
 
 		if ('r' == (char)key) {
-			hxc_printf_box(0, ">>>>>Rebooting...<<<<<");
-			jumptotrack0();
-			reboot();
+			hxc_printf_box(">>>>>Rebooting...<<<<<");
+			handle_exit(1);
 		} else if (('q' == (char)key && !_fIsLoader)) {
-			hxc_printf_box(0, ">>>>>Exiting...<<<<<");
-			jumptotrack0();
-			handle_exit();
+			hxc_printf_box(">>>>>Exiting...<<<<<");
+			handle_exit(0);
 		} else if (('f' == (char)key && _fIsLoader)) {
-			hxc_printf_box(0, ">>>>>Fastbooting...<<<<<");
-			jumptotrack0();
-			handle_exit();
-		} else if (0x61 == (key>>16)) {
+			hxc_printf_box(">>>>>Fastbooting...<<<<<");
+			handle_exit(0);
+		} else if (0x61 == (UWORD) (key>>16)) { /* Undo */
 			_apply_cfg_file(1);
 		}
-	} while (0x61 == (key>>16));
+	} while (0x61 == (UWORD) (key>>16));
 }
 
 
@@ -664,13 +657,13 @@ buttons to browse slots, and the middle button to return to the Autoboot slot.\n
 
 	clear_list(5);
 	print_str(help1, 0, HELP_Y_POS, 1);
-	wait_function_key();
+	get_char();
 
 	clear_list(5);
 	i = print_str(help2, 0, HELP_Y_POS, 1);
 	display_credits(i/8);
 
-	wait_function_key();
+	get_char();
 }
 
 
@@ -713,7 +706,7 @@ void handle_emucfg(void)
 	do
 	{
 		invert_line(i);
-		c=wait_function_key()>>16;
+		c = get_char()>>16;
 		invert_line(i);
 		ypos = HELP_Y_POS+(i<<3);
 
@@ -808,7 +801,7 @@ void handle_show_all_slots(void)
 	do
 	{
 		invert_line(_slotnumber);
-		keylow = wait_function_key()>>16;
+		keylow = get_char()>>16;
 		invert_line(_slotnumber);
 
 		slot_ptr = sdfecfg_file + 1024 + _slotnumber*128;
@@ -843,7 +836,7 @@ void handle_show_all_slots(void)
 			_apply_cfg_file(1);
 			_show_all_slots();	// saving may modify the slots, so redraw
 		} else if (keylow==0x41f) { /* Ctrl+S: Save */
-			hxc_printf_box(0,"Saving selection...");
+			hxc_printf_box("Saving selection...");
 			save_cfg_file();
 			restore_box();
 			_show_all_slots();	// saving may modify the slots, so redraw
@@ -903,9 +896,7 @@ int main(int argc, char* argv[])
 	{
 		init_atari_fdc(bootdev);
 
-		if(!hxc_media_init()) {
-			lockup();
-		}
+		hxc_media_init();
 
 		media_read_callback = hxc_media_read;
 		media_write_callback = hxc_media_write;
@@ -915,14 +906,13 @@ int main(int argc, char* argv[])
 	/* Attach media access functions to library*/
 	if (fl_attach_media(media_read_callback, media_write_callback) != FAT_INIT_OK)
 	{
-		hxc_printf_box(0,"FATAL ERROR: Media attach failed !");
-		lockup();
+		fatal("Media attach failed");
 	}
 
 	// default slot number (will be replaced while reading cfg file)
 	_slotnumber=1;
 
-	hxc_printf_box(0,"Reading HXCSDFE.CFG ...");
+	hxc_printf_box("Reading HXCSDFE.CFG...");
 	read_cfg_file();
 	_apply_cfg_file(0);
 	restore_box();
@@ -962,7 +952,7 @@ int main(int argc, char* argv[])
 		char clear_instajump = 1;
 
 		if (keylow == 0) {
-		} else if (isDir && (keylow==0x1c || keylow==0x52 || keylow==0x47) ) {
+		} else if (isDir && (keylow==0x1c || keylow==0x52 || keylow==0x47) ) { /* Return, Insert, ClrHome */
 			enter_sub_dir(0);
 		} else if (keylow == 0x4d) { /* Right: Next slot */
 			next_slot(_slotnumber, +1);
@@ -999,14 +989,14 @@ int main(int argc, char* argv[])
 			do
 			{
 				filter[i]=0;
-				c=get_char();
-				if(c!='\n' && c>=' ')
+				c = (char) get_char();
+				if(c!=13 && c>=' ')
 				{
 					filter[i]=c;
 					hxc_printf(0, FILTER_X_POS+13*8+(8*i), FILTER_Y_POS, "%c", c);
 					i++;
 				}
-			}while(c!='\n' && i<16);
+			}while(c!=13 && i<16); /* stop after Return or filter is full */
 			filter[i]=0;
 
 			/* get_str(&filter); */
@@ -1021,7 +1011,7 @@ int main(int argc, char* argv[])
 			handle_emucfg();
 			fRedraw_status = 1;
 		} else if (keylow==0x41f) { /* Ctrl+S: Save */
-			hxc_printf_box(0,"Saving selection...");
+			hxc_printf_box("Saving selection...");
 			save_cfg_file();
 			restore_box();
 			display_slot();	// saving may modify the slots, so redraw
@@ -1058,6 +1048,7 @@ int main(int argc, char* argv[])
 		}
 	} while (!fExit);
 
-	handle_exit();
+	// fExit: altF4 was pressed : quit
+	handle_exit(0);
 	return 0;
 }

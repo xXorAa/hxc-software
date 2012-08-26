@@ -206,7 +206,7 @@ long gfl_mainloop()
 {
 	long key, key_ret;
 	key_ret = 0;
-	key = wait_function_key();
+	key = get_char();
 
 	switch((UWORD) (key>>16))
 	{

@@ -99,8 +99,8 @@ UWORD fli_getNbEntries(void)
 }
 
 /**
- * Returns the entry of the first non-dir entry
- * @returns integer or 0xffff if there are no files (only dirs)
+ * Returns the entry number of the entry just after the last dir
+ * @returns integer
  */
 UWORD fli_getFirstFile(void)
 {
@@ -122,8 +122,7 @@ UWORD fli_getFirstFile(void)
             }
         }
 
-        // no file
-        _firstFile = 0xffff;
+        _firstFile = i;
     }
 
     return _firstFile;

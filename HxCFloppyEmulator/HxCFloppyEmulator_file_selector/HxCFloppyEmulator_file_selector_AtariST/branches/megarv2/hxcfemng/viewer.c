@@ -260,7 +260,7 @@ void viewer()
 			}
 		}
 
-		anykey = wait_function_key()>>16;
+		anykey = get_char()>>16;
 		if (0x3c == anykey) { // F2: toggle hex/ascii
 			fHex = fHex^1;
 			pageOffset = 0;

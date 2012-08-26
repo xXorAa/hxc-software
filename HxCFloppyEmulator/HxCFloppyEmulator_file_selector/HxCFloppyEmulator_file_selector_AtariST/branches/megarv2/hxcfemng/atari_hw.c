@@ -197,10 +197,6 @@ void su_jumptotrack0(void)
 	su_fdcUnlock();
 }
 
-void jumptotrack0()
-{
-	my_Supexec((LONG *) su_jumptotrack0);
-}
 
 
 void su_fdcDmaAdrSet(unsigned char *adr)
@@ -298,6 +294,7 @@ void su_toggleConterm()
 
 void restore_atari_hw(void)
 {
+	my_Supexec((LONG *) su_jumptotrack0);
 	my_Supexec((LONG *) su_toggleConterm);
 }
 
@@ -333,26 +330,12 @@ void flush_char()
 }
 #endif
 
-unsigned char get_char()
+unsigned long get_char()
 {
 	unsigned long key;
 
-	key=Crawcin();
-	if ( (key>>16) == 0x83e ) { /* Alt F4 */
-		fExit=1;
-	}
-	if((key>>16) == 0x1C) {
-		return '\n';
-	}
-
-	return (unsigned char) key&0xff;
-}
-
-
-long wait_function_key()
-{
-	long key = Crawcin();
-	if ( (key>>16) == 0x83e ) { /* Alt F4 */
+	key = Crawcin();
+	if ( ((unsigned short) (key>>16)) == 0x83e) { /* Alt F4 */
 		fExit=1;
 	}
 
@@ -375,10 +358,6 @@ void su_reboot()
 	__asm("\tjmp (a0)");
 }
 
-void reboot()
-{
-	my_Supexec((LONG *)su_reboot);
-}
 
 #if(0)
 unsigned long read_long_odd(unsigned char * adr)

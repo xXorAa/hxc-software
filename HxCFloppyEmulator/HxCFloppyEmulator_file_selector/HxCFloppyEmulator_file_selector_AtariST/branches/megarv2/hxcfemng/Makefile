@@ -53,7 +53,7 @@ $(EXEC):          libc/mStartupAsmC.o libc/mStartup.o quickersort.o gui_asm.o fe
 atari_hw.o:       atari_hw.c       atari_hw.h
 	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
-dir.o:            dir.c            filelist.h fat32/fat_access.h cfg_file.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h atari_hw.h fat32/fat_opts.h conf.h atari_hw.h fat32/fat_filelib.h
+dir.o:            dir.c            filelist.h fat32/fat_access.h cfg_file.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h atari_hw.h fat32/fat_opts.h conf.h atari_hw.h fat32/fat_filelib.h fectrl.h
 	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
 gui_utils.o:      gui_utils.c      gui_utils.h atari_hw.h conf.h libc/snprintf/snprintf.h graphx/data_bmp_hxc2001logo_bmp.h graphx/data_bmp_font_bmp.h graphx/data_bmp_font8x8_bmp.h graphx/data_bmp_sdhxcfelogo_bmp.h assembly.h

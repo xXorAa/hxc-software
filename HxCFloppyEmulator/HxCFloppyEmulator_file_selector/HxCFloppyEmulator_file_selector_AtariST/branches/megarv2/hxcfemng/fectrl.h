@@ -1,8 +1,6 @@
-#ifndef __GUI_UTILS_H__
-#define __GUI_UTILS_H__
 /*
 //
-// Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011, 2012 Jean-FranÃ§ois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -27,26 +25,10 @@
 //
 */
 
-void hxc_printf(unsigned char mode,unsigned short x_pos,unsigned short y_pos,char * chaine, ...);
-void hxc_printf_box(char * chaine, ...);
-void print_char8x8(unsigned short x, unsigned short y,unsigned char c);
-unsigned short print_str(char * buf,unsigned short x_pos,unsigned short y_pos, char fHandleCR);
-void restore_box();
-void more_busy();
-void less_busy();
+#ifndef __FECTRL_H__
+#define __FECTRL_H__
 
-void h_line(unsigned short y_pos, unsigned short val);
-void invert_line(unsigned short y_pos);
-void clear_list(unsigned char add);
-void clear_line(unsigned short y_pos, unsigned short val);
-void box(unsigned short x_p1,unsigned short y_p1,unsigned short x_p2,unsigned short y_p2,unsigned short fillval,unsigned char fill);
-void init_display();
-void restore_display();
-void display_statusl(unsigned char mode, unsigned char clear, char * text, ...);
-void redraw_statusl();
-int  display_credits();
-unsigned char set_color_scheme(unsigned char color);
+void fatal(char *msg);
+void error(char *msg);
 
-#define VERSIONCODE "2.0 alpha 4"
-#define DATECODE "2012-08-19"
 #endif

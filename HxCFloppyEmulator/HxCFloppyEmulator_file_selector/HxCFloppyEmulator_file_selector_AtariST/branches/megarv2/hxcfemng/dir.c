@@ -32,6 +32,7 @@
 #include "fat_opts.h"
 #include "fat_access.h"
 #include "conf.h"
+#include "fectrl.h"
 #include "fat32/fat_filelib.h"
 
 // A enlever:
@@ -215,9 +216,14 @@ int dir_scan()
 	// get all the files in the dir
 	nbFiles = 0;
 	fl_list_opendir((char *)currentPath, &_file_list_status);
+
 	while( fl_list_readdir(&_file_list_status, &_dir_entry) ) {
 		fli_push(&_dir_entry);
 		nbFiles++;
+	}
+
+	if (0 == nbFiles) {
+		fatal("Cannot read directory");
 	}
 
 	less_busy();

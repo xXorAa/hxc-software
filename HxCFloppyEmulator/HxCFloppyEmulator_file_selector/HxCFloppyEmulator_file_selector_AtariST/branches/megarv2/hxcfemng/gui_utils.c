@@ -347,12 +347,6 @@ void invert_line(unsigned short linenumber)
 	}
 }
 
-void get_char_restore_box()
-{
-	get_char();
-	restore_box();
-}
-
 void restore_box()
 {
 	if (screen_backup_isUsed) {
@@ -363,7 +357,10 @@ void restore_box()
 	}
 }
 
-void hxc_printf_box(unsigned char mode,char * chaine, ...)
+/**
+ * Print a line of text in the center of the screen, save the background to screen_backup_buffer
+ */
+void hxc_printf_box(char * chaine, ...)
 {
 	char temp_buffer[1024];
 	int str_size;

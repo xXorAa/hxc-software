@@ -13,6 +13,8 @@ _quickersort:
 
             moveq   #0,d0
             move.w  $2c+4(sp),d0            ;d0:number of strings
+            cmp.w   #2,d0
+            bmi     endquicksort
             move.l  d0,d1                   ;d1:number of strings:initial gap
 
             moveq   #0,d3
@@ -96,6 +98,7 @@ endpart:    ;insertion sort
             cmp.l   a2,a5
             blo.s   .pass
 
+endquicksort:
             movem.l     (sp)+,a0-a5/d0-d4
             rts
 
