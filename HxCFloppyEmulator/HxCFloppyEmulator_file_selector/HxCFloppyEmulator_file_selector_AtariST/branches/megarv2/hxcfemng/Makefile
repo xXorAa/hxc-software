@@ -53,7 +53,7 @@ $(EXEC):          libc/mStartupAsmC.o libc/mStartup.o quickersort.o gui_asm.o fe
 atari_hw.o:       atari_hw.c       atari_hw.h
 	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
-dir.o:            dir.c            filelist.h fat32/fat_access.h cfg_file.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h atari_hw.h fat32/fat_opts.h conf.h atari_hw.h fat32/fat_filelib.h fectrl.h
+dir.o:            dir.c            filelist.h fat32/fat_access.h cfg_file.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h conf.h atari_hw.h fat32/fat_filelib.h fectrl.h
 	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
 gui_utils.o:      gui_utils.c      gui_utils.h atari_hw.h conf.h libc/snprintf/snprintf.h graphx/data_bmp_hxc2001logo_bmp.h graphx/data_bmp_font_bmp.h graphx/data_bmp_font8x8_bmp.h graphx/data_bmp_sdhxcfelogo_bmp.h assembly.h
@@ -68,7 +68,7 @@ filelist.o:       filelist.c       fat32/fat_access.h atari_hw.h fat32/fat_defs.
 gui_filelist.o:   gui_filelist.c   gui_utils.h atari_hw.h conf.h libc/snprintf/snprintf.h cfg_file.h dir.h filelist.h  fat32/fat_access.h fat32/fat_defs.h fat32/fat_opts.h fat32/fat_types.h compiler_helper.h
 	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
-instajump.o:      instajump.c      filelist.h atari_hw.h fat32/fat_access.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h hxcfeda.h
+instajump.o:      instajump.c      filelist.h atari_hw.h fat32/fat_access.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h hxcfeda.h gui_filelist.h
 	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
 viewer.o:         viewer.c         atari_hw.h fat32/fat_access.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h hxcfeda.h gui_utils.h conf.h libc/snprintf/snprintf.h

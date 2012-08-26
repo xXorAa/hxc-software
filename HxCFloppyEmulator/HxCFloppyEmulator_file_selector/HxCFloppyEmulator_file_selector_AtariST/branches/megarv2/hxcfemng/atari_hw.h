@@ -28,7 +28,6 @@
 //
 */
 
-void mystrlwr(char *string);
 void restore_atari_hw(void);
 void init_atari_hw(void);
 void init_atari_fdc(unsigned char drive);

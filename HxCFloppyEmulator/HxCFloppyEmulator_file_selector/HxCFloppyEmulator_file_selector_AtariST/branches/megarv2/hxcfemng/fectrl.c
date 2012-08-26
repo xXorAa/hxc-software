@@ -1000,7 +1000,7 @@ int main(int argc, char* argv[])
 			filter[i]=0;
 
 			/* get_str(&filter); */
-			mystrlwr(filter);
+			strlwr(filter);
 			fRepaginate_files=1;
 		} else if (keylow==0x3c) { /* F2: Change palette */
 			sdfecfg_file[256+128] = set_color_scheme(0xff);
@@ -1026,24 +1026,13 @@ int main(int argc, char* argv[])
 //			fRepaginate_files=1;
 		} else {
 //			hxc_printf(0,0,0,"key:%08lx!",key);
-			if ((char) key >= ' ' && strlen(filter) == 0)
-			{ // disable instajump when filter is active
+			if ((char) key >= ' ') {
 				clear_instajump = 0;
 				ij_keyEvent((char) key);
-				i = ij_performSearch();
-				if (i != 0xffff) {
-					gfl_jumpToFile(i);
-				} else {
-					// not found: retry
-					ij_keyEvent('\0');
-					i = ij_performSearch();
-					if (i != 0xffff) {
-						gfl_jumpToFile(i);
-					}
-				}
 			}
 		}
 		if (clear_instajump) {
+			// clear instajump except when a key press resulted in a search
 			ij_clear();
 		}
 	} while (!fExit);

@@ -1,5 +1,3 @@
-
-
 How to build the fast HXC Manager for Atari ST :
 
 This distribution is a full kit with precompiled binaries for linux-i386, linux-amd64 and cygwin. All of these 3 development platforms have been tested and procuced BIT-ACCURATE final file OUT.ST. If your archictecture is not one of these, you'll have to build the tools. The source are included.
@@ -10,16 +8,28 @@ Instead, I chose to use VASM, that is very good (like even better than ASM.TTP !
 I may have used AS (the Gnu assembler), but the syntax is very different, and VASM is indeed needed (and a part of) by VBCC.
 I no longer use VBCC, I switched back to GCC. To reduce the size of the produced binary (190 Kib) to something reasonable (45 Kib), I usethe techniques described here : http://bus-error.nokturnal.pl/tiki-read_article.php?articleId=12. Note that the memcpy routine bombs on regular 68000 (odd address error), so I had to use another one. I also bundle a printf replacement. This one is very incomplete, but it is still useable in minimal environment. Note that there is NO float support. To use float, I think there is two options: implements/rip float linker library (libm ?), on use vbcc. So far the manager don't need float.
 
+To be able to use gcc to generate an Atari executable, you'll need the Vincent Rivière's port of the m68k-atari-mint tools.
+See the instructions at m68k-atari-mint : see http://vincent.riviere.free.fr/soft/m68k-atari-mint/.
+This website describe how to install them under linux and cygwin. I had some problem with using the distributed tools with linux-amd64, because the packages require a version of glibc too recent. This does not occurs with Ubuntu. If you need to get the packages for linux-amd64 under Debian, please contact me or Vincent Rivière.
+
+
 Prerequisites
 -------------
 PERL
 Bash compatible shell
 Gnu make
-Gnu gcc (only for building the build-tools)
+m68k-atari-mint : see http://vincent.riviere.free.fr/soft/m68k-atari-mint/
+Under windows: you need Cygwin with the following packages:
+    make
+    libmpc1
+    libmpfr4   (if gcc hangs it means you don't have it !)
+    libcloog0
+    perl
+
 
 Instructions
 ------------
-There is 3 directories:
+There are 3 directories:
 build-tools/ : precompiled binaries used for generating the files. Also contains source for
                building these tools, in case your architecture is not supplied.
 hxcfemng/    : the source for the manager, by Jeff. It builds HXCFEMNG.PRG
@@ -46,16 +56,17 @@ You'll have to use the HxCFloppyEmulator.exe : import OUT.ST, export as AUTOBOOT
 
 
 
-**************************
- How to build build-tools
-**************************
+*****************************
+ How to build the build-tools
+*****************************
+(this is only required if your platform is not cygwin, linux-i386 or linux-amd64)
 
 Description
 -----------
 
 I use two tools:
 - nrv2b
-This is an brute force variation of the UCL library nrv2b algorithm (http://www.oberhumer.com/opensource/ucl/). The main advantage of nrv2b is the depack algorithm is dead simple and insanely fast. It requires no overhead, and does not use stack. The depacker only take a fistful of bytes. The default pack performance is not very good, but it can be tuned. That's the goal of the supplied nrv2b implementation : it will brute force the file until it finds the optimal compression ratio. It now on par with zip -9 and upx -9. The main drawback is that is use a *lot* more cpu to compress. But given today's hardware, packing a 200 KB file only takes a few seconds, so it is perfectly usable.
+This is an brute force variation of the UCL library nrv2b algorithm (http://www.oberhumer.com/opensource/ucl/). The main advantage of nrv2b is the depack algorithm is dead simple and insanely fast. It requires no overhead, and does not use stack. The depacker only take a fistful of bytes. The default pack performance is not very good, but it can be tuned. That's the goal of the supplied nrv2b implementation : it will brute force the file until it finds the optimal compression ratio. It's now on par with zip -9 and upx -9. The main drawback is that is use a *lot* more cpu to compress. But given today's hardware, packing a 200 KB file only takes a few seconds, so it is perfectly usable.
 
 - vasm (part of vbcc)
 This is a cross assembler. It is robust, fast, has Devpac-compatibily mode, has automatic opt-in optimisations.
@@ -75,15 +86,5 @@ make install (this only move the binaries to ../bin-$ARCH)
 
 
 
-
-*************************
- Compiling under windows
-*************************
-
-To compile under windows, you need Cygwin with the following packages:
-make
-libmpc1
-libmpfr4   (if gcc hangs it means you don't have it !)
-libcloog0
 
 

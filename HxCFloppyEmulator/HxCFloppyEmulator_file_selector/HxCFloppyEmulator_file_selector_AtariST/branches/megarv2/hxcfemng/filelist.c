@@ -98,6 +98,7 @@ UWORD fli_getNbEntries(void)
     return _nbEntries;
 }
 
+#if(0)
 /**
  * Returns the entry number of the entry just after the last dir
  * @returns integer
@@ -127,6 +128,7 @@ UWORD fli_getFirstFile(void)
 
     return _firstFile;
 }
+#endif
 
 #if(0)
 UWORD fli_next(UWORD current)

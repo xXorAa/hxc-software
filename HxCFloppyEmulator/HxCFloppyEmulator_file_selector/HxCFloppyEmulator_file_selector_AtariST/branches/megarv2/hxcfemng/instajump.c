@@ -26,11 +26,12 @@
 */
 
 
-//#define IJ_DEBUG
+// #define IJ_DEBUG
 
 
 
 #include <string.h>
+#include <ctype.h>		// tolower()
 
 #include "atari_hw.h"
 #include "hxcfeda.h"
@@ -45,6 +46,7 @@
 
 //#include "dir.h"
 #include "filelist.h"
+#include "gui_filelist.h"
 
 
 //#include "conf.h"
@@ -55,72 +57,20 @@
 #define IJ_TIMEOUT 2000    // maximum time between two keystrokes (in ms)
 #define IJ_MAXLEN  15      // maximum number of chars
 
+//
+// Externs
+//
+extern unsigned char NUMBER_OF_FILE_ON_DISPLAY;
+extern UWORD gfl_selectorPos;
+extern UWORD gfl_cachedPageNumber;
+extern UWORD gfl_cachedPage[];
+extern UBYTE gfl_isLastPage;
+
 
 // static variables:
 static unsigned long _lastTime = 0;
 static char _searchString[IJ_MAXLEN+1];
-static unsigned char _isValid;						// previous search matched
 
-// interval:
-static UWORD _mini;						// low, inclusive
-static UWORD _maxi;						// high, exclusive
-static UBYTE _phase;					// 0:directories, 1:files
-
-
-/**
- * If a key was stroke within a short time, add that key to the current search
- * otherwise, initiate an other instajump.
- * this function does not call the search function
- */
-void ij_keyEvent(signed char key)
-{
-	unsigned long time;
-	int len = strlen(_searchString);
-	UWORD firstFile;
-
-	firstFile = fli_getFirstFile();
-	time = get_hz200();
-	if ( (time - _lastTime) < (IJ_TIMEOUT / 5)  ) {
-		if ('\0' == key) {
-			_mini++;
-			key = _searchString[len-1];
-			_searchString[0] = '\0';
-			len = 0;
-			_phase--;
-			if (!_phase) {
-				_maxi    = firstFile;
-			} else {
-				_maxi    = fli_getNbEntries();
-			}
-			if (_mini < _maxi) {
-				_isValid = 1;
-			}
-		}
-	} else {
-		// init a new search
-		len = 0;
-		_isValid = 1;
-		_mini    = 0;
-
-		if (0 == firstFile) {
-			_phase   = 1;		// files
-			_maxi    = fli_getNbEntries();
-		} else {
-			_phase   = 0;		// directories
-			_maxi    = firstFile;
-		}
-		#ifdef IJ_DEBUG
-			debug_line = 0;
-		#endif
-	}
-
-	if (_isValid && (len < IJ_MAXLEN)) {
-		_searchString[len++] = key | 32;	// lower case
-		_searchString[len]   = '\000';
-	}
-
-	_lastTime = time;
-}
 
 void ij_clear()
 {
@@ -128,86 +78,110 @@ void ij_clear()
 }
 
 
-/**
- * perform the search
- * @returns the entry number
- */
-UWORD ij_performSearch()
-{
-	UWORD curFile;
-	UWORD lastok = 0xffff;
-	UWORD lastmaxi;
-	UWORD backupmini;
-	struct fs_dir_ent dir_entry;
-	int cmp;
 
-	if (!_isValid) {
-		return 0xffff;
+UBYTE _search(UWORD pagenumber, UWORD selectorpos)
+{
+	int cmp, len;
+	UWORD curFile;
+	struct fs_dir_ent dir_entry;
+
+	gfl_setCachedPage(pagenumber);
+	len      = strlen(_searchString);
+
+	#ifdef IJ_DEBUG
+		hxc_printf(0, 0, 8*(debug_line++), "searching for %s from position pagenumber %d, %d", _searchString, pagenumber, selectorpos);
+	#endif
+
+	while(1) {
+		curFile = gfl_cachedPage[selectorpos];
+		if (!fli_getDirEntryMSB(curFile, &dir_entry)) {
+			break;
+		}
+
+		strlwr(dir_entry.filename);
+		cmp = strncmp(dir_entry.filename, _searchString, len);
+
+		if (0 == cmp) {
+			// found
+			#ifdef IJ_DEBUG
+				hxc_printf(0, 0, 8*(debug_line++), "Found at page %d, %d", pagenumber, selectorpos);
+				get_char();
+			#endif
+			// gfl_setCachedPage(pagenumber); (not needed)
+			gfl_selectorPos = selectorpos;
+
+			return 1;
+		}
+
+		selectorpos++;
+		if (selectorpos >= NUMBER_OF_FILE_ON_DISPLAY) {
+			if (gfl_isLastPage) {
+				break;
+			}
+			selectorpos = 0;
+			pagenumber++;
+			gfl_setCachedPage(pagenumber);
+		}
 	}
 
-	backupmini = _mini;
-	lastmaxi = _maxi;
-
-	#ifdef IJ_DEBUG
-		hxc_printf(0, 0, 8*(debug_line++), "searching for %s in [%d;%d[", _searchString, _mini, _maxi);
-	#endif
-
-	do {
-		curFile = (_mini + _maxi) >> 1;
-		fli_getDirEntryMSB(curFile, &dir_entry);
-
-		mystrlwr(dir_entry.filename);
-		cmp = strncmp(dir_entry.filename, _searchString, strlen(_searchString));
-
-		#ifdef IJ_DEBUG
-			hxc_printf(0, 0, 8*(debug_line++), "try p=%d in [%d;%d[ index %d (%d):%s", _phase, _mini, _maxi, curFile, cmp, dir_entry.filename);
-		#endif
-
-		if (curFile == _mini) {
-			//last
-			if (cmp != 0 && 0xffff != lastok) {
-				cmp = 0;
-				curFile = lastok;
-			}
-			if (0 == cmp) {
-				// found
-				_mini = curFile;
-				_maxi = lastmaxi;
-				#ifdef IJ_DEBUG
-					hxc_printf(0, 0, 8*(debug_line++), "Found at %d in [%d;%d[", curFile, _mini, _maxi);
-				#endif
-				return curFile;
-			}
-
-			// not found
-			_phase++; // files
-			if (1 == _phase) {
-				_mini    = fli_getFirstFile();
-				_maxi    = fli_getNbEntries();
-				lastmaxi = _maxi;
-			} else {
-				_mini = backupmini;
-			}
-		} else {
-			if ( cmp < 0) {
-				_mini = curFile;
-			} else {
-				_maxi = curFile;
-				if (0 == cmp) {
-					// this entry matches, but it is not necessarely the first one, so, continue to search.
-					// remember that this entry was OK, in case it was actually the first one to match.
-					lastok = curFile;
-				} else {
-					lastmaxi = curFile;
-				}
-			}
-		}
-		curFile++;
-	} while (_phase < 2);
-
-	#ifdef IJ_DEBUG
-		hxc_printf(0, 0, 8*(debug_line++), "Not found in [%d;%d[", _mini, _maxi);
-	#endif
-	_isValid = 0;
-	return 0xffff;
+	return 0;
 }
+
+
+
+/**
+ * If a key was stroke within a short time, add that key to the current search
+ * otherwise, initiate an other instajump.
+ */
+void ij_keyEvent(signed char key)
+{
+	unsigned long time;
+	int len;
+	UWORD oldPageNumber, oldSelectorPos;
+	UWORD res;
+
+	len = strlen(_searchString);
+	time = get_hz200();
+	if ( (time - _lastTime) < (IJ_TIMEOUT / 5)  ) {
+
+	} else {
+		// init a new search
+		len = 0;
+		#ifdef IJ_DEBUG
+			debug_line = 6;
+		#endif
+	}
+
+	if ( (len < IJ_MAXLEN)) {
+		_searchString[len++] = tolower(key);	// lower case
+		_searchString[len]   = '\000';
+	}
+
+	oldPageNumber  = gfl_cachedPageNumber;
+	oldSelectorPos = gfl_selectorPos;
+
+	res = _search(oldPageNumber, oldSelectorPos);
+
+	if (!res && len>1) {
+		// remove the last character and restart the search at the next file
+		_searchString[len-1] = '\000';
+		if (oldSelectorPos+1 >= NUMBER_OF_FILE_ON_DISPLAY) {
+			res = _search(oldPageNumber+1, 0);
+		} else {
+			res = _search(oldPageNumber, oldSelectorPos+1);
+		}
+	}
+	if (!res) {
+		// still not found
+		#ifdef IJ_DEBUG
+			hxc_printf(0, 0, 8*(debug_line++), "Not found");
+			get_char();
+		#endif
+		gfl_setCachedPage(oldPageNumber);
+		// gfl_selectorPos = oldSelectorPos; // not needed: search only update the gfl_selectorpos when found
+	}
+
+	// reset the last with the time at the end of the search
+	_lastTime = get_hz200();
+}
+

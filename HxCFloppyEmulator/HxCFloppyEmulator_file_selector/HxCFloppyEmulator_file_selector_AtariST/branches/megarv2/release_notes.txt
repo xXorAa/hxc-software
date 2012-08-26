@@ -37,7 +37,7 @@ Behaviour changes:
 New Features
 ------------
 
-* Instajump : type the beginning of a file, and the cursor will jump to it. Does not work when filter is used.
+* Instajump : type the beginning of a file, and the cursor will jump to it.
 
 * Slots manager : This is an improved version of the "View All Slots". It is accessed with the TAB key. It allows Copy/Cut/Paste slots (with the standard Ctrl-X/C/V), inserting and deleting a slot. Most of the standard keys are available in this view (including Esc (Quit menu), Undo (revert changes) and F7 (insert, save, quickboot)). It is also a quick way to choose the slot to boot to.
 

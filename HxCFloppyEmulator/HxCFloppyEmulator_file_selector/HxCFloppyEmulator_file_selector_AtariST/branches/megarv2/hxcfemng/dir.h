@@ -4,7 +4,6 @@
 #include "atari_hw.h"
 #include "fat_access.h"
 
-void mystrlwr(char *string);
 void dir_paginateAndPrefillCurrentPage();
 UWORD dir_getNbPages();
 UWORD dir_getFirstFileForPage(UWORD page);

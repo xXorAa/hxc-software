@@ -53,61 +53,114 @@ extern unsigned short SCREEN_YRESOL;
 //
 // Static variables
 //
-static UWORD _currentPage = 0xffff;
-static UWORD _selectorPos;
+static UWORD _currentPage = 0xffff;	// current shown page
+#if (0)
 static UWORD _selectorToEntry = 0xffff;
+#endif
 static signed short _invertedLine;
-static UBYTE _isLastPage;
 static UWORD _nbPages;
 
 
 // exported variables:
+UWORD gfl_cachedPageNumber = 0xffff;
+UWORD gfl_selectorPos;
+UBYTE gfl_isLastPage;
 DirectoryEntry   _dirEntLSB;
 DirectoryEntry * gfl_dirEntLSB_ptr = &_dirEntLSB;
-UWORD gfl_filelistCurrentPage_tab[MAXFILESPERPAGE];
+UWORD gfl_cachedPage[MAXFILESPERPAGE];	// the cache
 
 
 
 
+#if(0)
+UWORD gfl_getSelectorPos()
+{
+	return gfl_selectorPos;
+}
+#endif
 
+#if(0)
+UWORD gfl_getSelectorEntry()
+{
+	return gfl_cachedPage[gfl_selectorPos];
+}
+#endif
 
+#if(0)
 void gfl_jumpToFile(UWORD askedFile)
 {
 	_currentPage = dir_getPageForEntry(askedFile);
 	_selectorToEntry = askedFile;
 }
+#endif
 
 
+void gfl_setCachedPage(UWORD newpage)
+{
+	UWORD curFile;
+	int res;
+	UWORD i;
+	struct fs_dir_ent dir_entry;
+
+	// when the page was prefilled, isLastPage was not filled
+	gfl_isLastPage = ((newpage+1) == _nbPages);
+
+	if (gfl_cachedPageNumber == newpage) {
+		return;
+	}
+
+	// start at the first file of the directory
+	curFile = dir_getFirstFileForPage(newpage);
+
+	// reset the files for this page
+	memset(&gfl_cachedPage[0], 0xff, 2*MAXFILESPERPAGE);
+
+	res = fli_getDirEntryMSB(curFile, &dir_entry);
+
+	for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY && res; ) {
+		// store the file in the cache
+		gfl_cachedPage[i] = curFile;
+		i++;
+
+		do {
+			curFile++;
+			res = fli_getDirEntryMSB(curFile, &dir_entry);
+		} while (res && !dir_filter(&dir_entry));
+	}
+
+	// set the new page
+	gfl_cachedPageNumber = newpage;
+	_currentPage         = newpage;
+}
 
 
 void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 {
-	static UWORD _oldPage = 0xffff;
+	static UWORD _oldPage = 0xffff;		// the page displayed
 	UWORD curFile;
 	UWORD i;
 	UWORD y_pos;
 	UBYTE fForceRedraw=0;
+	struct fs_dir_ent dir_entry;
 
 	if (fRepaginate) {
 		dir_paginateAndPrefillCurrentPage();
 		_nbPages = dir_getNbPages();
-		_selectorPos = 0;
+		gfl_selectorPos = 0;
 		_currentPage = 0;
 		fForceRedraw = 1;
 	}
 
 	if ( (_oldPage != _currentPage) || fForceRedraw || fForceRedrawAll )
 	{
-		unsigned char fCached;
-		struct fs_dir_ent dir_entry;
-
-		_oldPage = _currentPage;
-
 		if (fForceRedrawAll) {
 			clear_list(5);
 		} else {
 			clear_list(0);
 		}
+
+		_oldPage = _currentPage;
+		gfl_setCachedPage(_currentPage);
 
 		_invertedLine = -1;	// the screen has been clear: no need to de-invert the line
 
@@ -119,71 +172,41 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 
 		y_pos=FILELIST_Y_POS;
 
-		// start at the first file of the directory
-		curFile = dir_getFirstFileForPage(_currentPage);
-		if (curFile == gfl_filelistCurrentPage_tab[0])
+		for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; i++)
 		{
-			fCached = 1;
-		}
-		else
-		{
-			// reset the files for this page
-			memset(&gfl_filelistCurrentPage_tab[0], 0xff, 2*MAXFILESPERPAGE);
-			fCached = 0;
-		}
-
-		int res;
-
-		res = fli_getDirEntryMSB(curFile, &dir_entry);
-
-		for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY && res; )
-		{
+			curFile = gfl_cachedPage[i];
+			if (!fli_getDirEntryMSB(curFile, &dir_entry)) {
+				break;
+			}
 
 			hxc_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(' '), dir_entry.filename);
 			y_pos=y_pos+8;
-
-			gfl_filelistCurrentPage_tab[i] = curFile;
-			i++;
-
-			if ( fCached )
-			{
-				// filelist has already been processed
-				curFile = gfl_filelistCurrentPage_tab[i];
-				res = fli_getDirEntryMSB(curFile, &dir_entry);
-			}
-			else
-			{
-				// find the next file to display
-				do {
-					curFile++;
-					res = fli_getDirEntryMSB(curFile, &dir_entry);
-				} while (res && !dir_filter(&dir_entry));
-			}
 		}
 
 		_invertedLine = -1;
-		_isLastPage = ((_currentPage+1) == _nbPages);
-	} // if ( (newPage != _currentPage) || (0xffff == _currentPage) )
+	} // if ( (_oldPage != _currentPage) || fForceRedraw || fForceRedrawAll )
 
 
+#if (0)
 	// a selector has been specified, so select the asked file
 	if (0xffff != _selectorToEntry)
 	{
 		// the page just has been shown, so it is now cached
 		for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; i++)
 		{
-			curFile = gfl_filelistCurrentPage_tab[i];
+			curFile = gfl_cachedPage[i];
 			if (curFile >= _selectorToEntry) {
 				// this is the asked entry (or >, to handle filter)
-				_selectorPos = i;
+				gfl_selectorPos = i;
 				break;
 			}
 		}
 		_selectorToEntry = 0xffff;
 	}
+#endif
 
 
-	if (_invertedLine != _selectorPos) {
+	if (_invertedLine != gfl_selectorPos) {
 		// reset the inverted line
 		if (_invertedLine>=0) {
 			invert_line(_invertedLine);
@@ -191,12 +214,12 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 		}
 
 		// set the inverted line (only if it has changed)
-		_invertedLine = _selectorPos;
-		hxc_printf(0, 0, FILELIST_Y_POS+(_selectorPos*8), ">");
-		invert_line(_selectorPos);
+		_invertedLine = gfl_selectorPos;
+		hxc_printf(0, 0, FILELIST_Y_POS+(gfl_selectorPos*8), ">");
+		invert_line(gfl_selectorPos);
 	}
 
-	fli_getDirEntryLSB(gfl_filelistCurrentPage_tab[_selectorPos], gfl_dirEntLSB_ptr);
+	fli_getDirEntryLSB(gfl_cachedPage[gfl_selectorPos], gfl_dirEntLSB_ptr);
 }
 
 
@@ -211,8 +234,8 @@ long gfl_mainloop()
 	switch((UWORD) (key>>16))
 	{
 		case 0x48: /* UP */
-			if (_selectorPos > 0) {
-				_selectorPos--;
+			if (gfl_selectorPos > 0) {
+				gfl_selectorPos--;
 				break;
 			}
 
@@ -223,30 +246,30 @@ long gfl_mainloop()
 			}
 
 			// top line not on the first page
-			_selectorPos=NUMBER_OF_FILE_ON_DISPLAY-1;
+			gfl_selectorPos=NUMBER_OF_FILE_ON_DISPLAY-1;
 			_currentPage--;
 			break;
 
 		case 0x50: /* Down */
-			if ( (_selectorPos+1)==NUMBER_OF_FILE_ON_DISPLAY ) {
+			if ( (gfl_selectorPos+1)==NUMBER_OF_FILE_ON_DISPLAY ) {
 				// last line of display
-				if (!_isLastPage) {
+				if (!gfl_isLastPage) {
 					_currentPage++;
-					_selectorPos = 0;
+					gfl_selectorPos = 0;
 				}
 				break;
-			} else if (0xffff != gfl_filelistCurrentPage_tab[_selectorPos+1]) {
+			} else if (0xffff != gfl_cachedPage[gfl_selectorPos+1]) {
 				// next file exist: allow down
-				_selectorPos++;
+				gfl_selectorPos++;
 			}
 			break;
 
 		case 0x0150: /* Shift Down : go next page */
 		case 0x0250:
 			/* TODO: better handling */
-			if ( (_nbPages > 1) && (!_isLastPage) ) {
+			if ( (_nbPages > 1) && (!gfl_isLastPage) ) {
 				_currentPage++;
-				_selectorPos=0;
+				gfl_selectorPos=0;
 			}
 			break;
 
@@ -255,18 +278,18 @@ long gfl_mainloop()
 			if (_currentPage) {
 				_currentPage--;
 			}
-			_selectorPos=0;
+			gfl_selectorPos=0;
 			break;
 
 		case 0x448:	/* Ctrl Up : go to first page, first file */
 			_currentPage=0;
-			_selectorPos=0;
+			gfl_selectorPos=0;
 			break;
 
 		case 0x450: /* Ctrl Down: go to last file */
 			/* TODO : currently it only go to the first file of the last page ! */
 			_currentPage = _nbPages - 1;
-			_selectorPos=0;
+			gfl_selectorPos=0;
 			break;
 
 

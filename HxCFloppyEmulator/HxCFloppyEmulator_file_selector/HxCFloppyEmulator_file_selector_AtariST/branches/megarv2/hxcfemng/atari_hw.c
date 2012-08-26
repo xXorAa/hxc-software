@@ -59,18 +59,6 @@ void asm_nop(void) = "\tnop\n";
 #endif
 
 
-void mystrlwr(char *string)
-{
-	while(*string)
-	{
-		if ( *string >= 'A' && *string <= 'Z' )
-		{
-			 *string = *string + 32;
-		}
-		string++;
-	}
-}
-
 void su_fdcRegSet(WORD reg, WORD data)
 {
 	DMA->control = reg | fdcDmaMode;

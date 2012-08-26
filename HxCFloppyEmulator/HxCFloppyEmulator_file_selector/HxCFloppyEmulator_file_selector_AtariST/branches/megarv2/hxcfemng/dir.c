@@ -28,15 +28,13 @@
 #include <string.h>
 
 #include "filelist.h"
-#include "atari_hw.h"
+//#include "atari_hw.h"
 #include "fat_opts.h"
 #include "fat_access.h"
 #include "conf.h"
 #include "fectrl.h"
 #include "fat32/fat_filelib.h"
-
-// A enlever:
-#include "gui_utils.h"
+#include "gui_utils.h"			// used by more_busy
 
 static struct fs_dir_list_status _file_list_status;
 static UWORD _FilelistPages_tab[512];
@@ -46,7 +44,7 @@ static UWORD _nbPages = 0xffff;
 
 extern unsigned short SCREEN_YRESOL;
 extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
-extern UWORD gfl_filelistCurrentPage_tab[];
+extern UWORD gfl_cachedPage[];
 extern unsigned char *currentPath[4*256];
 
 
@@ -56,7 +54,7 @@ int dir_filter(struct fs_dir_ent *dir_entry)
 	if (0 != _filter[0] && !(dir_entry->is_dir)) {
 		// only filter when filter is set. Don't filter dirs
 		strcpy(tmp, dir_entry->filename);
-		mystrlwr(tmp);
+		strlwr(tmp);
 
 		if(!strstr(tmp, _filter))
 		{
@@ -78,7 +76,8 @@ UWORD dir_getFirstFileForPage(UWORD page)
  * Find the asked entry
  * @returns page number
  */
-UWORD dir_getPageForEntry(UWORD askedEntry)
+#if(0)
+ UWORD dir_getPageForEntry(UWORD askedEntry)
 {
 	UWORD runPage;
 	UWORD entry;
@@ -91,6 +90,7 @@ UWORD dir_getPageForEntry(UWORD askedEntry)
 	}
 	return runPage;
 }
+#endif
 
 #if(0)
 int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
@@ -139,7 +139,7 @@ UWORD dir_getNbPages()
 
 /**
  * Filter the files and fill an array with the first file index
- * for each page.
+ * for each page. Also precache the first page
  */
 void dir_paginateAndPrefillCurrentPage()
 {
@@ -156,7 +156,7 @@ void dir_paginateAndPrefillCurrentPage()
 	memset(_FilelistPages_tab, 0xff, 2*512);
 
 	// erase current page
-	memset(&gfl_filelistCurrentPage_tab[0], 0xff, 2*MAXFILESPERPAGE);
+	memset(&gfl_cachedPage[0], 0xff, 2*MAXFILESPERPAGE);
 
 	currentPage       = 0xffff;
 	currentFile       = 0;
@@ -175,7 +175,7 @@ void dir_paginateAndPrefillCurrentPage()
 				_FilelistPages_tab[currentPage] = currentFile;
 			}
 			if (0 == currentPage) {
-				gfl_filelistCurrentPage_tab[currentFileInPage] = currentFile;
+				gfl_cachedPage[currentFileInPage] = currentFile;
 			}
 			currentFileInPage++;
 		}
