@@ -3,18 +3,21 @@
 
 REDIRECT_OUTPUT_TO_SERIAL   equ 0   ;0-output to console,1-output to serial port
 
+        xdef    _exit
         xdef    _memcpy
+        xdef    _strlen
+        xdef    _strcmp
+        xdef    _strstr
         xdef    ___mulsi3
         xdef    ___udivsi3
         xdef    ___umodsi3
         xdef    ___modsi3
         xdef    ___divsi3
-        xdef    _strcpy
-        
+
 BASEPAGE_SIZE   equ $100
 STACK_SIZE      equ $1000
 ;reduced stack size from 64 KiB to 4 kiB
-        
+
 ; --------------------------------------------------------------
 start:
         move.l  4(sp),a5                ;address to basepage
@@ -24,9 +27,10 @@ start:
         add.l   #STACK_SIZE+BASEPAGE_SIZE,d0        ;length of stackpointer+basepage
         move.l  a5,d1                   ;address to basepage
         add.l   d0,d1                   ;end of program
-        and.b   #$f0,d1                 ;align stack
+;        and.b   #$f0,d1                 ;align stack
+        lea     basepage(pc),a0
+        move.l  a5,(a0)+
         move.l  d1,sp                   ;new stackspace
-
         move.l  d0,-(sp)                ;mshrink()
         pea     (a5)                    ;start of the block, note that ALL other implementations
                                         ;assume basepage = start of the block. That's wrong.
@@ -34,9 +38,9 @@ start:
         move.w  #$4a,-(sp)              ;mshrink()
         trap    #1
         lea.l   12(sp),sp
-                
+
 ;########################## redirect output to serial
-        if (REDIRECT_OUTPUT_TO_SERIAL==1)  
+        if (REDIRECT_OUTPUT_TO_SERIAL==1)
         ; redirect to serial
         move.w #2,-(sp)
         move.w #1,-(sp)
@@ -44,19 +48,53 @@ start:
         trap #1
         addq.l #6,sp
         endif
-    
+
         jsr _main
 
-exit:   
+_exit:
 ;       move.w #1,-(sp)
 ;       trap #1
 ;       addq.l #2,sp
-        
-        clr.w -(sp)
+
+;check if the dta exists. If yes, it means that the program was loaded normally, otherwise,
+;it means that the program was loaded with the bootloader.
+;If loaded normally, exits normally
+;If loaded with bootloader, try to execute the bootsector.
+
+        move.l  basepage(pc),a5         ;basepage
+        tst.l   $24(a5)                 ;dta exists ?
+        beq.s   .bootsector
+        clr.w   -(sp)                   ;Pterm
         trap #1
-        
-;_basepage: ds.l    1
-;_len:  ds.l    1
+.bootsector:
+        pea     (a5)                    ;mfree the block
+        move.w  #$49,-(sp)
+        trap    #1
+        addq.l  #6,sp
+
+        clr.l   -(sp)
+        move.w  #$20,-(sp)
+        trap    #1
+        move.l  d0,sp                   ;restore the old stack
+
+        move.l  $4c6.w,a3               ;a3: adress to load boot sector to
+        move.w  $446.w,-(sp)            ;dev: _bootdev
+        pea     $10000                  ;recno=0, count=1
+        pea     (a3)                    ;buf
+        pea     $40000                  ;mode=0, rwabs
+        trap    #13                     ;rwabs
+        lea     14(sp),sp
+
+        moveq   #0,d0
+        move    #512/2-1,d1
+.chksum:add.w   (a3)+,d0
+        dbra    d1,.chksum
+        cmp.w   #$1234,d0
+        bne.s   .noexe
+        jmp     -512(a3)                ;jump, so the rts of the bootsector will return to TOS
+
+.noexe:    rts
+basepage:  dc.l 0
 
 ; --------------------------------------------------------------
 _memcpy:
@@ -124,6 +162,113 @@ _memcpy:
 ;l1:     move.b    (a1)+, (a0)+
 ;        bne.s     l1
 ;        rts
+
+; --------------------------------------------------------------
+
+_strlen:
+        move.l    4(sp), a0
+        moveq     #0,d0
+        bra.s     .l1
+.l2:    addq.l    #1,d0
+.l1:    tst.b     (a0)+
+        bne.s     .l2
+        rts
+
+; --------------------------------------------------------------
+
+_strcmp:
+;from https://code.google.com/p/plan9front/source/browse/sys/src/libc/68000/strcmp.s?r=9123bbc7c967e80c38003f42bd47911db953aa75
+        move.l    4(sp),a0
+        move.l    8(sp),a1
+.next:  move.b    (a1)+,d0
+        beq.s     .end
+        cmp.b     (a0)+,d0
+        beq.s     .next
+        bcs.s     .gtr
+        moveq     #-1,d0
+        rts
+.gtr:   moveq     #1,d0
+        rts
+.end:   tst.b     (a0)
+        bne.s     .gtr
+        moveq     #0,d0
+        rts
+
+; --------------------------------------------------------------
+
+_strstr:
+; this code is 52 bytes bigger than the c implementation. But it is way faster.
+;from http://cristi.indefero.net/p/uClibc-cristi/source/tree/ff250619f58caa6b10c951911c43fbb8a34fda8d/libc/string/strstr.c
+            movem.l 4(sp),a0-a1
+            movem.l d2/a2-a3,-(sp)
+;a0: aystack
+;a1: needle (>=1 char string)
+
+            move.b  (a1),d1             ; d1: neddle0
+            beq.s   .ret1
+            subq.l  #1,a0
+.do1:       addq.l  #1,a0
+            move.b  (a0),d2             ; d2: haystack0
+            beq.s   .ret0
+            cmp.b   d2,d1
+            bne.s   .do1
+
+            addq.l  #1,a1
+            move.b  (a1)+,d2            ;d2: needle1
+            beq.s   .ret1
+            bra.s   .jin
+
+.for:
+.do2:       addq.l  #1,a0
+            move.b  (a0),d0             ;d0: haystack1
+            beq.s   .ret0
+            cmp.b   d0,d1
+            beq.s   .do2break
+            addq.l  #1,a0
+            move.b  (a0),d0
+            beq.s   .ret0
+.shloop:    cmp.b   d0,d1
+            bne.s   .do2
+
+.do2break:
+.jin:       addq.l  #1,a0
+            move.b  (a0),d0
+            beq.s   .ret0
+            cmp.b   d0,d2
+            bne.s   .shloop
+
+            move.l  a0,a2               ;a2: rhaystack
+            addq.l  #1,a2
+            subq.l  #1,a0
+            move.l  a1,a3               ;a3: rneedle
+            move.b  (a3),d0
+
+            cmp.b   (a2),d0
+            bne.s   .endif
+.do3        tst.b   d0
+            beq.s   .ret1
+            addq.l  #1,a1
+            move.b  (a1),d0
+            addq.l  #1,a2
+            cmp.b   (a2),d0
+            bne.s   .do3break
+            tst.b   d0
+            beq.s   .ret1
+            addq.l  #1,a1
+            move.b  (a1),d0
+            addq.l  #1,a2
+            cmp.b   (a2),d0
+            beq.s   .do3
+.do3break:
+.endif:      move.l  a3,a1
+            tst.b   d0
+            bne.s   .for
+
+.ret1:       move.l   a0,d0
+            bra.s   .ret
+.ret0:       moveq   #0,d0
+.ret:        movem.l (sp)+,d2/a2-a3
+            rts
 
 ; --------------------------------------------------------------
 

@@ -24,6 +24,7 @@ push-gbo-pc: OUT.ST
 
 temp/packed.n2b: ../hxcfemng/HXCFEMNG.PRG
 	cp ../hxcfemng/HXCFEMNG.PRG temp/depack.prg
+	m68k-atari-mint-strip -s temp/depack.prg
 	# create the file to be packed
 	# first, create the basepage (256 0x00 bytes):
 	dd if=/dev/zero of=temp/depack_bp bs=256 count=1

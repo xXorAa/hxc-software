@@ -1,3 +1,5 @@
+#ifndef __CFG_FILE_H__
+#define __CFG_FILE_H__
 /*
 //
 // Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
@@ -87,3 +89,4 @@ typedef struct STRUCT_PACK disk_in_drive_
 	unsigned short tracklistoffset;
 } STRUCT_PACK_PREEND disk_in_drive;
 STRUCT_PACK_END
+#endif

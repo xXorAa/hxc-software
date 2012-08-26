@@ -94,7 +94,7 @@ int fatfs_create_boot_sector(struct fatfs *fs, UINT32 boot_sector_lba, UINT32 vo
 {
 	UINT32 total_clusters;
 	int i;
-	
+
 	// Zero sector initially
 	memset(fs->currentsector.sector, 0, FAT_SECTOR_SIZE);
 
@@ -110,7 +110,7 @@ int fatfs_create_boot_sector(struct fatfs *fs, UINT32 boot_sector_lba, UINT32 vo
 	fs->currentsector.sector[8] = 0x35;
 	fs->currentsector.sector[9] = 0x2E;
 	fs->currentsector.sector[10] = 0x30;
-	
+
 	// Bytes per sector
 	fs->currentsector.sector[11] = (FAT_SECTOR_SIZE >> 0) & 0xFF;
 	fs->currentsector.sector[12] = (FAT_SECTOR_SIZE >> 8) & 0xFF;
@@ -141,7 +141,7 @@ int fatfs_create_boot_sector(struct fatfs *fs, UINT32 boot_sector_lba, UINT32 vo
 	fs->currentsector.sector[19] = 0x00;
 	fs->currentsector.sector[20] = 0x00;
 
-	// Media type 
+	// Media type
 	fs->currentsector.sector[21] = 0xF8;
 
 	// Count of sectors used by the FAT table
@@ -150,11 +150,11 @@ int fatfs_create_boot_sector(struct fatfs *fs, UINT32 boot_sector_lba, UINT32 vo
 	fs->currentsector.sector[22] = (unsigned char)((fs->fat_sectors >> 0) & 0xFF);
 	fs->currentsector.sector[23] = (unsigned char)((fs->fat_sectors >> 8) & 0xFF);
 
-	// Sectors per track 
+	// Sectors per track
 	fs->currentsector.sector[24] = 0x00;
 	fs->currentsector.sector[25] = 0x00;
 
-	// Heads 
+	// Heads
 	fs->currentsector.sector[26] = 0x00;
 	fs->currentsector.sector[27] = 0x00;
 
@@ -255,7 +255,7 @@ int fatfs_format_fat16(struct fatfs *fs, UINT32 volume_sectors, const char *name
 	// Make sure we have read + write functions
 	if (!fs->disk_io.read_sector || !fs->disk_io.write_sector)
 		return FAT_INIT_MEDIA_ACCESS_ERROR;
-	
+
 	// Volume is FAT16
 	fs->fat_type = FAT_TYPE_16;
 

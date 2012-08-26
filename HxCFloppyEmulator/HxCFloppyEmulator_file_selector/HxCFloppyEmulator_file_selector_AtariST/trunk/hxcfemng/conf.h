@@ -25,14 +25,18 @@
 //
 */
 
-/* //#define NUMBER_OF_FILE_ON_DISPLAY 19-5 //19 -240 */
-#define NUMBER_OF_SLOT 16
-
-#define SCREEN_XRESOL 640
-/* #define SCREEN_YRESOL 200 */
+#define NUMBER_OF_SLOT 16       // must be 4-multiple
+#define MAXFILESPERPAGE 120
 
 #define FILELIST_Y_POS 12
 #define HELP_Y_POS 12
+#define VIEWER_Y_POS 12
 
-#define SLOT_Y_POS SCREEN_YRESOL-(48+(3*8))
+#define SLOT_Y_POS    SCREEN_YRESOL-(48+(3*8))
+#define CURDIR_X_POS  30*8
 #define CURDIR_Y_POS  SCREEN_YRESOL-(48+(3*8))
+#define PAGE_X_POS    640-17*8
+#define PAGE_Y_POS    CURDIR_Y_POS
+#define FILTER_X_POS  30*8
+#define FILTER_Y_POS  CURDIR_Y_POS+16
+

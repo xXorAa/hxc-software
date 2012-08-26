@@ -53,7 +53,7 @@ void fatfs_lfn_cache_init(struct lfn_cache *lfn, int wipeTable)
 #endif
 }
 //-----------------------------------------------------------------------------
-// fatfs_lfn_cache_entry - Function extracts long file name text from sector 
+// fatfs_lfn_cache_entry - Function extracts long file name text from sector
 // at a specific offset
 //-----------------------------------------------------------------------------
 #if FATFS_INC_LFN_SUPPORT
@@ -70,7 +70,7 @@ void fatfs_lfn_cache_entry(struct lfn_cache *lfn, unsigned char *entryBuffer)
 	if (LFNIndex == 0)
 		return ;
 
-	if (lfn->no_of_strings == 0) 
+	if (lfn->no_of_strings == 0)
 		lfn->no_of_strings = LFNIndex;
 
 	lfn->String[LFNIndex-1][0] = entryBuffer[1];
@@ -83,14 +83,14 @@ void fatfs_lfn_cache_entry(struct lfn_cache *lfn, unsigned char *entryBuffer)
 	lfn->String[LFNIndex-1][7] = entryBuffer[0x12];
 	lfn->String[LFNIndex-1][8] = entryBuffer[0x14];
 	lfn->String[LFNIndex-1][9] = entryBuffer[0x16];
-	lfn->String[LFNIndex-1][10] = entryBuffer[0x18];		 		  		  	 		 
+	lfn->String[LFNIndex-1][10] = entryBuffer[0x18];
 	lfn->String[LFNIndex-1][11] = entryBuffer[0x1C];
 	lfn->String[LFNIndex-1][12] = entryBuffer[0x1E];
 
 	for (i=0; i<MAX_LFN_ENTRY_LENGTH; i++)
-		if (lfn->String[LFNIndex-1][i]==0xFF) 
+		if (lfn->String[LFNIndex-1][i]==0xFF)
 			lfn->String[LFNIndex-1][i] = 0x20; // Replace with spaces
-} 
+}
 #endif
 //-----------------------------------------------------------------------------
 // fatfs_lfn_cache_get: Get a reference to the long filename
@@ -115,9 +115,9 @@ char* fatfs_lfn_cache_get(struct lfn_cache *lfn)
 #if FATFS_INC_LFN_SUPPORT
 int fatfs_entry_lfn_text(struct fat_dir_entry *entry)
 {
-	if ((entry->Attr & FILE_ATTR_LFN_TEXT) == FILE_ATTR_LFN_TEXT) 
+	if ((entry->Attr & FILE_ATTR_LFN_TEXT) == FILE_ATTR_LFN_TEXT)
 		return 1;
-	else 
+	else
 		return 0;
 }
 #endif
@@ -127,12 +127,12 @@ int fatfs_entry_lfn_text(struct fat_dir_entry *entry)
 #if FATFS_INC_LFN_SUPPORT
 int fatfs_entry_lfn_invalid(struct fat_dir_entry *entry)
 {
-	if ( (entry->Name[0]==FILE_HEADER_BLANK)  || 
+	if ( (entry->Name[0]==FILE_HEADER_BLANK)  ||
 		 (entry->Name[0]==FILE_HEADER_DELETED)||
-		 (entry->Attr==FILE_ATTR_VOLUME_ID) || 
-		 (entry->Attr & FILE_ATTR_SYSHID) ) 
+		 (entry->Attr==FILE_ATTR_VOLUME_ID) ||
+		 (entry->Attr & FILE_ATTR_SYSHID) )
 		return 1;
-	else 
+	else
 		return 0;
 }
 #endif
@@ -142,14 +142,14 @@ int fatfs_entry_lfn_invalid(struct fat_dir_entry *entry)
 #if FATFS_INC_LFN_SUPPORT
 int fatfs_entry_lfn_exists(struct lfn_cache *lfn, struct fat_dir_entry *entry)
 {
-	if ( (entry->Attr!=FILE_ATTR_LFN_TEXT) && 
-		 (entry->Name[0]!=FILE_HEADER_BLANK) && 
-		 (entry->Name[0]!=FILE_HEADER_DELETED) && 
-		 (entry->Attr!=FILE_ATTR_VOLUME_ID) && 
-		 (!(entry->Attr&FILE_ATTR_SYSHID)) && 
+	if ( (entry->Attr!=FILE_ATTR_LFN_TEXT) &&
+		 (entry->Name[0]!=FILE_HEADER_BLANK) &&
+		 (entry->Name[0]!=FILE_HEADER_DELETED) &&
+		 (entry->Attr!=FILE_ATTR_VOLUME_ID) &&
+		 (!(entry->Attr&FILE_ATTR_SYSHID)) &&
 		 (lfn->no_of_strings) )
 		return 1;
-	else 
+	else
 		return 0;
 }
 #endif
@@ -158,13 +158,13 @@ int fatfs_entry_lfn_exists(struct lfn_cache *lfn, struct fat_dir_entry *entry)
 //-----------------------------------------------------------------------------
 int fatfs_entry_sfn_only(struct fat_dir_entry *entry)
 {
-	if ( (entry->Attr!=FILE_ATTR_LFN_TEXT) && 
-		 (entry->Name[0]!=FILE_HEADER_BLANK) && 
-		 (entry->Name[0]!=FILE_HEADER_DELETED) && 
-		 (entry->Attr!=FILE_ATTR_VOLUME_ID) && 
+	if ( (entry->Attr!=FILE_ATTR_LFN_TEXT) &&
+		 (entry->Name[0]!=FILE_HEADER_BLANK) &&
+		 (entry->Name[0]!=FILE_HEADER_DELETED) &&
+		 (entry->Attr!=FILE_ATTR_VOLUME_ID) &&
 		 (!(entry->Attr&FILE_ATTR_SYSHID)) )
 		return 1;
-	else 
+	else
 		return 0;
 }
 // TODO: FILE_ATTR_SYSHID ?!!!!!
@@ -173,9 +173,9 @@ int fatfs_entry_sfn_only(struct fat_dir_entry *entry)
 //-----------------------------------------------------------------------------
 int fatfs_entry_is_dir(struct fat_dir_entry *entry)
 {
-	if (entry->Attr & FILE_TYPE_DIR) 
+	if (entry->Attr & FILE_TYPE_DIR)
 		return 1;
-	else 
+	else
 		return 0;
 }
 //-----------------------------------------------------------------------------
@@ -183,29 +183,32 @@ int fatfs_entry_is_dir(struct fat_dir_entry *entry)
 //-----------------------------------------------------------------------------
 int fatfs_entry_is_file(struct fat_dir_entry *entry)
 {
-	if (entry->Attr & FILE_TYPE_FILE) 
+	if ( (entry->Attr & FILE_TYPE_FILE) || (0 == entry->Attr) )
 		return 1;
-	else 
+	else
 		return 0;
 }
 //-----------------------------------------------------------------------------
 // fatfs_lfn_entries_required: Calculate number of 13 characters entries
 //-----------------------------------------------------------------------------
 #if FATFS_INC_LFN_SUPPORT
+#if(0)
 int fatfs_lfn_entries_required(char *filename)
 {
 	int length = (int)strlen(filename);
 
 	if (length)
-		return (length + MAX_LFN_ENTRY_LENGTH - 1) / MAX_LFN_ENTRY_LENGTH;	
+		return (length + MAX_LFN_ENTRY_LENGTH - 1) / MAX_LFN_ENTRY_LENGTH;
 	else
 		return 0;
 }
+#endif
 #endif
 //-----------------------------------------------------------------------------
 // fatfs_filename_to_lfn:
 //-----------------------------------------------------------------------------
 #if FATFS_INC_LFN_SUPPORT
+#if(0)
 void fatfs_filename_to_lfn(char *filename, unsigned char *buffer, int entry, unsigned char sfnChk)
 {
 	int i;
@@ -245,6 +248,7 @@ void fatfs_filename_to_lfn(char *filename, unsigned char *buffer, int entry, uns
 	}
 }
 #endif
+#endif
 //-----------------------------------------------------------------------------
 // fatfs_sfn_create_entry: Create the short filename directory entry
 //-----------------------------------------------------------------------------
@@ -266,7 +270,7 @@ void fatfs_sfn_create_entry(char *shortfilename, UINT32 size, UINT32 startCluste
 	entry->LstAccDate[0] = 0x20;
 	entry->WrtTime[1] = entry->WrtTime[0] = 0x00;
 	entry->WrtDate[1] = 0x00;
-	entry->WrtDate[0] = 0x20;	
+	entry->WrtDate[0] = 0x20;
 
 	if (!dir)
 		entry->Attr = FILE_TYPE_FILE;
@@ -281,7 +285,7 @@ void fatfs_sfn_create_entry(char *shortfilename, UINT32 size, UINT32 startCluste
 }
 #endif
 //-----------------------------------------------------------------------------
-// fatfs_lfn_create_sfn: Create a padded SFN 
+// fatfs_lfn_create_sfn: Create a padded SFN
 //-----------------------------------------------------------------------------
 #ifdef FATFS_INC_WRITE_SUPPORT
 int fatfs_lfn_create_sfn(char *sfn_output, char *filename)
@@ -319,12 +323,12 @@ int fatfs_lfn_create_sfn(char *sfn_output, char *filename)
 	}
 
 	// Add filename part
-	pos = 0; 
+	pos = 0;
 	for (i=0;i<len;i++)
 	{
 		if ( (filename[i]!=' ') && (filename[i]!='.') )
 			sfn_output[pos++] = (char)toupper(filename[i]);
-		
+
 		// Fill upto 8 characters
 		if (pos==FAT_SFN_SIZE_PARTIAL)
 			break;
@@ -344,16 +348,16 @@ static void fatfs_itoa(UINT32 num, char *s)
     char* cp;
     char outbuf[12];
     const char digits[] = "0123456789ABCDEF";
-   
+
 	// Build string backwards
     cp = outbuf;
-    do 
+    do
 	{
 		*cp++ = digits[(int)(num % 10)];
 		num /= 10;
-    } 
+    }
 	while (num > 0);
-    
+
 	*cp-- = 0;
 
 	// Copy in forwards
@@ -379,13 +383,13 @@ int fatfs_lfn_generate_tail(char *sfn_output, char *sfn_input, UINT32 tailNum)
 		return 0;
 
 	// Convert to number
-	memset(tail_str, 0x00, sizeof(tail_str)); 
+	memset(tail_str, 0x00, sizeof(tail_str));
 	tail_str[0] = '~';
 	fatfs_itoa(tailNum, tail_str+1);
-	
+
 	// Copy in base filename
     memcpy(sfn_output, sfn_input, FAT_SFN_SIZE_FULL);
-	   
+
 	// Overwrite with tail
 	tail_chars = (int)strlen(tail_str);
 	memcpy(sfn_output+(FAT_SFN_SIZE_PARTIAL-tail_chars), tail_str, tail_chars);

@@ -33,13 +33,12 @@
 # include <tos.h>
 #else
 # include <mint/osbind.h>
+# include <mint/sysvars.h>
 #endif
 
 #include <time.h>
 /* #include <vt52.h> */
 
-#include "keysfunc_defs.h"
-#include "keys_defs.h"
 #include "atari_hw.h"
 /* #include "atari_regs.h" */
 
@@ -47,11 +46,10 @@ static unsigned char floppydrive;
 static unsigned char datacache[512*9];
 static unsigned char valid_cache;
 
-KEYTAB * kt;
-
 WORD fdcDmaMode = 0;
 
-#define CONTERM *((unsigned char *) 0x484)
+// extern
+extern unsigned char fExit;
 
 
 #ifdef __VBCC__
@@ -64,7 +62,7 @@ void asm_nop(void) = "\tnop\n";
 void su_fdcRegSet(WORD reg, WORD data)
 {
 	DMA->control = reg | fdcDmaMode;
-	
+
 	asm_nop();
 	asm_nop();
 	DMA->data    = data;
@@ -166,7 +164,6 @@ void su_fdcUnlock(void)
 
 void su_headinit(void)
 {
-	CONTERM &= 0xFA;                /* disable key sound and bell */
 	su_fdcLock();
 	su_fdcSelectDriveASide0();
 	su_fdcRegSet(0x86, 255);        /* data : track number */
@@ -188,10 +185,6 @@ void su_jumptotrack0(void)
 	su_fdcUnlock();
 }
 
-void jumptotrack0()
-{
-	my_Supexec((LONG *) su_jumptotrack0);
-}
 
 
 void su_fdcDmaAdrSet(unsigned char *adr)
@@ -273,78 +266,78 @@ unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned c
 
 }
 
+void su_toggleConterm()
+{
+	#define CONTERM *((unsigned char *) 0x484)
+
+	static unsigned char oldconterm = 0xff;
+	if (0xff == oldconterm) {
+		oldconterm = CONTERM;
+		CONTERM &= 0xFA;                /* disable key sound and bell */
+		CONTERM |= 8;					/* enable keyboard function to return shift/alt/ctrl status */
+	} else {
+		CONTERM = oldconterm;
+	}
+}
+
+void restore_atari_hw(void)
+{
+	my_Supexec((LONG *) su_jumptotrack0);
+	my_Supexec((LONG *) su_toggleConterm);
+}
+
+void init_atari_hw(void)
+{
+	my_Supexec((LONG *) su_toggleConterm);
+}
 
 void init_atari_fdc(unsigned char drive)
 {
 	valid_cache=0;
 	floppydrive=drive;
 	my_Supexec((LONG *) su_headinit);
-	
-	kt=(KEYTAB *) Keytbl( (unsigned char *) -1, (unsigned char *) -1, (unsigned char *) -1 );
 }
 
+#if(0)
 unsigned char Keyboard()
-{	
+{
 	return 0;
 }
+#endif
 
+#if(0)
 int kbhit()
 {
 	return 0;
 }
+#endif
 
+#if(0)
 void flush_char()
 {
 }
+#endif
 
-unsigned char get_char()
+unsigned long get_char()
 {
-	unsigned char key;
+	unsigned long key;
 
-	key=Cconin()>>16;
-	if(key == 0x1C) return '\n';
-	
-	return kt->unshift[key];
+	key = Crawcin();
+	if ( ((unsigned short) (key>>16)) == 0x83e) { /* Alt F4 */
+		fExit=1;
+	}
 
-}
-
-unsigned char wait_function_key()
-{
-	unsigned char key,i;
-	unsigned char function_code,key_code;
-
-	function_code=FCT_NO_FUNCTION;
-	do
-	{
-		key=Cconin()>>16;
-		/* 	hxc_printf(0,0,0,"%08X",key); */
-
-		i=0;
-		do
-		{
-			function_code=keysmap[i].function_code;
-			key_code=keysmap[i].keyboard_code;
-			i++;
-		}while((key_code!=key) && (function_code!=FCT_NO_FUNCTION) );
-
-	}while(function_code==FCT_NO_FUNCTION);
-
-	return function_code;
+	return key;
 }
 
 
-
-unsigned long su_get_vid_mode()
+unsigned long su_get_hz200()
 {
-	if( *((unsigned char *) 0xFFFA01 ) & 0x80 )
-		return 0;
-	else
-		return 1;
+	return *_hz_200;
 }
-
-unsigned long get_vid_mode()
+unsigned long get_hz200()
 {
-	return (unsigned long) my_Supexec((LONG *) su_get_vid_mode);
+	return	(unsigned long) my_Supexec((LONG *) su_get_hz200);
 }
 
 void su_reboot()
@@ -353,20 +346,28 @@ void su_reboot()
 	__asm("\tjmp (a0)");
 }
 
-void reboot()
-{
-	my_Supexec((LONG *)su_reboot);
-}
 
+#if(0)
 unsigned long read_long_odd(unsigned char * adr)
 {
 	unsigned long ret = 0;
-	ret |= (unsigned long) (*(adr)<<24);
-	ret |= (unsigned long) (*(adr+1)<<16);
-	ret |= (unsigned long) (*(adr+2)<<8);
-	ret |= (unsigned long) (*(adr+3));
+	ret |= ((unsigned long) *(adr)<<24);
+	ret |= ((unsigned long) *(adr+1)<<16);
+	ret |= ((unsigned long) *(adr+2)<<8);
+	ret |= ((unsigned long) *(adr+3));
 	return ret;
 }
+#endif
+unsigned long read_long_lsb(unsigned char * adr)
+{
+	unsigned long ret = 0;
+	ret |= ((unsigned long) *(adr++));
+	ret |= ((unsigned long) *(adr++)<<8);
+	ret |= ((unsigned long) *(adr++)<<16);
+	ret |= ((unsigned long) *(adr)<<24);
+	return ret;
+}
+#if(0)
 void write_long_odd(unsigned char * adr, unsigned long value)
 {
 	*(adr)   = (value >> 24) & 0xff;
@@ -374,3 +375,4 @@ void write_long_odd(unsigned char * adr, unsigned long value)
 	*(adr+2) = (value >>  8) & 0xff;
 	*(adr+3) = (value      ) & 0xff;
 }
+#endif

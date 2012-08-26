@@ -64,7 +64,7 @@
 #define PARTITION1_SIZE_LOCATION	 			 458
 
 #define FAT_DIR_ENTRY_SIZE						 32
-#define FAT_SFN_SIZE_FULL						 11			
+#define FAT_SFN_SIZE_FULL						 11
 #define FAT_SFN_SIZE_PARTIAL					 8
 
 //-----------------------------------------------------------------------------

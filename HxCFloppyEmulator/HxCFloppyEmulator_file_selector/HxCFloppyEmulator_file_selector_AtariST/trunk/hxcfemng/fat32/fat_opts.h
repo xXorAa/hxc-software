@@ -25,7 +25,7 @@
 #define FAT_BROWSE_CLUSTER_CACHE_ENTRIES    128
 
 // Include support for writing files
-#define FATFS_INC_WRITE_SUPPORT				1
+//#define FATFS_INC_WRITE_SUPPORT				1
 
 // Support long filenames (1 / 0)?
 // (if not (0) only 8.3 format is supported)
@@ -35,7 +35,7 @@
 #define FATFS_DIR_LIST_SUPPORT				1
 
 // Include support for formatting disks (can be undefined)
-#define FATFS_INC_FORMAT_SUPPORT			1
+//#define FATFS_INC_FORMAT_SUPPORT			1
 
 // Sector size used
 #define FAT_SECTOR_SIZE						512

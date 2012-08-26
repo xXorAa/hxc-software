@@ -1,3 +1,6 @@
+#ifndef __ATARI_HW_H__
+#define __ATARI_HW_H__
+
 /*
 //
 // Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
@@ -25,19 +28,23 @@
 //
 */
 
+void restore_atari_hw(void);
+void init_atari_hw(void);
 void init_atari_fdc(unsigned char drive);
 unsigned char readsector(unsigned char sectornum,unsigned char * data,unsigned char invalidate_cache);
 unsigned char writesector(unsigned char sectornum,unsigned char * data);
 unsigned char Keyboard();
 void flush_char();
-unsigned char get_char();
-unsigned char wait_function_key();
+unsigned long get_hz200();
+unsigned long get_char();
 void jumptotrack0();
-void reboot();
+void su_reboot();
 unsigned long read_long_odd(unsigned char * adr);
+unsigned long read_long_lsb(unsigned char * adr);
 void write_long_odd(unsigned char * adr, unsigned long value);
 
-unsigned long get_vid_mode();
+unsigned char get_vid_mode();
+unsigned long get_hz200();
 
 #define L_INDIAN(var) (((var&0x000000FF)<<24) |((var&0x0000FF00)<<8) |((var&0x00FF0000)>>8) |((var&0xFF000000)>>24))
 
@@ -58,21 +65,13 @@ unsigned long get_vid_mode();
 #endif
 
 
-#ifndef KEYTAB
-typedef struct {
-    unsigned char   *unshift;
-    unsigned char   *shift;
-    unsigned char   *capslock;
-} KEYTAB;
-#endif
-
 
 struct dma {
-    UWORD   pad0[2];   
+    UWORD   pad0[2];
      WORD   data;       /* sector count, data register */
      WORD   control;    /* status/control register */
     UBYTE   pad1;
-    UBYTE   addr_high;  
+    UBYTE   addr_high;
     UBYTE   pad2;
     UBYTE   addr_med;
     UBYTE   pad3;
@@ -137,9 +136,9 @@ typedef struct
         UBYTE   dum1;
         volatile UBYTE  gpip;
         UBYTE   dum2;
-        volatile UBYTE  aer; 
+        volatile UBYTE  aer;
         UBYTE   dum3;
-        volatile UBYTE  ddr; 
+        volatile UBYTE  ddr;
         UBYTE   dum4;
         volatile UBYTE  iera;
         UBYTE   dum5;
@@ -157,7 +156,7 @@ typedef struct
         UBYTE   dum11;
         volatile UBYTE  imrb;
         UBYTE   dum12;
-        volatile UBYTE  vr;  
+        volatile UBYTE  vr;
         UBYTE   dum13;
         volatile UBYTE  tacr;
         UBYTE   dum14;
@@ -165,23 +164,23 @@ typedef struct
         UBYTE   dum15;
         volatile UBYTE  tcdcr;
         UBYTE   dum16;
-        volatile UBYTE  tadr; 
+        volatile UBYTE  tadr;
         UBYTE   dum17;
-        volatile UBYTE  tbdr; 
+        volatile UBYTE  tbdr;
         UBYTE   dum18;
-        volatile UBYTE  tcdr; 
+        volatile UBYTE  tcdr;
         UBYTE   dum19;
-        volatile UBYTE  tddr; 
+        volatile UBYTE  tddr;
         UBYTE   dum20;
-        volatile UBYTE  scr;  
+        volatile UBYTE  scr;
         UBYTE   dum21;
-        volatile UBYTE  ucr;  
+        volatile UBYTE  ucr;
         UBYTE   dum22;
-        volatile UBYTE  rsr;  
+        volatile UBYTE  rsr;
         UBYTE   dum23;
-        volatile UBYTE  tsr;  
+        volatile UBYTE  tsr;
         UBYTE   dum24;
-        volatile UBYTE  udr;  
+        volatile UBYTE  udr;
 } MFP;
 
 #define MFP_BASE        ((MFP *)(0xfffffa00L))
@@ -196,3 +195,41 @@ __regsused("d0/d1/d2/a0/a1/a2") LONG my_Supexec(__reg("a0")LONG * function) =
 #else
 #    define my_Supexec Supexec
 #endif
+
+#endif
+
+
+/**
+ * Detect if the program is running under an emulator
+ * See emudtect.s from Steem documentation
+ * @returns 1 if running under emulator, otherwise 0
+ */
+#define emulatordetect(  )                          \
+__extension__                                       \
+({                                                  \
+    register long retvalue __asm__("d0");           \
+                                                    \
+    __asm__ volatile                                \
+    (                                               \
+        "move.l  #0x456d753f,d5\n\t" /* Emu? */     \
+        "move.l  d5,d7\n\t"                         \
+        "move.l  d5,d6\n\t"                         \
+        "movw    #37,sp@-\n\t"                      \
+        "trap    #14\n\t"                           \
+        "addql   #2,sp\n\t"                         \
+        "moveq   #0,d0\n\t"                         \
+        "cmp.l   d5,d6\n\t"                         \
+        "bne.s   Lyes\n\t"                          \
+        "cmp.l   d5,d7\n\t"                         \
+        "beq.s   Lend\n\t"                          \
+        "Lyes:moveq #1,d0\n\t"                      \
+        "Lend:"                                     \
+    : /* outputs  */ "=r"(retvalue)                 \
+    : /* inputs   */                                \
+    : /* clobbers */ __CLOBBER_RETURN("d0")         \
+                     "d1", "d2", "d5", "d6", "d7",  \
+                     "a0", "a1", "a2"               \
+                     AND_MEMORY                     \
+    );                                              \
+    retvalue;                                       \
+})

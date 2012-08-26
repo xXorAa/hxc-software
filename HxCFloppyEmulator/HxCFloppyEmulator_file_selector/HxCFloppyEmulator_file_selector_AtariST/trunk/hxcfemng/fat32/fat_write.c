@@ -49,14 +49,14 @@ int fatfs_add_free_space(struct fatfs *fs, UINT32 *startCluster)
 
 	// Set the next free cluster hint to unknown
 	if (fs->next_free_cluster != FAT32_LAST_CLUSTER)
-		fatfs_set_fs_info_next_free_cluster(fs, FAT32_LAST_CLUSTER); 
+		fatfs_set_fs_info_next_free_cluster(fs, FAT32_LAST_CLUSTER);
 
 	// Start looking for free clusters from the beginning
 	if (fatfs_find_blank_cluster(fs, fs->rootdir_first_cluster, &nextcluster))
 	{
 		// Point last to this
 		fatfs_fat_set_cluster(fs, *startCluster, nextcluster);
-		
+
 		// Point this to end of file
 		fatfs_fat_set_cluster(fs, nextcluster, FAT32_LAST_CLUSTER);
 
@@ -84,7 +84,7 @@ int fatfs_allocate_free_space(struct fatfs *fs, int newFile, UINT32 *startCluste
 
 	// Set the next free cluster hint to unknown
 	if (fs->next_free_cluster != FAT32_LAST_CLUSTER)
-		fatfs_set_fs_info_next_free_cluster(fs, FAT32_LAST_CLUSTER); 
+		fatfs_set_fs_info_next_free_cluster(fs, FAT32_LAST_CLUSTER);
 
 	// Work out size and clusters
 	clusterSize = fs->sectors_per_cluster * FAT_SECTOR_SIZE;
@@ -123,7 +123,7 @@ int fatfs_allocate_free_space(struct fatfs *fs, int newFile, UINT32 *startCluste
 	return 1;
 }
 //-----------------------------------------------------------------------------
-// fatfs_find_free_dir_offset: Find a free space in the directory for a new entry 
+// fatfs_find_free_dir_offset: Find a free space in the directory for a new entry
 // which takes up 'entryCount' blocks (or allocate some more)
 //-----------------------------------------------------------------------------
 static int fatfs_find_free_dir_offset(struct fatfs *fs, UINT32 dirCluster, int entryCount, UINT32 *pSector, unsigned char *pOffset)
@@ -144,7 +144,7 @@ static int fatfs_find_free_dir_offset(struct fatfs *fs, UINT32 dirCluster, int e
 	while (TRUE)
 	{
 		// Read sector
-		if (fatfs_sector_reader(fs, dirCluster, x++, FALSE)) 
+		if (fatfs_sector_reader(fs, dirCluster, x++, FALSE))
 		{
 			// Analyse Sector
 			for (item = 0; item < FAT_DIR_ENTRIES_PER_SECTOR; item++)
@@ -167,12 +167,12 @@ static int fatfs_find_free_dir_offset(struct fatfs *fs, UINT32 dirCluster, int e
 						start_recorded = 1;
 					}
 
-					// Increment the count in-case the file turns 
+					// Increment the count in-case the file turns
 					// out to be deleted...
 					possible_spaces++;
 				}
 				// SFN Entry
-				else 
+				else
 				{
 					// Has file been deleted?
 					if (fs->currentsector.sector[recordoffset] == FILE_HEADER_DELETED)
@@ -245,7 +245,7 @@ static int fatfs_find_free_dir_offset(struct fatfs *fs, UINT32 dirCluster, int e
 			}
 
 			// If non of the name fitted on previous sectors
-			if (!start_recorded) 
+			if (!start_recorded)
 			{
 				// Store start
 				*pSector = (x-1);
@@ -290,7 +290,7 @@ int fatfs_add_file_entry(struct fatfs *fs, UINT32 dirCluster, char *filename, ch
 	if (!entryCount)
 		return 0;
 #else
-	entryCount = 0;	
+	entryCount = 0;
 #endif
 
 	// Find space in the directory for this filename (or allocate some more)
@@ -310,7 +310,7 @@ int fatfs_add_file_entry(struct fatfs *fs, UINT32 dirCluster, char *filename, ch
 	while (TRUE)
 	{
 		// Read sector
-		if (fatfs_sector_reader(fs, dirCluster, x++, FALSE)) 
+		if (fatfs_sector_reader(fs, dirCluster, x++, FALSE))
 		{
 			// Analyse Sector
 			for (item = 0; item < FAT_DIR_ENTRIES_PER_SECTOR; item++)
@@ -325,7 +325,7 @@ int fatfs_add_file_entry(struct fatfs *fs, UINT32 dirCluster, char *filename, ch
 
 				// Start adding filename
 				if (foundEnd)
-				{				
+				{
 					if (entryCount==0)
 					{
 						// Short filename
@@ -341,7 +341,7 @@ int fatfs_add_file_entry(struct fatfs *fs, UINT32 dirCluster, char *filename, ch
 						entryCount--;
 
 						// Copy entry to directory buffer
-						fatfs_filename_to_lfn(filename, &fs->currentsector.sector[recordoffset], entryCount, checksum); 
+						fatfs_filename_to_lfn(filename, &fs->currentsector.sector[recordoffset], entryCount, checksum);
 						dirtySector = TRUE;
 					}
 #endif
@@ -356,7 +356,7 @@ int fatfs_add_file_entry(struct fatfs *fs, UINT32 dirCluster, char *filename, ch
 
 				dirtySector = FALSE;
 			}
-		} 
+		}
 		else
 			return 0;
 	} // End of while loop
