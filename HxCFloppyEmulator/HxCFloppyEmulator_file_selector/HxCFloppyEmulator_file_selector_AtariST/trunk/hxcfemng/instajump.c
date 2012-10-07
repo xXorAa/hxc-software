@@ -25,10 +25,7 @@
 //
 */
 
-
 // #define IJ_DEBUG
-
-
 
 #include <string.h>
 #include <ctype.h>		// tolower()
@@ -41,17 +38,13 @@
 	static int debug_line=0;
 #endif
 
+#include "fat_filelib.h"
+#include "fat_opts.h"
+#include "fat_access.h"
+#include "conf.h"
 
-//#include "cfg_file.h"
-
-//#include "dir.h"
 #include "filelist.h"
 #include "gui_filelist.h"
-
-
-//#include "conf.h"
-
-
 
 // constants
 #define IJ_TIMEOUT 2000    // maximum time between two keystrokes (in ms)
@@ -76,8 +69,6 @@ void ij_clear()
 {
 	_lastTime = 0;
 }
-
-
 
 UBYTE _search(UWORD pagenumber, UWORD selectorpos)
 {

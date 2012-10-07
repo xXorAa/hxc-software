@@ -1,4 +1,5 @@
-#include "fat_access.h"
+#include "fat_filelib.h"
+
 #include "atari_hw.h"
 #include "hxcfeda.h"
 #include "assembly.h"
@@ -9,6 +10,9 @@ LONG    _length;
 UWORD   _nbEntries;
 UWORD   _firstFile;     // 0xfffe: not yet computed, 0xffff: no file
 UBYTE * _endAdr;
+
+#define TRUE 1
+#define FALSE 0
 
 /*
 nouveau map:
@@ -45,7 +49,7 @@ int fli_init(void * base, LONG length)
     return TRUE;
 }
 
-int fli_push(struct fs_dir_ent * dir_entry) {
+int fli_push(fl_dirent * dir_entry) {
     UWORD len;
     UWORD totalLen;
     UBYTE *newAdr;
@@ -63,7 +67,7 @@ int fli_push(struct fs_dir_ent * dir_entry) {
     if (! (1 == len && '.' == dir_entry->filename[0]) )
     {   // don't push "."
         // compute total length of the struct
-        totalLen = (len+1 + 4+4+1 + 1) & 0xfffe;  // filename, 0x00 (+1), size(+4), cluster(+4), is_dir(+1). Add one byte and align.
+        totalLen = (len + 1 + 4 + 4 + 1 + 1) & 0xfffe;  // filename, 0x00 (+1), size(+4), cluster(+4), is_dir(+1). Add one byte and align.
 
         // reserve space at the end of the block
         newAdr  = _endAdr - totalLen;
@@ -75,9 +79,10 @@ int fli_push(struct fs_dir_ent * dir_entry) {
         }
 
         // copy data into new allocated block
-        memcpy(newAdr, &dir_entry->cluster, 8);  // copy cluster, size
+        memcpy(newAdr, &dir_entry->cluster, 4);  // copy cluster
+        memcpy(newAdr + 4, &dir_entry->size, 4);  // copy size
         *(newAdr+8) = 2-(dir_entry->is_dir);   // copy (is_dir+1), so it is either 1(dir) or 2(file) (for sorting)
-        memcpy(newAdr+9, &dir_entry->filename, len);
+        memcpy(newAdr + 9, &dir_entry->filename, len);
         *(newAdr+9 + len) = (unsigned char) 0;
 
         // add pointer to the block
@@ -133,10 +138,10 @@ UWORD fli_getFirstFile(void)
 #if(0)
 UWORD fli_next(UWORD current)
 {
-	if ( (current+1) < _nbEntries ) {
-		return current+1;
-	}
-	return 0xffff;
+    if ( (current+1) < _nbEntries ) {
+        return current+1;
+    }
+    return 0xffff;
 }
 #endif
 
@@ -150,7 +155,7 @@ UWORD fli_next(UWORD current)
  *
  * @returns boolean success
  */
-int fli_getDirEntryMSB(UWORD number, struct fs_dir_ent * dir_entry)
+int fli_getDirEntryMSB(UWORD number, fl_dirent * dir_entry)
 {
     UBYTE **ptr;
     UBYTE *newAdr;
@@ -161,7 +166,8 @@ int fli_getDirEntryMSB(UWORD number, struct fs_dir_ent * dir_entry)
     ptr = (UBYTE **) (_base + number*4);
     newAdr = *ptr;
 
-    memcpy(&dir_entry->cluster, newAdr, 8);                // copy cluster, size
+    memcpy(&dir_entry->cluster, newAdr, 4);                // copy cluster
+    memcpy(&dir_entry->size, newAdr + 4, 4);               // copy size
     dir_entry->is_dir = 2-(*(newAdr+8));                   // copy is_dir
     strcpy(dir_entry->filename, (char *) newAdr+9);        // copy filename
 

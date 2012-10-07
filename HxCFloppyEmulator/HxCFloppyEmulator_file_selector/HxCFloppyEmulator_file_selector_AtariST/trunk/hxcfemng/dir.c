@@ -27,8 +27,11 @@
 
 #include <string.h>
 
+
+#include "fat_filelib.h"
 #include "filelist.h"
 //#include "atari_hw.h"
+#include "fat_filelib.h"
 #include "fat_opts.h"
 #include "fat_access.h"
 #include "conf.h"
@@ -36,9 +39,11 @@
 #include "fat32/fat_filelib.h"
 #include "gui_utils.h"			// used by more_busy
 
-static struct fs_dir_list_status _file_list_status;
+#define TRUE 1
+#define FALSE 0
+
 static UWORD _FilelistPages_tab[512];
-static struct fs_dir_ent _dir_entry;
+static fl_dirent _dir_entry;
 static char * _filter=0;
 static UWORD _nbPages = 0xffff;
 
@@ -207,6 +212,7 @@ void dir_setFilter(char *filter)
 int dir_scan()
 {
 	UWORD nbFiles;
+	FL_DIR dir;
 
 	more_busy();
 
@@ -215,15 +221,20 @@ int dir_scan()
 
 	// get all the files in the dir
 	nbFiles = 0;
-	fl_list_opendir((char *)currentPath, &_file_list_status);
+	if ( fl_opendir((char *)currentPath, &dir) )
+	{
+	
+		while( !fl_readdir(&dir, &_dir_entry) ) {
+		
+			fli_push(&_dir_entry);
+			nbFiles++;
+		}
 
-	while( fl_list_readdir(&_file_list_status, &_dir_entry) ) {
-		fli_push(&_dir_entry);
-		nbFiles++;
-	}
+		if (nbFiles == 0) {
+			fatal("Cannot read directory");
+		}
 
-	if (0 == nbFiles) {
-		fatal("Cannot read directory");
+		fl_closedir(&dir);
 	}
 
 	less_busy();

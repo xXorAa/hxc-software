@@ -39,6 +39,12 @@
 /* #include <vt52.h>
  */
 
+#include "fat_opts.h"
+#include "fat_misc.h"
+#include "fat_defs.h"
+#include "fat_filelib.h"
+#include "conf.h"
+
 #include "gui_utils.h"
 #include "cfg_file.h"
 #include "hxcfeda.h"
@@ -52,12 +58,8 @@
 #include "atari_hw.h"
 /* #include "atari_regs.h" */
 
-#include "fat_opts.h"
-#include "fat_misc.h"
-#include "fat_defs.h"
-#include "fat_filelib.h"
 
-#include "conf.h"
+
 
 
 static unsigned short y_pos;
@@ -73,8 +75,6 @@ static char filter[17];
 
 static unsigned char fRepaginate_files;
 static unsigned char fRedraw_status;
-
-static struct fs_dir_list_status file_list_status;
 
 static UBYTE * _bigmem_adr;
 static LONG    _bigmem_len;
@@ -178,7 +178,7 @@ void hxc_media_init()
 	_setlbabase(last_setlbabase);
 }
 
-int hxc_media_read(unsigned long sector, unsigned char *buffer)
+int hxc_media_single_read(unsigned long sector, unsigned char *buffer)
 {
 	direct_access_status_sector * dass;
 
@@ -213,7 +213,20 @@ int hxc_media_read(unsigned long sector, unsigned char *buffer)
 	return 1;
 }
 
-int hxc_media_write(unsigned long sector, unsigned char *buffer)
+int hxc_media_read(unsigned long sector, unsigned char *buffer, unsigned long sector_count)
+{
+	int i,c;
+
+	c=0;
+	for(i=0;i<sector_count;i++)
+	{
+		hxc_media_single_read(sector + i, &buffer[512*i]);
+		c++;
+	}
+	return c;
+}
+
+int hxc_media_single_write(unsigned long sector, unsigned char *buffer)
 {
 	more_busy();
 
@@ -233,21 +246,41 @@ int hxc_media_write(unsigned long sector, unsigned char *buffer)
 	return 1;
 }
 
-
-int bios_media_read(unsigned long sector, unsigned char *buffer)
+int hxc_media_write(unsigned long sector, unsigned char *buffer,unsigned long sector_count)
 {
-	Rwabs(0, buffer, 1, sector, 0);
+	int i,c;
+
+	c = 0;
+	for(i=0;i<sector_count;i++)
+	{
+		hxc_media_single_write(sector + i, &buffer[512*i]);
+		c++;
+	}
+
+	return c;
+}
+
+int bios_media_read(unsigned long sector, unsigned char *buffer,unsigned long sector_count)
+{
+	int i;
+
+	for(i=0;i<sector_count;i++)
+	{
+		Rwabs(0, &buffer[i*512], 1, sector+i, 0);
+	}
 	return 1;
 }
 
-int bios_media_write(unsigned long sector, unsigned char *buffer)
+int bios_media_write(unsigned long sector, unsigned char *buffer,unsigned long sector_count)
 {
-	Rwabs(1, buffer, 1, sector, 0);
+	int i;
+
+	for(i=0;i<sector_count;i++)
+	{
+		Rwabs(1, &buffer[i*512], 1, sector+i, 0);
+	}
 	return 1;
 }
-
-
-
 
 /**
  * Apply the cfg file. Revert to the backup one if fRevert
@@ -368,11 +401,11 @@ char save_cfg_file(unsigned char fShowMessage)
 	ret=0;
 
 	// open the file for reading. Actual write will use fl_fswrite to write sectors, but we need the file handle
-	file = fl_fopen("/HXCSDFE.CFG", "r");
+	file = fl_fopen("/HXCSDFE.CFG", "r+");
 	if (file)
 	{
 		/* Save the sectors */
-		if (fl_fswrite((unsigned char*)sdfecfg_file, 2 + NUMBER_OF_SLOT/4, 0, file) != 2 + NUMBER_OF_SLOT/4)
+		if (fl_fwrite ((unsigned char*)sdfecfg_file, (2 + NUMBER_OF_SLOT/4) * 512, 1, file ) != (2 + NUMBER_OF_SLOT/4) * 512)
 		{
 			error("Write file failed");
 
@@ -492,6 +525,7 @@ void enter_sub_dir(unsigned char fGoParent)
 	unsigned char c;
 	int i;
 	int old_index;
+	FL_DIR dir;
 
 	old_index=strlen((const char *)currentPath);
 
@@ -552,7 +586,7 @@ void enter_sub_dir(unsigned char fGoParent)
 	displayFolder();
 
 	more_busy();
-	if(!fl_list_opendir((const char *)currentPath, &file_list_status))
+	if(!fl_opendir((const char *)currentPath, &dir))
 	{
 		currentPath[old_index]=0;
 		displayFolder();
@@ -882,6 +916,9 @@ int main(int argc, char* argv[])
 	unsigned char c;
 	long key;
 
+	fn_diskio_read media_read_callback;
+	fn_diskio_write media_write_callback;
+
 	init_display();
 
 	// malloc all the available memory
@@ -897,9 +934,6 @@ int main(int argc, char* argv[])
 	fl_init();
 
 	init_atari_hw();
-
-	fn_diskio_read media_read_callback;
-	fn_diskio_write media_write_callback;
 
 	if (emulatordetect())
 	{

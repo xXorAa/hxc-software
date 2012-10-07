@@ -31,15 +31,18 @@
 #include "gui_utils.h"
 #include "cfg_file.h"
 #include "hxcfeda.h"
+
+#include "fat_filelib.h"
+#include "fat_opts.h"
 #include "fat_access.h"
+#include "conf.h"
+
 #include "dir.h"
 #include "filelist.h"
-
 
 #include "atari_hw.h"
 
 #include "conf.h"
-
 
 //
 // Externs

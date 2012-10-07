@@ -8,6 +8,6 @@
 //-----------------------------------------------------------------------------
 // Prototypes
 //-----------------------------------------------------------------------------
-int fatfs_format_fat16(struct fatfs *fs, UINT32 volume_sectors, const char *name);
+int fatfs_format_fat16(struct fatfs *fs, uint32 volume_sectors, const char *name);
 
 #endif
