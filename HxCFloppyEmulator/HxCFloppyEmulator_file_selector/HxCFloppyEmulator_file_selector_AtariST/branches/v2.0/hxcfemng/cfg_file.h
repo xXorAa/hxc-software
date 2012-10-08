@@ -2,7 +2,7 @@
 #define __CFG_FILE_H__
 /*
 //
-// Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011 Jean-Francois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -28,10 +28,7 @@
 */
 
 
-#include "compiler_helper.h"
-
-STRUCT_PACK_BEGIN
-typedef struct STRUCT_PACK cfgfile_
+typedef struct cfgfile_
 {
 	char signature[16]; /* "HXCFECFGV1.0" */
 	unsigned char step_sound;         /* 0x00 -> off 0xFF->on */
@@ -48,8 +45,8 @@ typedef struct STRUCT_PACK cfgfile_
 	unsigned char lcd_scroll_speed;
 	unsigned char startup_mode;
 	unsigned char enable_drive_b;
-} STRUCT_PACK_PREEND cfgfile;
-STRUCT_PACK_END
+}  __attribute__ ((__packed__)) cfgfile;
+
 
 
 /* unsigned char get_device_parameters(struct DirectoryEntry *pDirEnt); */
@@ -57,8 +54,7 @@ STRUCT_PACK_END
 
 
 
-STRUCT_PACK_BEGIN
-struct STRUCT_PACK ShortDirectoryEntry {
+struct ShortDirectoryEntry {
 	unsigned char name[12];
 	unsigned char attributes;
 /*	unsigned long firstCluster;*/
@@ -72,14 +68,12 @@ struct STRUCT_PACK ShortDirectoryEntry {
 	unsigned char size_b3;
 	unsigned char size_b4;
 	unsigned char longName[17];	/* boolean */
-} STRUCT_PACK_PREEND;
-STRUCT_PACK_END
+}  __attribute__ ((__packed__));
 
 extern struct DirectoryEntry directoryEntry;
 
 
-STRUCT_PACK_BEGIN
-typedef struct STRUCT_PACK disk_in_drive_
+typedef struct disk_in_drive_
 {
 	struct ShortDirectoryEntry DirEnt;
 	unsigned char numberoftrack;
@@ -87,6 +81,5 @@ typedef struct STRUCT_PACK disk_in_drive_
 	unsigned short rpm;
 	unsigned short bitrate;
 	unsigned short tracklistoffset;
-} STRUCT_PACK_PREEND disk_in_drive;
-STRUCT_PACK_END
+}  __attribute__ ((__packed__)) disk_in_drive;
 #endif

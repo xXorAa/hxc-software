@@ -1,6 +1,6 @@
 /*
 //
-// Copyright (C) 2009, 2010, 2011, 2012 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011, 2012 Jean-Francois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -29,15 +29,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __VBCC__
-#include <tos.h>
-#else
 #include <mint/osbind.h>
-#endif
 
 #include <time.h>
-/* #include <vt52.h>
- */
 
 #include "gui_utils.h"
 #include "cfg_file.h"
@@ -47,7 +41,8 @@
 #include "gui_filelist.h"
 #include "instajump.h"
 #include "viewer.h"
-
+#include "screen.h"
+#include "screen_layout.h"
 
 #include "atari_hw.h"
 /* #include "atari_regs.h" */
@@ -61,8 +56,6 @@
 
 
 static unsigned short y_pos;
-static unsigned long last_setlbabase;
-static unsigned char sector[512];
 
 unsigned char currentPath[4*256] = {"\\"};
 
@@ -82,8 +75,6 @@ static unsigned char _slotnumber;
 static unsigned char _fIsLoader;
 
 // imported variables:
-extern unsigned short SCREEN_XRESOL;
-extern unsigned short SCREEN_YRESOL;
 extern DirectoryEntry * gfl_dirEntLSB_ptr;
 
 // exported variables:
@@ -98,7 +89,7 @@ void handle_exit(unsigned char fReboot)
 	}
 	fl_shutdown();
 	free(_bigmem_adr);
-	restore_display();
+	scr_leaveModule();
 	exit(0);
 }
 
@@ -115,136 +106,17 @@ void _lockup()
 
 void fatal(char *msg)
 {
-	hxc_printf_box("FATAL ERROR: %s! Alt-F4 to quit", msg);
+	gui_printf_box("FATAL ERROR: %s! Alt-F4 to quit", msg);
 	_lockup();
 }
 
 void error(char *msg)
 {
-	hxc_printf_box("ERROR: %s", msg);
+	gui_printf_box("ERROR: %s", msg);
 	get_char();
-	restore_box();
+	gui_restore_box();
 }
 
-void _setlbabase(unsigned long lba)
-{
-	int ret;
-	direct_access_cmd_sector * dacs;
-
-	dacs=(direct_access_cmd_sector  *)sector;
-
-	memset(&sector,0,512);
-
-	sprintf(dacs->DAHEADERSIGNATURE,"HxCFEDA");
-	dacs->cmd_code=1;
-	dacs->parameter_0=(lba>>0)&0xFF;
-	dacs->parameter_1=(lba>>8)&0xFF;
-	dacs->parameter_2=(lba>>16)&0xFF;
-	dacs->parameter_3=(lba>>24)&0xFF;
-	dacs->parameter_4=0xA5;
-
-	ret=writesector( 0,(unsigned char *)&sector);
-	if(!ret)
-	{
-		fatal("Write CTRL error");
-	}
-}
-
-
-/**
- * Init the hardware
- * Display Firmware version
- * @return 0 on failure, 1 on success
- */
-void hxc_media_init()
-{
-	unsigned char sector[512];
-	direct_access_status_sector * dass;
-
-	last_setlbabase=0xFFFFF000;
-	if (!readsector(0,(unsigned char*)&sector,1)) {
-		fatal("Floppy Access error");
-	}
-
-	dass=(direct_access_status_sector *)sector;
-	if(strcmp(dass->DAHEADERSIGNATURE,"HxCFEDA")) {
-		fatal("HxC Floppy Emulator not found");
-	}
-
-	hxc_printf(0,0,SCREEN_YRESOL-30,"Firmware %s" ,dass->FIRMWAREVERSION);
-
-	dass= (direct_access_status_sector *)sector;
-	last_setlbabase=0;
-	_setlbabase(last_setlbabase);
-}
-
-int hxc_media_read(unsigned long sector, unsigned char *buffer)
-{
-	direct_access_status_sector * dass;
-
-	dass= (direct_access_status_sector *)buffer;
-
-	more_busy();
-
-	do
-	{
-		if((sector-last_setlbabase)>=8)
-		{
-			_setlbabase(sector);
-		}
-
-		if(!readsector(0,buffer,0))
-		{
-			error("Read error");
-		}
-		last_setlbabase=L_INDIAN(dass->lba_base);
-
-		/* hxc_printf(0,0,0,"BA: %08X %08X" ,L_INDIAN(dass->lba_base),sector);*/
-	}while((sector-L_INDIAN(dass->lba_base))>=8);
-
-	if(!readsector((sector-last_setlbabase)+1,buffer,0))
-	{
-		//hxc_printf(0, 0, 0, "fsector=%d", (sector-last_setlbabase)+1));
-		fatal("Read error");
-	}
-
-	less_busy();
-
-	return 1;
-}
-
-int hxc_media_write(unsigned long sector, unsigned char *buffer)
-{
-	more_busy();
-
-	if((sector-last_setlbabase)>=8)
-	{
-		last_setlbabase=sector;
-		_setlbabase(sector);
-	}
-
-	if(!writesector((sector-last_setlbabase)+1,buffer))
-	{
-		fatal("Write sector error");
-	}
-
-	less_busy();
-
-	return 1;
-}
-
-
-int bios_media_read(unsigned long sector, unsigned char *buffer)
-{
-	Rwabs(0, buffer, 1, sector, 0);
-	return 1;
-}
-
-int bios_media_write(unsigned long sector, unsigned char *buffer)
-{
-	Rwabs(1, buffer, 1, sector, 0);
-	return 1;
-}
 
 
 
@@ -264,7 +136,7 @@ void _apply_cfg_file(unsigned char fRevert)
 	// apply color mode
 	if(sdfecfg_file[256+128]!=0xFF)
 	{
-		set_color_scheme(sdfecfg_file[256+128]);
+		scr_setColorScheme(sdfecfg_file[256+128]);
 	}
 
 	cfgfile_ptr = (cfgfile *) sdfecfg_file;
@@ -313,7 +185,7 @@ char read_cfg_file()
 
 /**
  * save the changes to the cfgfile
- * @param boolean fShowMessage : hxc_printf_box("Saving selection...") and restore_box
+ * @param boolean fShowMessage : gui_printf_box("Saving selection...") and gui_restore_box
 
  **/
 char save_cfg_file(unsigned char fShowMessage)
@@ -325,7 +197,7 @@ char save_cfg_file(unsigned char fShowMessage)
 	void *diskslotIn_ptr, *diskslotOut_ptr;
 
 	if (fShowMessage) {
-		hxc_printf_box("Saving selection...");
+		gui_printf_box("Saving selection...");
 	}
 
 	// remove the empty slots, so they are not saved
@@ -393,7 +265,7 @@ char save_cfg_file(unsigned char fShowMessage)
 	}
 
 	if (fShowMessage) {
-		restore_box();
+		gui_restore_box();
 	}
 
 	return ret;
@@ -414,19 +286,19 @@ void display_slot()
 
 	diskInDrive_ptr = (void *) (sdfecfg_file + 1024 + _slotnumber*128);
 
-	hxc_printf(0,0,SLOT_Y_POS,"Slot %02d:", _slotnumber);
-	hxc_printf(0,0,SLOT_Y_POS+8, "Drive A:                 ");
-	hxc_printf(0,0,SLOT_Y_POS+16,"Drive B:                 ");
+	gui_printf(0,0,SLA_SLOT_Y_POS,"Slot %02d:", _slotnumber);
+	gui_printf(0,0,SLA_SLOT_Y_POS+8, "Drive A:                 ");
+	gui_printf(0,0,SLA_SLOT_Y_POS+16,"Drive B:                 ");
 
 	disk = (disk_in_drive *) diskInDrive_ptr;
 	memcpy(tmp_str,disk->DirEnt.longName,16);
 	tmp_str[16]=0;
-	print_str(tmp_str, 9*8, SLOT_Y_POS+8, 0);
+	gui_print_str(tmp_str, 9*8, SLA_SLOT_Y_POS+8, 0);
 
 	disk = (disk_in_drive *) (diskInDrive_ptr+64);
 	memcpy(tmp_str,disk->DirEnt.longName,16);
 	tmp_str[16]=0;
-	print_str(tmp_str, 9*8, SLOT_Y_POS+16, 0);
+	gui_print_str(tmp_str, 9*8, SLA_SLOT_Y_POS+16, 0);
 }
 
 
@@ -470,17 +342,17 @@ void displayFolder()
 	int i;
 	UWORD curdir_len;
 
-	curdir_len = (SCREEN_XRESOL - CURDIR_X_POS)/8;
-	hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS, "Current directory:");
+	curdir_len = (SCR_XRESOL - SLA_CURDIR_X_POS)/8;
+	gui_printf(0, SLA_CURDIR_X_POS, SLA_CURDIR_Y_POS, "Current directory:");
 
-	for(i=CURDIR_X_POS; i<SCREEN_XRESOL; i=i+8) {
-		hxc_printf(0, i, CURDIR_Y_POS+8, " ");
+	for(i=SLA_CURDIR_X_POS; i<SCR_XRESOL; i=i+8) {
+		gui_printf(0, i, SLA_CURDIR_Y_POS+8, " ");
 	}
 
 	if(strlen((const char *)currentPath) < curdir_len)
-		hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS+8, "%s", currentPath);
+		gui_printf(0, SLA_CURDIR_X_POS, SLA_CURDIR_Y_POS+8, "%s", currentPath);
 	else
-		hxc_printf(0, CURDIR_X_POS, CURDIR_Y_POS+8, "...%s", &currentPath[strlen((const char *)currentPath)-curdir_len]+3);
+		gui_printf(0, SLA_CURDIR_X_POS, SLA_CURDIR_Y_POS+8, "...%s", &currentPath[strlen((const char *)currentPath)-curdir_len]+3);
 }
 
 
@@ -551,7 +423,7 @@ void enter_sub_dir(unsigned char fGoParent)
 
 	displayFolder();
 
-	more_busy();
+	gui_more_busy();
 	if(!fl_list_opendir((const char *)currentPath, &file_list_status))
 	{
 		currentPath[old_index]=0;
@@ -560,7 +432,7 @@ void enter_sub_dir(unsigned char fGoParent)
 		dir_scan();
 		fRepaginate_files = 1;
 	}
-	less_busy();
+	gui_less_busy();
 }
 
 
@@ -568,7 +440,7 @@ void enter_sub_dir(unsigned char fGoParent)
 
 void fastboot()
 {
-	hxc_printf_box("Insert & Boot...");
+	gui_printf_box("Insert & Boot...");
 	save_cfg_file(0);
 
 	if (_fIsLoader) {
@@ -604,22 +476,22 @@ void handle_quit_menu()
 			strcat(tmpLine, " -- Changes will be saved (UNDO:revert)");
 		}
 
-		hxc_printf_box(tmpLine);
+		gui_printf_box(tmpLine);
 
 		key = get_char() | 0x20;
-		restore_box();
+		gui_restore_box();
 
 		if ('r' == (char)key) {
 			save_cfg_file(1);
-			hxc_printf_box(">>>>>Rebooting...<<<<<");
+			gui_printf_box(">>>>>Rebooting...<<<<<");
 			handle_exit(1);
 		} else if (('q' == (char)key && !_fIsLoader)) {
 			save_cfg_file(1);
-			hxc_printf_box(">>>>>Exiting...<<<<<");
+			gui_printf_box(">>>>>Exiting...<<<<<");
 			handle_exit(0);
 		} else if (('f' == (char)key && _fIsLoader)) {
 			save_cfg_file(1);
-			hxc_printf_box(">>>>>Fastbooting...<<<<<");
+			gui_printf_box(">>>>>Fastbooting...<<<<<");
 			handle_exit(0);
 		} else if (0x61 == (UWORD) (key>>16)) { /* Undo */
 			_apply_cfg_file(1);
@@ -671,13 +543,13 @@ The HxC can emulate both A: & B: floppies by adding a jumper.\n\
 Slots are useful to handle multiple disk: use the HxC hardware left/right\n\
 buttons to browse slots, and the middle button to return to the Autoboot slot.\n";
 
-	clear_list(5);
-	print_str(help1, 0, HELP_Y_POS, 1);
+	gui_clear_list(5);
+	gui_print_str(help1, 0, SLA_HELP_Y_POS, 1);
 	get_char();
 
-	clear_list(5);
-	i = print_str(help2, 0, HELP_Y_POS, 1);
-	display_credits(i/8);
+	gui_clear_list(5);
+	i = gui_print_str(help2, 0, SLA_HELP_Y_POS, 1);
+	gui_display_credits(i/8);
 
 	get_char();
 }
@@ -691,40 +563,40 @@ void handle_emucfg(void)
 	unsigned char c;
 	signed char direct;
 
-	clear_list(5);
+	gui_clear_list(5);
 	cfgfile_ptr=(cfgfile * )sdfecfg_file;
 
-	UWORD ypos = HELP_Y_POS;
+	UWORD ypos = SLA_HELP_Y_POS;
 
 	i=0;
-	hxc_printf(0,0,ypos, "SD HxC Floppy Emulator settings:");
+	gui_printf(0,0,ypos, "SD HxC Floppy Emulator settings:");
 
 	ypos += 16;
-	hxc_printf(0,0,ypos, "Track step sound :");
-	hxc_printf(0,SCREEN_XRESOL/2,ypos, "%s ",cfgfile_ptr->step_sound?"on":"off");
+	gui_printf(0,0,ypos, "Track step sound :");
+	gui_printf(0,SCR_XRESOL/2,ypos, "%s ",cfgfile_ptr->step_sound?"on":"off");
 
 	ypos += 8;
-	hxc_printf(0,0,ypos, "User interface sound:");
-	hxc_printf(0,SCREEN_XRESOL/2,ypos, "%d  ",cfgfile_ptr->buzzer_duty_cycle);
+	gui_printf(0,0,ypos, "User interface sound:");
+	gui_printf(0,SCR_XRESOL/2,ypos, "%d  ",cfgfile_ptr->buzzer_duty_cycle);
 
 	ypos += 8;
-	hxc_printf(0,0,ypos, "LCD Backlight standby:");
-	hxc_printf(0,SCREEN_XRESOL/2,ypos, "%d s",cfgfile_ptr->back_light_tmr);
+	gui_printf(0,0,ypos, "LCD Backlight standby:");
+	gui_printf(0,SCR_XRESOL/2,ypos, "%d s",cfgfile_ptr->back_light_tmr);
 
 	ypos += 8;
-	hxc_printf(0,0,ypos, "SDCard Standby:");
-	hxc_printf(0,SCREEN_XRESOL/2,ypos, "%d s",cfgfile_ptr->standby_tmr);
+	gui_printf(0,0,ypos, "SDCard Standby:");
+	gui_printf(0,SCR_XRESOL/2,ypos, "%d s",cfgfile_ptr->standby_tmr);
 
 	ypos += 16;
-	hxc_printf(1,0,ypos, "---Press Esc to exit---");
+	gui_printf(1,0,ypos, "---Press Esc to exit---");
 
 	i=2;
 	do
 	{
-		invert_line(i);
+		gui_invert_line(i);
 		c = get_char()>>16;
-		invert_line(i);
-		ypos = HELP_Y_POS+(i<<3);
+		gui_invert_line(i);
+		ypos = SLA_HELP_Y_POS+(i<<3);
 
 		if (0x48 ==c && i>2) { /* Up */
 			i--;
@@ -739,24 +611,24 @@ void handle_emucfg(void)
 			{
 			case 2:
 				cfgfile_ptr->step_sound =~ cfgfile_ptr->step_sound;
-				hxc_printf(0, SCREEN_XRESOL/2, ypos, "%s ", cfgfile_ptr->step_sound?"on":"off");
+				gui_printf(0, SCR_XRESOL/2, ypos, "%s ", cfgfile_ptr->step_sound?"on":"off");
 			break;
 			case 3:
 				cfgfile_ptr->buzzer_duty_cycle += direct;
 				if (cfgfile_ptr->buzzer_duty_cycle >= 0x80) {
 					cfgfile_ptr->buzzer_duty_cycle = 0x7f;
 				}
-				hxc_printf(0, SCREEN_XRESOL/2, ypos, "%d  ", cfgfile_ptr->buzzer_duty_cycle);
+				gui_printf(0, SCR_XRESOL/2, ypos, "%d  ", cfgfile_ptr->buzzer_duty_cycle);
 				if(!cfgfile_ptr->buzzer_duty_cycle) { cfgfile_ptr->ihm_sound=0x00; }
 				else {cfgfile_ptr->ihm_sound=0xff;}
 				break;
 			case 4:
 				cfgfile_ptr->back_light_tmr += direct;
-				hxc_printf(0, SCREEN_XRESOL/2, ypos, "%d s  ", cfgfile_ptr->back_light_tmr);
+				gui_printf(0, SCR_XRESOL/2, ypos, "%d s  ", cfgfile_ptr->back_light_tmr);
 			break;
 			case 5:
 				cfgfile_ptr->standby_tmr += direct;
-				hxc_printf(0, SCREEN_XRESOL/2, ypos, "%d s  ", cfgfile_ptr->standby_tmr);
+				gui_printf(0, SCR_XRESOL/2, ypos, "%d s  ", cfgfile_ptr->standby_tmr);
 			break;
 			}
 		}
@@ -774,26 +646,26 @@ void _show_all_slots()
 
 	diskslot_ptr = (void *) sdfecfg_file + 1024 + 1*128;	// start at slot 1
 
-	clear_list(5);
+	gui_clear_list(5);
 
 	ypos = ALLSLOTS_Y_POS + 8;
 	for ( currentSlot = 1; currentSlot < NUMBER_OF_SLOT; currentSlot++ )
 	{
 		memcpy(tmp_str, ((disk_in_drive *) diskslot_ptr)->DirEnt.longName, 16);
 		tmp_str[16]=0;
-		hxc_printf(0, 0, ypos, "Slot %02d - A : %s", currentSlot, tmp_str);
+		gui_printf(0, 0, ypos, "Slot %02d - A : %s", currentSlot, tmp_str);
 		diskslot_ptr += 64;
 
 		memcpy(tmp_str, ((disk_in_drive *) diskslot_ptr)->DirEnt.longName, 16);
 		tmp_str[16]=0;
-		hxc_printf(0, 40*8, ypos, "B : %s", tmp_str);
+		gui_printf(0, 40*8, ypos, "B : %s", tmp_str);
 		diskslot_ptr += 64;
 
 		ypos += 8;
 	}
 
 	ypos += 8;
-	print_str("\
+	gui_print_str("\
 KEYS: Help, Tab:return, Esc:exit, Delete, Insert, Undo:revert, F2, F4, F7\n\
       Ctrl-S:save, Ctrl-X:cut, Ctrl-C:copy, Ctrl-V:paste", 0, ypos, 1);
 }
@@ -816,9 +688,9 @@ void handle_show_all_slots(void)
 
 	do
 	{
-		invert_line(_slotnumber);
+		gui_invert_line(_slotnumber);
 		keylow = get_char()>>16;
-		invert_line(_slotnumber);
+		gui_invert_line(_slotnumber);
 
 		slot_ptr = sdfecfg_file + 1024 + _slotnumber*128;
 
@@ -855,7 +727,7 @@ void handle_show_all_slots(void)
 			save_cfg_file(1);
 			_show_all_slots();	// saving may modify the slots, so redraw
 		} else if (keylow==0x3c) { /* F2: Change palette */
-			sdfecfg_file[256+128] = set_color_scheme(0xff);
+			sdfecfg_file[256+128] = scr_setColorScheme(0xff);
 		} else if (keylow==0x3e) { /* F4: Emuconfig */
 			handle_emucfg();
 			_show_all_slots();
@@ -882,7 +754,11 @@ int main(int argc, char* argv[])
 	unsigned char c;
 	long key;
 
-	init_display();
+	scr_enterModule();
+	sla_enterModule();
+	gui_enterModule();
+
+	gui_display_welcome();
 
 	// malloc all the available memory
 	_bigmem_len = (long)    malloc(-1L);
@@ -898,27 +774,10 @@ int main(int argc, char* argv[])
 
 	init_atari_hw();
 
-	fn_diskio_read media_read_callback;
-	fn_diskio_write media_write_callback;
-
-	if (emulatordetect())
-	{
-		media_read_callback = bios_media_read;
-		media_write_callback = bios_media_write;
-	}
-	else
-	{
-		init_atari_fdc(bootdev);
-
-		hxc_media_init();
-
-		media_read_callback = hxc_media_read;
-		media_write_callback = hxc_media_write;
-	}
-
+	hxc_enterModule(bootdev);
 
 	/* Attach media access functions to library*/
-	if (fl_attach_media(media_read_callback, media_write_callback) != FAT_INIT_OK)
+	if (fl_attach_media((fn_diskio_read) hxc_media_read, (fn_diskio_write) hxc_media_write) != FAT_INIT_OK)
 	{
 		fatal("Media attach failed");
 	}
@@ -926,10 +785,10 @@ int main(int argc, char* argv[])
 	// default slot number (will be replaced while reading cfg file)
 	_slotnumber=1;
 
-	hxc_printf_box("Reading HXCSDFE.CFG...");
+	gui_printf_box("Reading HXCSDFE.CFG...");
 	read_cfg_file();
 	_apply_cfg_file(0);
-	restore_box();
+	gui_restore_box();
 
 	strcpy((char *)currentPath, "/" );
 
@@ -946,13 +805,13 @@ int main(int argc, char* argv[])
 
 	do
 	{
-		y_pos=FILELIST_Y_POS;
+		y_pos=SLA_FILELIST_Y_POS;
 
 		gfl_showFilesForPage(fRepaginate_files, fRedraw_status);
 
 		if (fRedraw_status)
 		{
-			redraw_statusl();
+			gui_redraw_statusl();
 			display_slot();
 			displayFolder();
 			fRedraw_status=0;
@@ -995,8 +854,8 @@ int main(int argc, char* argv[])
 			clear_slot();
 			display_slot();
 		} else if (keylow==0x3b) { /* F1: Filter */
-			for(i=FILTER_X_POS+13*8; i<SCREEN_XRESOL; i=i+8) {
-				hxc_printf(0, i, FILTER_Y_POS, " ");
+			for(i=SLA_FILTER_X_POS+13*8; i<SCR_XRESOL; i=i+8) {
+				gui_printf(0, i, SLA_FILTER_Y_POS, " ");
 			}
 //			flush_char();
 			i=0;
@@ -1007,7 +866,7 @@ int main(int argc, char* argv[])
 				if(c!=13 && c>=' ')
 				{
 					filter[i]=c;
-					hxc_printf(0, FILTER_X_POS+13*8+(8*i), FILTER_Y_POS, "%c", c);
+					gui_printf(0, SLA_FILTER_X_POS+13*8+(8*i), SLA_FILTER_Y_POS, "%c", c);
 					i++;
 				}
 			}while(c!=13 && i<16); /* stop after Return or filter is full */
@@ -1017,9 +876,9 @@ int main(int argc, char* argv[])
 			strlwr(filter);
 			fRepaginate_files=1;
 		} else if (keylow==0x3c) { /* F2: Change palette */
-			sdfecfg_file[256+128] = set_color_scheme(0xff);
+			sdfecfg_file[256+128] = scr_setColorScheme(0xff);
 		} else if (keylow==0x3d) { /* F3: View */
-			viewer(0);
+			vie_viewer(0);
 			fRedraw_status = 1;
 		} else if (keylow==0x3e) { /* F4: Emuconfig */
 			handle_emucfg();
@@ -1037,7 +896,7 @@ int main(int argc, char* argv[])
 //			fli_sort();
 //			fRepaginate_files=1;
 		} else {
-//			hxc_printf(0,0,0,"key:%08lx!",key);
+//			gui_printf(0,0,0,"key:%08lx!",key);
 			if ((char) key >= ' ') {
 				clear_instajump = 0;
 				ij_keyEvent((char) key);

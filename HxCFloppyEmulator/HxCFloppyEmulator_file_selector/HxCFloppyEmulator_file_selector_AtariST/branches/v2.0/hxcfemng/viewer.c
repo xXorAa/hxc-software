@@ -1,6 +1,6 @@
 /*
 //
-// Copyright (C) 2009, 2010, 2011, 2012 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011, 2012 Jean-Francois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -33,8 +33,11 @@
 #include <string.h>
 
 #include "atari_hw.h"
+#include "conf.h"
 #include "hxcfeda.h"
 #include "gui_utils.h"
+#include "screen.h"
+#include "screen_layout.h"
 #include "fat32/fat_filelib.h"
 #include "libc/snprintf/snprintf.h"
 
@@ -43,16 +46,12 @@
 #endif
 
 
-#include "conf.h"
 
 
 
 //
 // Externs
 //
-extern unsigned char NUMBER_OF_FILE_ON_DISPLAY;
-extern unsigned short SCREEN_XRESOL;
-extern unsigned short SCREEN_YRESOL;
 extern unsigned char fExit;
 extern DirectoryEntry * gfl_dirEntLSB_ptr;
 extern unsigned char currentPath[4*256];
@@ -104,10 +103,10 @@ int _hexviewer(unsigned long offsetIn, unsigned long *offsetOut)
 		}
 		lineAscii[curX] = '\0';
 
-		print_str(lineStart , 0, curY + VIEWER_Y_POS, 0);
+		gui_print_str(lineStart , 0, curY + SLA_VIEWER_Y_POS, 0);
 		*offsetOut += 16;
 		curY += 8;
-	} while ( curY < ((NUMBER_OF_FILE_ON_DISPLAY+4)<<3) );
+	} while ( curY < ((SLA_FILES_PER_PAGE+4)<<3) );
 	return 0;
 }
 
@@ -160,17 +159,17 @@ int _textviewer(unsigned long offsetIn, unsigned long *offsetOut)
 					(*offsetOut)++;
 				}
 			} else {
-				print_char8x8(curX, VIEWER_Y_POS + curY, curChar);
+				gui_print_char8x8(curX, SLA_VIEWER_Y_POS + curY, curChar);
 				curX +=8;
 			}
 
 			bufOffset++;
 			(*offsetOut)++;
 
-			if (curX >= SCREEN_XRESOL) {
+			if (curX >= SCR_XRESOL) {
 				curX = 0;
 				curY += 8;
-				if ( curY >= ((NUMBER_OF_FILE_ON_DISPLAY+4)<<3) ) {
+				if ( curY >= ((SLA_FILES_PER_PAGE+4)<<3) ) {
 					return 0; // not at eof
 				}
 			}
@@ -188,7 +187,7 @@ int _textviewer(unsigned long offsetIn, unsigned long *offsetOut)
 /**
  * View the selected file
  */
-void viewer()
+void vie_viewer()
 {
 	char filename[5*LFN_MAX_SIZE+2];
 	unsigned short anykey=0;
@@ -205,11 +204,11 @@ void viewer()
 	filelen = read_long_lsb(&gfl_dirEntLSB_ptr->size_b1);
 
 	if (!filelen) {
-		display_statusl(0, 1, "File has 0 length !");
+		gui_display_statusl(0, 1, "File has 0 length !");
 		get_char();
 		return;
 	} else {
-		display_statusl(0, 1, "Opening file length = %ld bytes ($%lx)", (unsigned long)filelen, (unsigned long)filelen);
+		gui_display_statusl(0, 1, "Opening file length = %ld bytes ($%lx)", (unsigned long)filelen, (unsigned long)filelen);
 	}
 
 	strcpy(filename, (char *)currentPath);
@@ -241,7 +240,7 @@ void viewer()
 			fHexLast = fHex;
 
 			// clear the screen
-			clear_list(4);
+			gui_clear_list(4);
 			if (fHex) {
 				isEof = _hexviewer(offset, &offsetEnd);
 			} else {
@@ -254,9 +253,9 @@ void viewer()
 			}
 
 			// ensure that this line is shown (even if the first chunk is the last one)
-			display_statusl(0, 0, "space/[ctrl/shift]Up/Down:navigate   F2:Text/Hex display   Esc/F3:Quit");
+			gui_display_statusl(0, 0, "space/[ctrl/shift]Up/Down:navigate   F2:Text/Hex display   Esc/F3:Quit");
 			if (isEof) {
-				display_statusl(0, 0, "End of file                       ");
+				gui_display_statusl(0, 0, "End of file                       ");
 			}
 		}
 
@@ -280,7 +279,7 @@ void viewer()
 			if (offset + (pageOffset<<3) >= filelen) {offset = filelen-(pageOffset>>2);}
 			else {offset += (pageOffset<<3); }
 		}
-		//hxc_printf(0,0,0,"key:%08lx ", anykey);
+		//gui_printf(0,0,0,"key:%08lx ", anykey);
 	} while (anykey!=1 && anykey!=0x3d && !fExit);
 
 	fl_fclose(_file);

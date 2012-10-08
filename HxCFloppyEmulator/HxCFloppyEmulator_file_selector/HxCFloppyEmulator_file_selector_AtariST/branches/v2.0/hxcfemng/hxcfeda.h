@@ -3,7 +3,7 @@
 
 /*
 //
-// Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011 Jean-Francois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -28,43 +28,14 @@
 //
 */
 
-#include "compiler_helper.h"
+#include "conf.h"
 
-STRUCT_PACK_BEGIN
-typedef struct STRUCT_PACK direct_access_status_sector_
-{
-	char DAHEADERSIGNATURE[8];
-	char FIRMWAREVERSION[12];
-	unsigned long lba_base;
-	unsigned char cmd_cnt;
-	unsigned char read_cnt;
-	unsigned char write_cnt;
-	unsigned char last_cmd_status;
-} STRUCT_PACK_PREEND direct_access_status_sector;
-STRUCT_PACK_END
+int hxc_media_read(unsigned long sector, unsigned char *buffer);
+int hxc_media_write(unsigned long sector, unsigned char *buffer);
+void hxc_enterModule(unsigned char bootdev);
 
 
-STRUCT_PACK_BEGIN
-typedef struct STRUCT_PACK direct_access_cmd_sector_
-{
-	char DAHEADERSIGNATURE[8];
-	unsigned char cmd_code;
-	unsigned char parameter_0;
-	unsigned char parameter_1;
-	unsigned char parameter_2;
-	unsigned char parameter_3;
-	unsigned char parameter_4;
-	unsigned char parameter_5;
-	unsigned char parameter_6;
-	unsigned char parameter_7;
-	unsigned char cmd_checksum;
-} STRUCT_PACK_PREEND direct_access_cmd_sector;
-STRUCT_PACK_END
-
-#define LFN_MAX_SIZE 128
-
-STRUCT_PACK_BEGIN
-typedef struct STRUCT_PACK DirectoryEntry_ {
+typedef struct DirectoryEntry_ {
 	unsigned char name[12];
 	unsigned char attributes;
 /*	unsigned long firstCluster;*/
@@ -78,6 +49,6 @@ typedef struct STRUCT_PACK DirectoryEntry_ {
 	unsigned char size_b3;
 	unsigned char size_b4;
 	unsigned char longName[LFN_MAX_SIZE];	/* boolean */
-} STRUCT_PACK_PREEND DirectoryEntry;
-STRUCT_PACK_END
+}  __attribute__ ((__packed__)) DirectoryEntry;
+
 #endif

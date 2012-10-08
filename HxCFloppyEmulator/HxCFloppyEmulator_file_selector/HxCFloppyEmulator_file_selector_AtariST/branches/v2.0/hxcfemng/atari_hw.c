@@ -1,6 +1,6 @@
 /*
 //
-// Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011 Jean-Francois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -29,18 +29,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef __VBCC__
-# include <tos.h>
-#else
-# include <mint/osbind.h>
-# include <mint/sysvars.h>
-#endif
+#include <mint/osbind.h>
+#include <mint/sysvars.h>
 
 #include <time.h>
-/* #include <vt52.h> */
 
 #include "atari_hw.h"
-/* #include "atari_regs.h" */
 
 static unsigned char floppydrive;
 static unsigned char datacache[512*9];
@@ -52,11 +46,7 @@ WORD fdcDmaMode = 0;
 extern unsigned char fExit;
 
 
-#ifdef __VBCC__
-void asm_nop(void) = "\tnop\n";
-#else
 #define asm_nop(void) __asm("nop");
-#endif
 
 
 void su_fdcRegSet(WORD reg, WORD data)
@@ -94,15 +84,10 @@ void su_fdcWait(void)
 void su_fdcSelectDriveASide0()
 {
 	UBYTE data;
-#ifdef __VBCC__
-	__asm("\tmove.w sr,-(a7)\n");
-	__asm("\tor.w #$700,sr\n");
-#else
 	__asm("\tmove.w sr,-(a7)\n"
 		  "\tor.w #0x700,sr\n"
 		   :::"%sp"
 		 );
-#endif
 
 	PSG->regdata = 14;      /* select register 14 */
 	data = PSG->regdata;
@@ -116,11 +101,7 @@ void su_fdcSelectDriveASide0()
 
 	PSG->write = data;
 
-#ifdef __VBCC__
-	__asm("\tmove.w (a7)+,sr\n");
-#else
 	__asm("\tmove.w (a7)+,sr\n" ::: "%sp");
-#endif
 
 }
 
@@ -138,15 +119,9 @@ see the steem source at
 https://github.com/btuduri/Steem-Engine/blob/629d8b98df7245c8645b0ad41f90ed395d427531/steem/code/iow.cpp
 */
 
-#ifdef __VBCC__
-	__asm("\tst $43e.w\n");
-	__asm("\tbclr #7,$fffffa09.w\n");
-	__asm("\tbclr #5, $fffffa05.w\n");
-#else
 	__asm("\tst 0x43e.w\n");
 	__asm("\tbclr #7,0xfffffa09.w\n");
 	__asm("\tbclr #5, 0xfffffa05.w\n");
-#endif
 
 	su_fdcWait();
 }
@@ -154,11 +129,7 @@ void su_fdcUnlock(void)
 {
 	su_fdcWait();
 
-#ifdef __VBCC__
-	__asm("\tsf $43e.w\n");
-#else
 	__asm("\tsf 0x43e.w\n");
-#endif
 }
 
 

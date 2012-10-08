@@ -1,6 +1,6 @@
 /*
 //
-// Copyright (C) 2009, 2010, 2011, 2012 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011, 2012 Jean-Francois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -39,14 +39,8 @@
 #include "atari_hw.h"
 
 #include "conf.h"
+#include "screen_layout.h"
 
-
-//
-// Externs
-//
-extern unsigned char NUMBER_OF_FILE_ON_DISPLAY;
-extern unsigned short SCREEN_XRESOL;
-extern unsigned short SCREEN_YRESOL;
 
 
 
@@ -117,7 +111,7 @@ void gfl_setCachedPage(UWORD newpage)
 
 	res = fli_getDirEntryMSB(curFile, &dir_entry);
 
-	for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY && res; ) {
+	for (i=0; i<SLA_FILES_PER_PAGE && res; ) {
 		// store the file in the cache
 		gfl_cachedPage[i] = curFile;
 		i++;
@@ -154,9 +148,9 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 	if ( (_oldPage != _currentPage) || fForceRedraw || fForceRedrawAll )
 	{
 		if (fForceRedrawAll) {
-			clear_list(5);
+			gui_clear_list(5);
 		} else {
-			clear_list(0);
+			gui_clear_list(0);
 		}
 
 		_oldPage = _currentPage;
@@ -165,21 +159,21 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 		_invertedLine = -1;	// the screen has been clear: no need to de-invert the line
 
 		// page number
-		hxc_printf(0,PAGE_X_POS, PAGE_Y_POS, "Page %d of %d      ", _currentPage+1, _nbPages);
+		gui_printf(0, SLA_PAGE_X_POS, SLA_PAGE_Y_POS, "Page %d of %d      ", _currentPage+1, _nbPages);
 
 		// filter
-		hxc_printf(0, FILTER_X_POS, FILTER_Y_POS,"Filter (F1): [%s]", dir_getFilter());
+		gui_printf(0, SLA_FILTER_X_POS, SLA_FILTER_Y_POS,"Filter (F1): [%s]", dir_getFilter());
 
-		y_pos=FILELIST_Y_POS;
+		y_pos=SLA_FILELIST_Y_POS;
 
-		for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; i++)
+		for (i=0; i<SLA_FILES_PER_PAGE; i++)
 		{
 			curFile = gfl_cachedPage[i];
 			if (!fli_getDirEntryMSB(curFile, &dir_entry)) {
 				break;
 			}
 
-			hxc_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(' '), dir_entry.filename);
+			gui_printf(0,0,y_pos," %c%s", (dir_entry.is_dir)?(10):(' '), dir_entry.filename);
 			y_pos=y_pos+8;
 		}
 
@@ -192,7 +186,7 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 	if (0xffff != _selectorToEntry)
 	{
 		// the page just has been shown, so it is now cached
-		for (i=0; i<NUMBER_OF_FILE_ON_DISPLAY; i++)
+		for (i=0; i<SLA_FILES_PER_PAGE; i++)
 		{
 			curFile = gfl_cachedPage[i];
 			if (curFile >= _selectorToEntry) {
@@ -209,14 +203,14 @@ void gfl_showFilesForPage(UBYTE fRepaginate, UBYTE fForceRedrawAll)
 	if (_invertedLine != gfl_selectorPos) {
 		// reset the inverted line
 		if (_invertedLine>=0) {
-			invert_line(_invertedLine);
-			hxc_printf(0, 0, FILELIST_Y_POS+(_invertedLine*8), " ");
+			gui_invert_line(_invertedLine);
+			gui_printf(0, 0, SLA_FILELIST_Y_POS+(_invertedLine*8), " ");
 		}
 
 		// set the inverted line (only if it has changed)
 		_invertedLine = gfl_selectorPos;
-		hxc_printf(0, 0, FILELIST_Y_POS+(gfl_selectorPos*8), ">");
-		invert_line(gfl_selectorPos);
+		gui_printf(0, 0, SLA_FILELIST_Y_POS+(gfl_selectorPos*8), ">");
+		gui_invert_line(gfl_selectorPos);
 	}
 
 	fli_getDirEntryLSB(gfl_cachedPage[gfl_selectorPos], gfl_dirEntLSB_ptr);
@@ -246,12 +240,12 @@ long gfl_mainloop()
 			}
 
 			// top line not on the first page
-			gfl_selectorPos=NUMBER_OF_FILE_ON_DISPLAY-1;
+			gfl_selectorPos=SLA_FILES_PER_PAGE-1;
 			_currentPage--;
 			break;
 
 		case 0x50: /* Down */
-			if ( (gfl_selectorPos+1)==NUMBER_OF_FILE_ON_DISPLAY ) {
+			if ( (gfl_selectorPos+1)==SLA_FILES_PER_PAGE ) {
 				// last line of display
 				if (!gfl_isLastPage) {
 					_currentPage++;

@@ -2,7 +2,6 @@
 #define __FAT_DEFS_H__
 
 #include "fat_types.h"
-#include "compiler_helper.h"
 
 //-----------------------------------------------------------------------------
 //			FAT32 Offsets
@@ -89,8 +88,7 @@
 #define FAT32_LAST_CLUSTER		0xFFFFFFFF
 #define FAT32_INVALID_CLUSTER	0xFFFFFFFF
 
-STRUCT_PACK_BEGIN
-struct STRUCT_PACK fat_dir_entry
+struct fat_dir_entry
 {
 	unsigned char Name[11];
 	unsigned char Attr;
@@ -104,7 +102,6 @@ struct STRUCT_PACK fat_dir_entry
 	unsigned char WrtDate[2];
 	UINT16 FstClusLO;
 	UINT32 FileSize;
-} STRUCT_PACK_PREEND;
-STRUCT_PACK_END
+}  __attribute__ ((__packed__));
 
 #endif

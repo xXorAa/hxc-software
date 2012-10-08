@@ -3,7 +3,7 @@
 
 /*
 //
-// Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011 Jean-Francois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -185,19 +185,7 @@ typedef struct
 
 #define MFP_BASE        ((MFP *)(0xfffffa00L))
 
-#ifdef __VBCC__
-// This one comes from TOS.H, but the prototype was LONG Supexec(__reg("a0")LONG(*)())
-__regsused("d0/d1/d2/a0/a1/a2") LONG my_Supexec(__reg("a0")LONG * function) =
-  "\tpea\t(a0)\n"
-  "\tmove.w\t#38,-(sp)\n"
-  "\ttrap\t#14\n"
-  "\taddq.l\t#6,sp";
-#else
-#    define my_Supexec Supexec
-#endif
-
-#endif
-
+#define my_Supexec Supexec
 
 /**
  * Detect if the program is running under an emulator
@@ -233,3 +221,4 @@ __extension__                                       \
     );                                              \
     retvalue;                                       \
 })
+#endif

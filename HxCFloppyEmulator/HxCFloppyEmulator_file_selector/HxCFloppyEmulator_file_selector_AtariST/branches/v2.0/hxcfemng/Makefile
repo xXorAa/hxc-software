@@ -35,7 +35,7 @@ EXEC             = HXCFEMNG.PRG
 all: $(EXEC)
 
 clean:
-	rm -rf $(EXEC) *.o *.asm fat32/*.o fat32/*.asm libc/*.o libc/*.asm libc/snprintf/*.o symbols.map
+	rm -rf $(EXEC) *.o *.d fat32/*.o fat32/*.d libc/*.o libc/*.d libc/snprintf/*.o libc/snprintf/*.d symbols.map
 
 push-mina: $(EXEC)
 	rsync --perms $< Gilles@mina.openvpn:/cygdrive/c/data/dropbox/emul/atari/hd/c/tmp/
@@ -47,66 +47,60 @@ push-gbo-pc: $(EXEC)
 	rsync --perms $< gbouthenot@gbo-pc.openvpn:/cygdrive/c/data/dropbox/emul/atari/hd/c/tmp/
 
 
-$(EXEC):          libc/mStartupAsmC.o libc/mStartup.o quickersort.o gui_asm.o fectrl.o filelist.o dir.o gui_utils.o atari_hw.o fat32/fat_access.o fat32/fat_filelib.o fat32/fat_misc.o fat32/fat_string.o fat32/fat_table.o fat32/fat_write.o fat32/fat_cache.o libc/snprintf/snprintf.o gui_filelist.o instajump.o viewer.o
+OBJSWALL = atari_hw.o dir.o fectrl.o filelist.o gui_filelist.o hxcfeda.o instajump.o viewer.o screen.o screen_layout.o libc/snprintf/snprintf.o
+OBJSW0   = fat32/fat_access.o fat32/fat_filelib.o fat32/fat_misc.o fat32/fat_string.o fat32/fat_table.o fat32/fat_write.o fat32/fat_cache.o
+OBJSW1   = gui_utils.o
+OBJSW2   = libc/mStartup.o
+OBJSC    = $(OBJSWALL) $(OBJSW0) $(OBJSW1) $(OBJSW2)
+
+OBJSASM  = libc/mStartupAsmC.o quickersort.o gui_asm.o
+
+OBJS     = $(OBJSASM) $(OBJSC)
+
+
+# link
+$(EXEC):          $(OBJS)
 	$(C)          $(LFLAGS)           $^ -o $@
+	m68k-atari-mint-strip $@
+	ls -l $@
+	md5sum $@
 
-atari_hw.o:       atari_hw.c       atari_hw.h
-	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
-dir.o:            dir.c            filelist.h fat32/fat_access.h cfg_file.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h conf.h atari_hw.h fat32/fat_filelib.h fectrl.h
-	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
-gui_utils.o:      gui_utils.c      gui_utils.h atari_hw.h conf.h libc/snprintf/snprintf.h graphx/data_bmp_hxc2001logo_bmp.h graphx/data_bmp_font_bmp.h graphx/data_bmp_font8x8_bmp.h graphx/data_bmp_sdhxcfelogo_bmp.h assembly.h
-	$(C)          $(CFLAGS)        -c $< -o $@ -Wall -Wno-missing-braces -Wno-unused-value
+# pull in dependency info for *existing* .o files
+-include $(OBJS:.o=.d)
 
-fectrl.o:         fectrl.c         gui_utils.h conf.h cfg_file.h hxcfeda.h atari_hw.h fat32/fat_opts.h fat32/fat_misc.h fat32/fat_types.h fat32/fat_defs.h fat32/fat_filelib.h fat32/fat_access.h compiler_helper.h filelist.h dir.h gui_filelist.h viewer.h
-	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
-filelist.o:       filelist.c       fat32/fat_access.h atari_hw.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h hxcfeda.h assembly.h
-	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
+#
+# c files: compile and generate dependency info
+# -MMD is used to generated a .d file containing dependencies
+#
+# credits t:
+# http://scottmcpeak.com/autodepend/autodepend.html
+# http://make.paulandlesley.org/autodep.html
+%.o: %.c
+	@if  [ -n "$(filter $@,$(OBJSWALL))" ]; then \
+		echo $(C) -MMD -c $(CFLAGS) $*.c -o $*.o -Wall; \
+		     $(C) -MMD -c $(CFLAGS) $*.c -o $*.o -Wall; \
+	elif [ -n "$(filter $@,$(OBJSW0))" ]; then \
+		echo $(C) -MMD -c $(CFLAGS) $*.c -o $*.o; \
+		     $(C) -MMD -c $(CFLAGS) $*.c -o $*.o; \
+	elif [ -n "$(filter $@,$(OBJSW1))" ]; then \
+		echo $(C) -MMD -c $(CFLAGS) $*.c -o $*.o -Wall -Wno-missing-braces; \
+		     $(C) -MMD -c $(CFLAGS) $*.c -o $*.o -Wall -Wno-missing-braces; \
+	elif [ -n "$(filter $@,$(OBJSW2))" ]; then \
+		echo $(C) -MMD -c $(CFLAGS) $*.c -o $*.o -Wall -Wno-unused-value; \
+		     $(C) -MMD -c $(CFLAGS) $*.c -o $*.o -Wall -Wno-unused-value; \
+	fi
 
-gui_filelist.o:   gui_filelist.c   gui_utils.h atari_hw.h conf.h libc/snprintf/snprintf.h cfg_file.h dir.h filelist.h  fat32/fat_access.h fat32/fat_defs.h fat32/fat_opts.h fat32/fat_types.h compiler_helper.h
-	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
+#
+# Assembly files
+#
+%.o: %.s
+	@if [ -n "$(filter $@,$(OBJSASM))" ]; then \
+		echo $(VASMBIN)    $(VASMOPT)          $< -o $@; \
+		     $(VASMBIN)    $(VASMOPT)          $< -o $@; \
+	fi
 
-instajump.o:      instajump.c      filelist.h atari_hw.h fat32/fat_access.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h hxcfeda.h gui_filelist.h
-	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
 
-viewer.o:         viewer.c         atari_hw.h fat32/fat_access.h fat32/fat_defs.h fat32/fat_types.h compiler_helper.h fat32/fat_opts.h hxcfeda.h gui_utils.h conf.h libc/snprintf/snprintf.h
-	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
-
-fat32/fat_misc.o: fat32/fat_misc.c fat32/fat_misc.h fat32/fat_defs.h compiler_helper.h
-	$(C)          $(CFLAGS)        -c $< -o $@
-
-fat32/fat_filelib.o: fat32/fat_filelib.c fat32/fat_filelib.h fat32/fat_access.h fat32/fat_defs.h compiler_helper.h fat32/fat_types.h fat32/fat_opts.h fat32/fat_table.h fat32/fat_misc.h fat32/fat_write.h fat32/fat_string.h fat32/fat_cache.h
-	$(C)          $(CFLAGS)        -c $< -o $@
-
-fat32/fat_access.o: fat32/fat_access.c   fat32/fat_access.h fat32/fat_defs.h compiler_helper.h fat32/fat_types.h fat32/fat_opts.h fat32/fat_table.h fat32/fat_write.h fat32/fat_misc.h fat32/fat_string.h fat32/fat_cache.h fat32/fat_filelib.h
-	$(C)          $(CFLAGS)        -c $< -o $@
-
-fat32/fat_string.o: fat32/fat_string.c   fat32/fat_string.h
-	$(C)          $(CFLAGS)        -c $< -o $@
-
-fat32/fat_table.o: fat32/fat_table.c     fat32/fat_opts.h fat32/fat_misc.h fat32/fat_defs.h compiler_helper.h fat32/fat_types.h
-	$(C)          $(CFLAGS)        -c $< -o $@
-
-fat32/fat_write.o: fat32/fat_write.c     fat32/fat_write.h fat32/fat_access.h fat32/fat_defs.h compiler_helper.h fat32/fat_types.h fat32/fat_opts.h fat32/fat_table.h fat32/fat_misc.h fat32/fat_string.h
-	$(C)          $(CFLAGS)        -c $< -o $@
-
-fat32/fat_cache.o: fat32/fat_cache.c     fat32/fat_cache.h
-	$(C)          $(CFLAGS)        -c $< -o $@
-
-libc/mStartup.o: libc/mStartup.c
-	$(C)          $(CFLAGS)        -c $< -o $@ -Wall -Wno-unused-value
-
-libc/snprintf/snprintf.o: libc/snprintf/snprintf.c libc/snprintf/snprintf.h
-	$(C)          $(CFLAGS)        -c $< -o $@ -Wall
-
-libc/mStartupAsmC.o: libc/mStartupAsmC.s
-	$(VASMBIN)    $(VASMOPT)          $< -o $@
-
-quickersort.o: quickersort.s
-	$(VASMBIN)    $(VASMOPT)          $< -o $@
-
-gui_asm.o: gui_asm.s
-	$(VASMBIN)    $(VASMOPT)          $< -o $@
 

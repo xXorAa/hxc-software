@@ -1,6 +1,6 @@
 /*
 //
-// Copyright (C) 2009, 2010, 2011, 2012 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011, 2012 Jean-Francois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -26,7 +26,7 @@
 */
 
 
-// #define IJ_DEBUG
+// #define _IJ_DEBUG
 
 
 
@@ -36,7 +36,7 @@
 #include "atari_hw.h"
 #include "hxcfeda.h"
 
-#ifdef IJ_DEBUG
+#ifdef _IJ_DEBUG
 	#include "gui_utils.h" // DEBUG ONLY !
 	static int debug_line=0;
 #endif
@@ -49,18 +49,17 @@
 #include "gui_filelist.h"
 
 
-//#include "conf.h"
+#include "screen_layout.h"
 
 
 
 // constants
-#define IJ_TIMEOUT 2000    // maximum time between two keystrokes (in ms)
-#define IJ_MAXLEN  15      // maximum number of chars
+#define _IJ_TIMEOUT 2000    // maximum time between two keystrokes (in ms)
+#define _IJ_MAXLEN  15      // maximum number of chars
 
 //
 // Externs
 //
-extern unsigned char NUMBER_OF_FILE_ON_DISPLAY;
 extern UWORD gfl_selectorPos;
 extern UWORD gfl_cachedPageNumber;
 extern UWORD gfl_cachedPage[];
@@ -69,7 +68,7 @@ extern UBYTE gfl_isLastPage;
 
 // static variables:
 static unsigned long _lastTime = 0;
-static char _searchString[IJ_MAXLEN+1];
+static char _searchString[_IJ_MAXLEN+1];
 
 
 void ij_clear()
@@ -88,8 +87,8 @@ UBYTE _search(UWORD pagenumber, UWORD selectorpos)
 	gfl_setCachedPage(pagenumber);
 	len      = strlen(_searchString);
 
-	#ifdef IJ_DEBUG
-		hxc_printf(0, 0, 8*(debug_line++), "searching for %s from position pagenumber %d, %d", _searchString, pagenumber, selectorpos);
+	#ifdef _IJ_DEBUG
+		gui_printf(0, 0, 8*(debug_line++), "searching for %s from position pagenumber %d, %d", _searchString, pagenumber, selectorpos);
 	#endif
 
 	while(1) {
@@ -103,8 +102,8 @@ UBYTE _search(UWORD pagenumber, UWORD selectorpos)
 
 		if (0 == cmp) {
 			// found
-			#ifdef IJ_DEBUG
-				hxc_printf(0, 0, 8*(debug_line++), "Found at page %d, %d", pagenumber, selectorpos);
+			#ifdef _IJ_DEBUG
+				gui_printf(0, 0, 8*(debug_line++), "Found at page %d, %d", pagenumber, selectorpos);
 				get_char();
 			#endif
 			// gfl_setCachedPage(pagenumber); (not needed)
@@ -114,7 +113,7 @@ UBYTE _search(UWORD pagenumber, UWORD selectorpos)
 		}
 
 		selectorpos++;
-		if (selectorpos >= NUMBER_OF_FILE_ON_DISPLAY) {
+		if (selectorpos >= SLA_FILES_PER_PAGE) {
 			if (gfl_isLastPage) {
 				break;
 			}
@@ -142,17 +141,17 @@ void ij_keyEvent(signed char key)
 
 	len = strlen(_searchString);
 	time = get_hz200();
-	if ( (time - _lastTime) < (IJ_TIMEOUT / 5)  ) {
+	if ( (time - _lastTime) < (_IJ_TIMEOUT / 5)  ) {
 
 	} else {
 		// init a new search
 		len = 0;
-		#ifdef IJ_DEBUG
+		#ifdef _IJ_DEBUG
 			debug_line = 6;
 		#endif
 	}
 
-	if ( (len < IJ_MAXLEN)) {
+	if ( (len < _IJ_MAXLEN)) {
 		_searchString[len++] = tolower(key);	// lower case
 		_searchString[len]   = '\000';
 	}
@@ -165,7 +164,7 @@ void ij_keyEvent(signed char key)
 	if (!res && len>1) {
 		// remove the last character and restart the search at the next file
 		_searchString[len-1] = '\000';
-		if (oldSelectorPos+1 >= NUMBER_OF_FILE_ON_DISPLAY) {
+		if (oldSelectorPos+1 >= SLA_FILES_PER_PAGE) {
 			res = _search(oldPageNumber+1, 0);
 		} else {
 			res = _search(oldPageNumber, oldSelectorPos+1);
@@ -173,8 +172,8 @@ void ij_keyEvent(signed char key)
 	}
 	if (!res) {
 		// still not found
-		#ifdef IJ_DEBUG
-			hxc_printf(0, 0, 8*(debug_line++), "Not found");
+		#ifdef _IJ_DEBUG
+			gui_printf(0, 0, 8*(debug_line++), "Not found");
 			get_char();
 		#endif
 		gfl_setCachedPage(oldPageNumber);

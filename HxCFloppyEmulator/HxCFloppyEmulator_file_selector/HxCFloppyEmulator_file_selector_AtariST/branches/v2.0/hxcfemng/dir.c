@@ -1,6 +1,6 @@
 /*
 //
-// Copyright (C) 2009, 2010, 2011, 2012 Jean-François DEL NERO
+// Copyright (C) 2009, 2010, 2011, 2012 Jean-Francois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -34,7 +34,9 @@
 #include "conf.h"
 #include "fectrl.h"
 #include "fat32/fat_filelib.h"
-#include "gui_utils.h"			// used by more_busy
+#include "gui_utils.h"			// used by gui_more_busy
+#include "screen.h"
+#include "screen_layout.h"
 
 static struct fs_dir_list_status _file_list_status;
 static UWORD _FilelistPages_tab[512];
@@ -42,8 +44,6 @@ static struct fs_dir_ent _dir_entry;
 static char * _filter=0;
 static UWORD _nbPages = 0xffff;
 
-extern unsigned short SCREEN_YRESOL;
-extern unsigned char  NUMBER_OF_FILE_ON_DISPLAY;
 extern UWORD gfl_cachedPage[];
 extern unsigned char *currentPath[4*256];
 
@@ -97,10 +97,10 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 {
 	UWORD i, currentFile;
 
-	more_busy();
+	gui_more_busy();
 	currentFile = _FilelistPages_tab[page & 0x1ff];
 	if (0xffff == currentFile) {
-		less_busy();
+		gui_less_busy();
 		return FALSE;
 	}
 
@@ -111,7 +111,7 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 
 
 	// beginning with currentFile, get the filename, and apply the filter
-	for(i=0; i<NUMBER_OF_FILE_ON_DISPLAY; currentFile++) {
+	for(i=0; i<SLA_FILES_PER_PAGE; currentFile++) {
 		if ( TRUE != fli_getDirEntryMSB(currentFile, &_dir_entry) ) {
 			break;
 		}
@@ -122,7 +122,7 @@ int dir_getFilesForPage(UWORD page, UWORD *FilelistCurrentPage_tab)
 		}
 	}
 
-	less_busy();
+	gui_less_busy();
 	return TRUE;
 }
 #endif
@@ -147,7 +147,7 @@ void dir_paginateAndPrefillCurrentPage()
 	UWORD currentFile;
 	UBYTE currentFileInPage;
 
-	more_busy();
+	gui_more_busy();
 
 	// sort the directory
 	fli_sort();
@@ -160,14 +160,14 @@ void dir_paginateAndPrefillCurrentPage()
 
 	currentPage       = 0xffff;
 	currentFile       = 0;
-	currentFileInPage = NUMBER_OF_FILE_ON_DISPLAY;
+	currentFileInPage = SLA_FILES_PER_PAGE;
 
 	//unsigned long time = get_hz200();
 
 	while(fli_getDirEntryMSB(currentFile, &_dir_entry)) {
 		if (dir_filter(&_dir_entry)) {
 			// file will be shown
-			if (currentFileInPage >= NUMBER_OF_FILE_ON_DISPLAY) {
+			if (currentFileInPage >= SLA_FILES_PER_PAGE) {
 				// add a page
 				currentPage++;
 				currentFileInPage = 0;
@@ -185,10 +185,10 @@ void dir_paginateAndPrefillCurrentPage()
 
 	//time = get_hz200() - time;
 	//time = time / 2;
-	//hxc_printf(2,0,0, "dir_paginate(): %ld seconds/100", time);
+	//gui_printf(2,0,0, "dir_paginate(): %ld seconds/100", time);
 
 	_nbPages = currentPage+1;
-	less_busy();
+	gui_less_busy();
 }
 
 
@@ -208,7 +208,7 @@ int dir_scan()
 {
 	UWORD nbFiles;
 
-	more_busy();
+	gui_more_busy();
 
 	// reset the file list
 	fli_clear();
@@ -226,7 +226,7 @@ int dir_scan()
 		fatal("Cannot read directory");
 	}
 
-	less_busy();
+	gui_less_busy();
 	return nbFiles;
 }
 

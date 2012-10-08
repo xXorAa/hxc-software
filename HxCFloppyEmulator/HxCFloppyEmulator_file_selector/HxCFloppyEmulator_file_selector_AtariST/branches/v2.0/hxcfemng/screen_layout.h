@@ -1,9 +1,9 @@
-#ifndef __VIEWER_H__
-#define __VIEWER_H__
+#ifndef __SCREEN_LAYOUT_H__
+#define __SCREEN_LAYOUT_H__
 
 /*
 //
-// Copyright (C) 2009, 2010, 2011, 2012 Jean-Francois DEL NERO
+// Copyright (C) 2009, 2010, 2011 Jean-Francois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -28,6 +28,23 @@
 //
 */
 
-void vie_viewer();
+
+extern unsigned short SLA_SLOT_Y_POS;				/* SCR_YRESOL-(48+(3*8)) */
+extern unsigned char  SLA_FILES_PER_PAGE;			/* 19-5 //19 -240 */
+extern unsigned short SLA_LINE_CHARS;				/* number of 8x8 chars per line */
+extern unsigned short SLA_BOX_Y_POS;				/* box y position               */
+extern unsigned short SLA_STATUSL_Y_POS;			/* status line y position       */
+
+#define SLA_FILELIST_Y_POS 12
+#define SLA_HELP_Y_POS 12
+#define SLA_VIEWER_Y_POS 12
+#define SLA_CURDIR_X_POS  30*8
+#define SLA_CURDIR_Y_POS  SLA_SLOT_Y_POS
+#define SLA_PAGE_X_POS    640-17*8
+#define SLA_PAGE_Y_POS    SLA_CURDIR_Y_POS
+#define SLA_FILTER_X_POS  30*8
+#define SLA_FILTER_Y_POS  SLA_CURDIR_Y_POS+16
+
+void sla_enterModule();
 
 #endif
