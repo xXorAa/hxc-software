@@ -64,4 +64,23 @@ __asm__ volatile                        \
 );                                      \
 })
 
+extern short setColor();
+#define setColor(index, value)              \
+__extension__                           \
+({                                      \
+register short retvalue __asm__("d0");  \
+__asm__ volatile                        \
+(                                       \
+"move.w   %3,-(sp)\n\t"                    \
+"move.w   %2,-(sp)\n\t"                    \
+"jsr      (%1)\n\t"                         \
+"addq.l   #4,sp"                          \
+: /* outputs  */ "=r"(retvalue)           \
+: /* inputs   */ "a"(setColor), "g"((short) index), "g"((short) value) \
+: /* clobbers */ __CLOBBER_RETURN("d0") "d1", "d2", "d3", "d4", "d5", "d6", "d7", "a0", "a1", "a2", "a3", "a4" \
+/*  AND_MEMORY */                       \
+);                                      \
+retvalue;                               \
+})
+
 #endif

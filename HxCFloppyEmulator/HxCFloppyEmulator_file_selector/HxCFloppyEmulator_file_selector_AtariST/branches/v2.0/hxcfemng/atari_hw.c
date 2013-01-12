@@ -61,10 +61,14 @@ void su_fdcRegSet(WORD reg, WORD data)
 }
 void su_fdcSendCommandWait(WORD command)
 {
+	long timeout = (*_hz_200) + 200*3;      /* 3-second timeout */
 	MFP *mfp = MFP_BASE;
 	su_fdcRegSet(0x80, command);
 
-	while (0x20 == (mfp->gpip & 0x20));       /* wait till the next interrupt */
+	while (!(                               /* wait until */
+	        (0x20 != (mfp->gpip & 0x20))    /* next interrupt */
+			|| ((*_hz_200) > timeout)       /* or timeout */
+	));
 }
 WORD su_fdcRegGet(WORD reg)
 {
@@ -76,9 +80,13 @@ WORD su_fdcRegGet(WORD reg)
 
 void su_fdcWait(void)
 {
+	long timeout = (*_hz_200) + 200*3;	/* 3-second timeout */
 	DMA->control = 0x80 | fdcDmaMode;
 
-	while (FDC_BUSY == (DMA->data & FDC_BUSY));
+	while (!(                                        /* wait until */
+		    (FDC_BUSY != (DMA->data & FDC_BUSY))     /* no more busy */
+		    || ((*_hz_200) > timeout)                /* or timeout */
+    ));
 }
 
 void su_fdcSelectDriveASide0()

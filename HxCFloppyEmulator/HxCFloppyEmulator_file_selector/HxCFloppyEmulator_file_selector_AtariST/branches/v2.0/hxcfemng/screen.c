@@ -141,7 +141,7 @@ unsigned char scr_setColorScheme(unsigned char colorm)
 			// the last two colors may be pal[2] and pal[3] in 2 planes, or pal[14] and pal[15] in 4 planes
 			j = nbcols - 4 + i;
 		}
-		tmpcolor = Setcolor(j, palette[i]);
+		tmpcolor = setColor(j, palette[i]);
 		if (0xffff == initialpalette[i]) {
 			initialpalette[i] = tmpcolor;
 		}
