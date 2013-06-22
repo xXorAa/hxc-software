@@ -1,0 +1,13 @@
+//int fd_result(int sensei);
+int randomaccess(unsigned long nbsect);
+void print_hex(unsigned char * buffer, int size);
+int setlbabase(unsigned long lba);
+//void wrfdc(unsigned char cmd);
+//int fd_result(int sensei);
+//unsigned char waitirq();
+//unsigned short rdfdc(void);
+//void initdma(unsigned char mode, unsigned count);
+//void calibratedrive(unsigned char drive);
+//void trackseek(unsigned char drive,unsigned char track,unsigned char head);
+//int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigned char head,unsigned char track,unsigned char sector,unsigned char size,unsigned char density,int rate);
+//void reset(unsigned char drive);
