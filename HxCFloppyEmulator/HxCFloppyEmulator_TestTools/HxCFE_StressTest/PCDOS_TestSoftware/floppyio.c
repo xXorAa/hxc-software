@@ -43,20 +43,20 @@
 // Change History (most recent first):
 ///////////////////////////////////////////////////////////////////////////////////
 
-#include	<stdio.h>
-#include	<io.h>
-#include	<stdlib.h>
-#include	<string.h>
+#include <stdio.h>
+#include <io.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include	<bios.h>
-#include	<dos.h>
-#include	<conio.h>
-#include	<i86.h>
+#include <bios.h>
+#include <dos.h>
+#include <conio.h>
+#include <i86.h>
 
-#include	"upd765.h"
-#include	"dma.h"
-#include	"print_output.h"
-#include	"floppyio.h"
+#include "upd765.h"
+#include "dma.h"
+#include "print_output.h"
+#include "floppyio.h"
 
 unsigned char fdc_track;
 unsigned char sr0;
@@ -70,8 +70,8 @@ unsigned char * dmabuffer;
 unsigned short dmabuf_off;
 unsigned dmabuf_seg_rd,dmabuf_seg_wr;
 
-unsigned	char	*bufrd;
-unsigned	char	*bufwr;
+unsigned char *bufrd;
+unsigned char *bufwr;
 
 void (__interrupt __far *prev_floppy_int)( void );
 void (__interrupt __far *prev_timer_int)( void );
@@ -81,7 +81,7 @@ unsigned char DORsel[] = { 0x14, 0x25, 0x46, 0x87 };
 unsigned int  ratecode[]={500,300,250,1000,0};
 
 unsigned char sector_buf[512];
-	
+
 void _interrupt	timer_interrupt_handler(void)
 {
 	ticktimer++;
@@ -90,10 +90,10 @@ void _interrupt	timer_interrupt_handler(void)
 
 void _interrupt floppy_interrupt_handler(void)
 {
-    //printf("IRQ   6\n");
-    intflag=0xFF;
-    outp(0x20,0x20);
-    //outp(0x3F2,0x14);
+	//printf("IRQ   6\n");
+	intflag=0xFF;
+	outp(0x20,0x20);
+	//outp(0x3F2,0x14);
 }
 
 void init_floppyio(void)
@@ -110,10 +110,10 @@ void init_floppyio(void)
 		hxc_printf(0,"FDC Reset error : Return value %d\n",status);
 		
 	prev_floppy_int	= _dos_getvect( 8+0x6 );
-	_dos_setvect(	8+0x6,	floppy_interrupt_handler );
+	_dos_setvect( 8+0x6, floppy_interrupt_handler );
 	
 	prev_timer_int = _dos_getvect( 8+0x0 );
-	_dos_setvect(	8+0x0,	timer_interrupt_handler	);
+	_dos_setvect( 8+0x0, timer_interrupt_handler	);
 
 	if(_dos_allocmem( 4096/16, &dmabuf_seg_rd ))
 	{
@@ -137,19 +137,19 @@ void init_floppyio(void)
  */
 unsigned short rdfdc(void)
 {
-    int tmo;
+	int tmo;
 
-    for(tmo=0;tmo<128;tmo++)
-    {
-        if( ( inp( FDC_MSR ) & 0xD0 ) == 0xD0 )
-        {
-            return inp( FDC_DATA );
-        }
+	for(tmo=0;tmo<128;tmo++)
+	{
+		if( ( inp( FDC_MSR ) & 0xD0 ) == 0xD0 )
+		{
+			return inp( FDC_DATA );
+		}
 
-        inp( 0x80 );
-    }
+		inp( 0x80 );
+	}
 
-    return 0xFFFF;
+	return 0xFFFF;
 };
 
 /*
@@ -157,22 +157,22 @@ unsigned short rdfdc(void)
  */
 void wrfdc(unsigned char cmd)
 {
-    int tmo;
+	int tmo;
 
-    for (tmo=0;tmo<128;tmo++)
-    {
-        if( ( inp(FDC_MSR) & 0xC0 ) == 0x80 )
-        {
-            outp( FDC_DATA, cmd );
-            return;
-        }
+	for (tmo=0;tmo<128;tmo++)
+	{
+		if( ( inp(FDC_MSR) & 0xC0 ) == 0x80 )
+		{
+			outp( FDC_DATA, cmd );
+			return;
+		}
 
-        inp( 0x80 );
-    }
+		inp( 0x80 );
+	}
 }
 
 
-int	getratecode(int	bitrate)
+int getratecode(int	bitrate)
 {
 	int i;
 
@@ -182,32 +182,32 @@ int	getratecode(int	bitrate)
 		i++;
 	}
 
-	return	i;
+	return i;
 }
 
 int fd_result(int sensei)
 {
-    int n;
-    int data;
+	int n;
+	int data;
 
-    // Read in command result bytes
-    n   =   0;
-    while (n < 7 && ( inp(FDC_MSR) & (1 << 4)) != 0)
-    {
-        data = rdfdc();
-        status[n++] = data;
-        n++;
-    }
+	// Read in command result bytes
+	n   =   0;
+	while (n < 7 && ( inp(FDC_MSR) & (1 << 4)) != 0)
+	{
+		data = rdfdc();
+		status[n++] = data;
+		n++;
+	}
 
-    if (sensei)
-    {
-        // Send a "sense interrupt status" command
-        wrfdc(FDC_CMD_SENSEI);
-        sr0 = rdfdc();
-        fdc_track = rdfdc();
-    }
+	if (sensei)
+	{
+		// Send a "sense interrupt status" command
+		wrfdc(FDC_CMD_SENSEI);
+		sr0 = rdfdc();
+		fdc_track = rdfdc();
+	}
 
-    return 0;
+	return 0;
 }
 
 /*
@@ -217,18 +217,18 @@ int fd_result(int sensei)
  */
 unsigned char waitirq()
 {
-    ticktimer = 0;
-    do
-    {
-    }while( (!intflag) && (ticktimer<(18*3)) );
+	ticktimer = 0;
+	do
+	{
+	}while( (!intflag) && (ticktimer<(18*3)) );
 
-    if(ticktimer>=(18*3))
-    {
-        hxc_printf(0,"Waitirq Timeout\n");
-        return  0;
-    }
+	if(ticktimer>=(18*3))
+	{
+		hxc_printf(0,"Waitirq Timeout\n");
+		return  0;
+	}
 
-    return  1;
+	return  1;
 }
 
 /*
@@ -236,59 +236,59 @@ unsigned char waitirq()
  */
 void initdma(unsigned char mode, unsigned count)
 {
-    unsigned dmabuf_seg;
+	unsigned dmabuf_seg;
 
-    // Set up DMA
-    outp(DMA1_CHAN, 0x06);
+	// Set up DMA
+	outp(DMA1_CHAN, 0x06);
 
-    if(mode   ==  FD_MODE_READ)
-    {
-        dmabuf_seg  =  dmabuf_seg_rd;
-        outp(DMA1_RESET, DMA1_CHAN2_READ);
-        outp(DMA1_MODE, DMA1_CHAN2_READ);
-    }
-    else
-    {
-        dmabuf_seg = dmabuf_seg_wr;
-        outp(DMA1_RESET, DMA1_CHAN2_WRITE);
-        outp(DMA1_MODE,  DMA1_CHAN2_WRITE);
-    }
+	if(mode   ==  FD_MODE_READ)
+	{
+		dmabuf_seg  =  dmabuf_seg_rd;
+		outp(DMA1_RESET, DMA1_CHAN2_READ);
+		outp(DMA1_MODE, DMA1_CHAN2_READ);
+	}
+	else
+	{
+		dmabuf_seg = dmabuf_seg_wr;
+		outp(DMA1_RESET, DMA1_CHAN2_WRITE);
+		outp(DMA1_MODE,  DMA1_CHAN2_WRITE);
+	}
 
-    //  Setup   DMA transfer
-    outp(DMA1_CHAN2_ADDR, (dmabuf_seg << 4)  &   255 );
-    outp(DMA1_CHAN2_ADDR, (dmabuf_seg >> 4)  &   255 );
-    outp(DMA1_CHAN2_PAGE,  dmabuf_seg >> 12);
-    outp(DMA1_CHAN2_COUNT, ((count - 1) &  0xFF));
-    outp(DMA1_CHAN2_COUNT, ((count - 1) >> 8));
-    outp(DMA1_CHAN, 0x02);
+	//  Setup   DMA transfer
+	outp(DMA1_CHAN2_ADDR, (dmabuf_seg << 4)  &   255 );
+	outp(DMA1_CHAN2_ADDR, (dmabuf_seg >> 4)  &   255 );
+	outp(DMA1_CHAN2_PAGE,  dmabuf_seg >> 12);
+	outp(DMA1_CHAN2_COUNT, ((count - 1) &  0xFF));
+	outp(DMA1_CHAN2_COUNT, ((count - 1) >> 8));
+	outp(DMA1_CHAN, 0x02);
 }
 
 void calibratedrive(unsigned char drive)
 {
-    intflag=0;
+	intflag=0;
 
 #ifdef DBGMODE
-    hxc_printf(0,"Calibrate drive %d ... ",drive);
+	hxc_printf(0,"Calibrate drive %d ... ",drive);
 #endif
-    outp(FDC_DOR, DORsel[drive&3] | 0xC );
+	outp(FDC_DOR, DORsel[drive&3] | 0xC );
 
-    wrfdc(FDC_CMD_RECAL);
-    wrfdc(drive&3);
+	wrfdc(FDC_CMD_RECAL);
+	wrfdc(drive&3);
 
-    waitirq();
-    fd_result(1);
+	waitirq();
+	fd_result(1);
 
 #ifdef DBGMODE
-    hxc_printf(0,"done\n");
+	hxc_printf(0,"done\n");
 #endif
 
 }
 
 void trackseek(unsigned char drive,unsigned char track,unsigned char head)
 {
-    unsigned char byte,ret;
+	unsigned char byte,ret;
 
-    do
+	do
 	{
 		intflag=0;
 
@@ -301,15 +301,15 @@ void trackseek(unsigned char drive,unsigned char track,unsigned char head)
 		wrfdc(FDC_CMD_SEEK);
 
 		byte = drive & 3;
-        if(head)
+		if(head)
 		{
 			byte = byte | 0x4;
 		}
 
-        wrfdc(byte);
-        wrfdc(track);
-        ret = waitirq();
-        fd_result(1);
+		wrfdc(byte);
+		wrfdc(track);
+		ret = waitirq();
+		fd_result(1);
 
 	}while(!ret);
 
@@ -368,7 +368,7 @@ int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigne
 
 	if((status[0] & 0xC0) || !ret)
 	{
-		hxc_printf(0,"Read failed : ST0:0x%.2x, ST1:0x%.2x, ST2:0x%.2x",status[0],status[1],status[2]);
+		hxc_printf(0,"Read failed : ST0:0x%.2x, ST1:0x%.2x, ST2:0x%.2x\n",status[0],status[1],status[2]);
 		return  1;
 	}
 
@@ -434,7 +434,7 @@ int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsign
 	if((status[0]   &   0xC0)   ||  !ret)
 	{
 	
-		hxc_printf(0,"Write failed : ST0:0x%.2x, ST1:0x%.2x, ST2:0x%.2x",status[0],status[1],status[2]);            
+		hxc_printf(0,"Write failed : ST0:0x%.2x, ST1:0x%.2x, ST2:0x%.2x\n",status[0],status[1],status[2]);
 		return  1;
 	}
 
@@ -448,49 +448,49 @@ int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsign
 
 void reset_drive(unsigned char drive)
 {
-    outp(FDC_DOR,0);
+	outp(FDC_DOR,0);
 
-    outp(FDC_DRS,0);
+	outp(FDC_DRS,0);
 
-    ticktimer=0;
+	ticktimer=0;
 	do
 	{
 	}while(ticktimer<18);
 
-    outp(FDC_DOR,DORsel[drive&3] | 0xC);
+	outp(FDC_DOR,DORsel[drive&3] | 0xC);
 
-    waitirq();
-    fd_result(1);
+	waitirq();
+	fd_result(1);
 
-    wrfdc(FDC_CMD_SPECIFY);
-    wrfdc(0xDF);
-    wrfdc(0x02);
+	wrfdc(FDC_CMD_SPECIFY);
+	wrfdc(0xDF);
+	wrfdc(0x02);
 
-    trackseek(0,1,0);
-    calibratedrive(0);
+	trackseek(0,1,0);
+	calibratedrive(0);
 }
 
 void reset2(unsigned char drive)
 {
-    outp(FDC_DOR,0);
+	outp(FDC_DOR,0);
 
-    outp(FDC_DRS,0);
+	outp(FDC_DRS,0);
 
-    ticktimer=0;
+	ticktimer=0;
 	do
 	{
 	}while(ticktimer<1);
-    outp(FDC_DOR,DORsel[drive&3] | 0xC);
+	outp(FDC_DOR,DORsel[drive&3] | 0xC);
 
-    waitirq();
-    fd_result(1);
+	waitirq();
+	fd_result(1);
 
-    wrfdc(FDC_CMD_SPECIFY);
-    wrfdc(0xDF);
-    wrfdc(0x02);
+	wrfdc(FDC_CMD_SPECIFY);
+	wrfdc(0xDF);
+	wrfdc(0x02);
 
-    trackseek(0,1,0);
-    calibratedrive(0);
+	trackseek(0,1,0);
+	calibratedrive(0);
 }
 
 void fdc_specify(unsigned char t)
@@ -530,7 +530,7 @@ int chs_biosdisk(int cmd, int drive, int head, int track,int sector, int nsects,
 		else if(cmd == _DISK_FORMAT)
 			regs.h.ah = 0x05;
 		else
-			return 1;	/*	invalid	command	*/
+			return 1; /* invalid command */
 	
 		regs.h.al = nsects;
 		int86x(0x13, &regs, &regs, &sregs);
@@ -543,7 +543,7 @@ int chs_biosdisk(int cmd, int drive, int head, int track,int sector, int nsects,
 		int86x(0x13,&regs,&regs,&sregs);
 	}
 
-	hxc_printf(0,"chs_biosdisk: error 0x%02X\n",	err);
+	hxc_printf(0,"chs_biosdisk: error 0x%02X\n", err);
 
-	return	err;
+	return err;
 }

@@ -84,7 +84,7 @@ int hxc_printf(int MSGTYPE,char * chaine, ...)
 	vsprintf(stroutbuffer,chaine,marker);
 
 	printf(stroutbuffer);
-	printf("\n");
+	//printf("\n");
 	//serialprint(stroutbuffer);    
 	
 	va_end( marker );

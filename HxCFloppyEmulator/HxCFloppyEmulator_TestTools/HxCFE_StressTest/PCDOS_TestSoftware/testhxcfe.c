@@ -38,36 +38,36 @@
 // File : floppy_utils.c
 // Contains: HxC Floppy Emulator Endurance / Stress test software.
 //
-// Written by:	DEL NERO Jean Francois
+// Written by: DEL NERO Jean Francois
 //
 // Change History (most recent first):
 ///////////////////////////////////////////////////////////////////////////////////
 
-#include	<stdio.h>
-#include	<io.h>
-#include	<stdlib.h>
-#include	<string.h>
+#include <stdio.h>
+#include <io.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include	<time.h>
-#include	<math.h>
-#include	<bios.h>
-#include	<dos.h>
-#include	<conio.h>
-#include	<i86.h>
+#include <time.h>
+#include <math.h>
+#include <bios.h>
+#include <dos.h>
+#include <conio.h>
+#include <i86.h>
 
-#include	"upd765.h"
-#include	"dma.h"
-#include	"daccess.h"
-#include	"testhxcfe.h"
+#include "upd765.h"
+#include "dma.h"
+#include "daccess.h"
+#include "testhxcfe.h"
 
-#include	"print_output.h"
-#include	"floppyio.h"
+#include "print_output.h"
+#include "floppyio.h"
 
 //#define	DBGMODE	1
 
 int	errorcnt,readerror,writeerror;
 
-unsigned	char	tracksectors[32][1024];
+unsigned char tracksectors[32][1024];
 
 extern unsigned char *bufrd;
 extern unsigned char *bufwr;
@@ -83,12 +83,12 @@ unsigned int sector_size_table_fm_300[]={256,1024,128,256,128,128,512,512,128,12
 unsigned int sector_size_table_mfm_250[]={256,1024,256,512,512,256,256,512,256,1024,0};
 unsigned int sector_size_table_fm_250[]={256,1024,128,256,128,128,128,512,128,0};
 
-int	randomaccess(unsigned	long	nbsect)
+int	randomaccess(unsigned long nbsect)
 {
-	unsigned	long	i;
+	unsigned long i;
 	int	track,head,sector;
-	unsigned	char	sectorbuf[512];
-	unsigned	short	status;
+	unsigned char sectorbuf[512];
+	unsigned short status;
 
 	errorcnt=0;
 
@@ -102,11 +102,11 @@ int	randomaccess(unsigned	long	nbsect)
 
 		hxc_printf(0,"%u : ",i);
 		hxc_printf(0,"Track:%d Head:%d Sector:%d (E:%d)\n",track,head,sector,errorcnt);
-		status=chs_biosdisk(_DISK_READ,0,	head,	track,sector,	1,	&sectorbuf);
+		status=chs_biosdisk(_DISK_READ,0, head, track,sector, 1, &sectorbuf);
 		if(status)
 		{
 			hxc_printf(0,"------------Failed!!!!---------\n");
-			status	=	chs_biosdisk(_DISK_RESET,0,	0,	255,0,	1,	&sector);
+			status = chs_biosdisk(_DISK_RESET,0, 0, 255,0, 1, &sector);
 			errorcnt++;
 //			for(;;);
 		}
@@ -116,17 +116,17 @@ int	randomaccess(unsigned	long	nbsect)
 	return	0;
 }
 
-int	getsizecode(int	size)
+int	getsizecode(int size)
 {
 	int	i;
 
 	i=0;
-	while(sizecode[i]	&&	(sizecode[i]!=size))
+	while(sizecode[i] && (sizecode[i]!=size))
 	{
 		i++;
 	}
 
-	return	i;
+	return i;
 }
 
 int forceaccess()
@@ -202,7 +202,7 @@ int forceaccess()
 
 }
 
-int	testdrive(int	drive,unsigned	int	*	secttable,	int	trackformat,unsigned	int	*	secttableT0S0,	int	trackformatT0S0,unsigned	int	*	secttableT0S1,	int	trackformatT0S1,int	bitrate,int readonly)
+int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int * secttableT0S0, int trackformatT0S0,unsigned int * secttableT0S1, int trackformatT0S1,int bitrate,int readonly)
 {
 	unsigned int i,j,ret,c;
 	unsigned char track,head,precomp;
@@ -227,24 +227,24 @@ int	testdrive(int	drive,unsigned	int	*	secttable,	int	trackformat,unsigned	int	*
 
 		if(track)
 		{
-			sectortable	=	secttable;
-			density	=	trackformat;
+			sectortable = secttable;
+			density = trackformat;
 		}
 		else
 		{
 			if(head)
 			{
-				sectortable	=	secttableT0S1;
-				density	=	trackformatT0S1;
+				sectortable = secttableT0S1;
+				density = trackformatT0S1;
 			}
 			else
 			{
-				sectortable	=	secttableT0S0;
-				density	=	trackformatT0S0;
+				sectortable = secttableT0S0;
+				density = trackformatT0S0;
 			}
 		}
 
-		hxc_printf(0,"Track:%d, Side:%d, density:%d, Precomp: %d, deleted : 0x%.2x Rate:%d",track,head,density,precomp&7,deleted,bitrate);
+		hxc_printf(0,"Track:%d, Side:%d, density:%d, Precomp: %d, deleted : 0x%.2x Rate:%d\n",track,head,density,precomp&7,deleted,bitrate);
 
 		trackseek(drive,track,head);
 
@@ -289,7 +289,7 @@ int	testdrive(int	drive,unsigned	int	*	secttable,	int	trackformat,unsigned	int	*
 				if(ret)
 				{
 					readerror++;
-					hxc_printf(0,"Read Error Track %d Side %d Sector %d Deleted:%d Size :%d Retry...",track,head,1+i,deleted,sectortable[i]);
+					hxc_printf(0,"Read Error Track %d Side %d Sector %d Deleted:%d Size :%d Retry...\n",track,head,1+i,deleted,sectortable[i]);
 				}
 				c++;
 			}while(ret && c<5);
@@ -298,7 +298,7 @@ int	testdrive(int	drive,unsigned	int	*	secttable,	int	trackformat,unsigned	int	*
 			{
 				if(memcmp(bufrd,&tracksectors[i],sectortable[i]))
 				{
-					hxc_printf(0,"-!-!-!-!-!-!-Write diff-!-!-!-!-!-!- : Sector %d Size:%d",i+1,sectortable[i]);
+					hxc_printf(0,"-!-!-!-!-!-!-Write diff-!-!-!-!-!-!- : Sector %d Size:%d\n",i+1,sectortable[i]);
 					fail = 1;
 					//for(;;);
 				}
@@ -311,18 +311,18 @@ int	testdrive(int	drive,unsigned	int	*	secttable,	int	trackformat,unsigned	int	*
 		{
 			okcnt++;
 			if(readonly)
-				hxc_printf(0,"---------Read  ok--------- ok: %d fail: %d rderr %d wrerr %d",okcnt,failcnt,readerror,writeerror);
+				hxc_printf(0,"---------Read  ok--------- ok: %d fail: %d rderr %d wrerr %d\n",okcnt,failcnt,readerror,writeerror);
 			else
-				hxc_printf(0,"---------Write ok--------- ok: %d fail: %d rderr %d wrerr %d",okcnt,failcnt,readerror,writeerror);
+				hxc_printf(0,"---------Write ok--------- ok: %d fail: %d rderr %d wrerr %d\n",okcnt,failcnt,readerror,writeerror);
 		}
 		else
 		{
 			failcnt++;
-			hxc_printf(0,"---!--->>Write Failed<<---!--- ok: %d fail: %d rderr %d",okcnt,failcnt,readerror,writeerror);
+			hxc_printf(0,"---!--->>Write Failed<<---!--- ok: %d fail: %d rderr %d\n",okcnt,failcnt,readerror,writeerror);
 
 			trackseek(0,1,0);
 			calibratedrive(0);
-			fail	=	0;
+			fail = 0;
 		}
 
 		if(!readonly)
@@ -332,7 +332,7 @@ int	testdrive(int	drive,unsigned	int	*	secttable,	int	trackformat,unsigned	int	*
 	}
 }
 
-int	main(int	argc,	char*	argv[])
+int	main(int argc, char* argv[])
 {
 	unsigned char  c;
 
@@ -371,43 +371,43 @@ int	main(int	argc,	char*	argv[])
 		c=getchar();
 		switch(c)
 		{
-			case	'1':
-				testdrive(0,sector_size_table_mfm_500,1,sector_size_table_fm_500,	0,sector_size_table_fm_500,	0,500,0);
+			case '1':
+				testdrive(0,sector_size_table_mfm_500,1,sector_size_table_fm_500, 0,sector_size_table_fm_500,	0,500,0);
 			break;
-			case	'2':
-				testdrive(0,sector_size_table_mfm_300,1,sector_size_table_fm_300,	0,sector_size_table_fm_300,	0,300,0);
+			case '2':
+				testdrive(0,sector_size_table_mfm_300,1,sector_size_table_fm_300, 0,sector_size_table_fm_300,	0,300,0);
 			break;
-			case	'3':
-				testdrive(0,sector_size_table_mfm_250,1,sector_size_table_fm_250,	0,sector_size_table_fm_250,	0,250,0);
+			case '3':
+				testdrive(0,sector_size_table_mfm_250,1,sector_size_table_fm_250, 0,sector_size_table_fm_250, 0,250,0);
 			break;
-			case	'4':
-				testdrive(0,sector_size_table_fm_500,0,sector_size_table_mfm_500,	1,sector_size_table_mfm_500,	1,500,0);
+			case '4':
+				testdrive(0,sector_size_table_fm_500,0,sector_size_table_mfm_500, 1,sector_size_table_mfm_500, 1,500,0);
 			break;
-			case	'5':
-				testdrive(0,sector_size_table_fm_300,0,sector_size_table_mfm_300,	1,sector_size_table_mfm_300,	1,300,0);
+			case '5':
+				testdrive(0,sector_size_table_fm_300,0,sector_size_table_mfm_300, 1,sector_size_table_mfm_300, 1,300,0);
 			break;
-			case	'6':
-				testdrive(0,sector_size_table_fm_250,0,sector_size_table_mfm_250,	1,sector_size_table_mfm_250,	1,250,0);
+			case '6':
+				testdrive(0,sector_size_table_fm_250,0,sector_size_table_mfm_250, 1,sector_size_table_mfm_250, 1,250,0);
 			break;
-			case	'a':
-				testdrive(0,sector_size_table_mfm_500,1,sector_size_table_fm_500,	0,sector_size_table_fm_500,	0,500,1);
+			case 'a':
+				testdrive(0,sector_size_table_mfm_500,1,sector_size_table_fm_500, 0,sector_size_table_fm_500, 0,500,1);
 			break;
-			case	'b':
-				testdrive(0,sector_size_table_mfm_300,1,sector_size_table_fm_300,	0,sector_size_table_fm_300,	0,300,1);
+			case 'b':
+				testdrive(0,sector_size_table_mfm_300,1,sector_size_table_fm_300, 0,sector_size_table_fm_300, 0,300,1);
 			break;
-			case	'c':
-				testdrive(0,sector_size_table_mfm_250,1,sector_size_table_fm_250,	0,sector_size_table_fm_250,	0,250,1);
+			case 'c':
+				testdrive(0,sector_size_table_mfm_250,1,sector_size_table_fm_250, 0,sector_size_table_fm_250, 0,250,1);
 			break;
-			case	'd':
-				testdrive(0,sector_size_table_fm_500,0,sector_size_table_mfm_500,	1,sector_size_table_mfm_500,	1,500,1);
+			case 'd':
+				testdrive(0,sector_size_table_fm_500,0,sector_size_table_mfm_500, 1,sector_size_table_mfm_500, 1,500,1);
 			break;
-			case	'e':
-				testdrive(0,sector_size_table_fm_300,0,sector_size_table_mfm_300,	1,sector_size_table_mfm_300,	1,300,1);
+			case 'e':
+				testdrive(0,sector_size_table_fm_300,0,sector_size_table_mfm_300, 1,sector_size_table_mfm_300, 1,300,1);
 			break;
-			case	'f':
-				testdrive(0,sector_size_table_fm_250,0,sector_size_table_mfm_250,	1,sector_size_table_mfm_250,	1,250,1);
+			case 'f':
+				testdrive(0,sector_size_table_fm_250,0,sector_size_table_mfm_250, 1,sector_size_table_mfm_250, 1,250,1);
 			break;
-			case	'T':
+			case 'T':
 				forceaccess();
 			break;
 
@@ -416,7 +416,7 @@ int	main(int	argc,	char*	argv[])
 		}
 	}while(1);
 
-	return	0;
+	return 0;
 }
 
 
