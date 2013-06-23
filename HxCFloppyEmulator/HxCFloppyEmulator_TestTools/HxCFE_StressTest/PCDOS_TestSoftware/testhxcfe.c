@@ -81,6 +81,23 @@ unsigned int sector_size_table_fm_300[]={256,1024,128,256,128,128,512,512,128,12
 unsigned int sector_size_table_mfm_250[]={256,1024,256,512,512,256,256,512,256,1024,0};
 unsigned int sector_size_table_fm_250[]={256,1024,128,256,128,128,128,512,128,0};
 
+typedef struct _track_test{
+	unsigned int sectorsize;
+	unsigned int nbsector;
+	unsigned int gap3min;
+	unsigned int gap3max;
+}track_test;
+
+track_test dd_track_test[]=
+{
+	{256,16,18,30},
+	{512,10,26,36},
+	{1024,4,26,74},
+	{2048,2,36,94},
+	{4096,1,36,34},
+	{0,0,0,0}
+};
+
 int	randomaccess(unsigned long nbsect)
 {
 	unsigned long i;
@@ -194,13 +211,14 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 
 	unsigned int * sectortable;
 	unsigned char deleted;
-	int	density,fail,failcnt,okcnt;
+	int	density,fail,failcnt,okcnt,gap3;
 
 	deleted = 0x00;
 	precomp = 0;
 	fail    = 0;
 	failcnt = 0;
 	okcnt   = 0;
+	gap3 = 30;
 
 	for(;;)
 	{
@@ -233,7 +251,6 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 
 		trackseek(drive,track,head);
 
-
 		i=0;
 		while(sectortable[i])
 		{
@@ -252,7 +269,7 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 			while(sectortable[i])
 			{
 				memcpy(bufwr,&tracksectors[i],sectortable[i]);
-				ret = write_sector(deleted,1+i,drive,head,track,1,sectortable[i],density,precomp,bitrate);
+				ret = write_sector(deleted,1+i,drive,head,track,1,1,sectortable[i],density,precomp,bitrate,gap3);
 				fd_result(1);
 				if(ret)
 				{
@@ -269,7 +286,7 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 			c=0;
 			do
 			{
-				ret = read_sector(deleted,1+i,drive,head,track,1,sectortable[i],density,bitrate);
+				ret = read_sector(deleted,1+i,drive,head,track,1,1,sectortable[i],density,bitrate,gap3);
 				fd_result(1);
 				if(ret)
 				{
@@ -319,15 +336,21 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 
 void format_write_read(int drive,int density,int bitrate)
 {
-	int track,ret;
+	int track,ret,i;
 	int side,nbsector,sector;
-	int sectorsize,precomp;
-	unsigned char formatvalue,gap3;
+	int sectorsize,precomp,failcnt;
+	unsigned char formatvalue,gap3,fvalue;
+	int trackindex;
+	unsigned int cycle;
 
-	precomp=0;
+	precomp = 0;
+	failcnt = 0;
 	gap3 = 30;
 	formatvalue = 0x00;
 	sectorsize = 512;
+
+	cycle = 0;
+	trackindex = 0;
 
 	if(density)
 	{
@@ -361,39 +384,157 @@ void format_write_read(int drive,int density,int bitrate)
 	}
 
 	do{
+
+		if(!dd_track_test[trackindex].sectorsize)
+			trackindex = 0;
+
+		sectorsize = dd_track_test[trackindex].sectorsize;
+		nbsector = dd_track_test[trackindex].nbsector;
+		gap3 = dd_track_test[trackindex].gap3min;
+
+		fvalue = formatvalue;
 		for(track=0;track<80;track++)
 		{
 			trackseek(drive,track,side);
 			for(side=0;side<=1;side++)
 			{
-				hxc_printf(0,"Format Track:%d, Side:%d, density:%d, Precomp: %d, Rate:%d\n",track,side,density,precomp&7,bitrate);
+				hxc_printf(0,"Format:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
 				format_track(drive,density,track,side,nbsector,sectorsize,1,formatvalue,precomp,bitrate,gap3);
 				fd_result(1);
 				formatvalue++;
+
+				gap3++;
+				if(gap3>dd_track_test[trackindex].gap3max)
+					gap3 = dd_track_test[trackindex].gap3min;
 			}
 		}
+
+		hxc_printf(0,"-----------------------------------------------------\n");
+		hxc_printf(0,"---- Test %d - fail: %d rderr %d wrerr %d ----\n",cycle,failcnt,readerror,writeerror);
+		hxc_printf(0,"-----------------------------------------------------\n");
+
+		gap3 = dd_track_test[trackindex].gap3min;
+		formatvalue = fvalue;
+		for(track=0;track<80;track++)
+		{
+			trackseek(drive,track,side);
+			for(side=0;side<=1;side++)
+			{
+				hxc_printf(0,"Read:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
+
+				sector = 0;
+				ret = read_sector(0,1+sector,drive,side,track,1,nbsector,sectorsize,density,bitrate,gap3);
+				fd_result(1);
+				if(ret)
+				{
+					readerror++;
+					hxc_printf(0,"Read Error Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
+				}
+
+				memset(bufwr,formatvalue,nbsector*sectorsize);
+				if(memcmp(bufwr,bufrd,nbsector*sectorsize))
+				{
+					hxc_printf(0,"Data Error Track %d Side %d Sector %d Size :%d\n",track,side,1+sector,sectorsize);
+					readerror++;
+					writeerror++;
+					failcnt++;
+				}
+
+				formatvalue++;
+
+				gap3++;
+				if(gap3>dd_track_test[trackindex].gap3max)
+					gap3 = dd_track_test[trackindex].gap3min;
+
+			}
+		}
+
+		hxc_printf(0,"-----------------------------------------------------\n");
+		hxc_printf(0,"---- Test %d - fail: %d rderr %d wrerr %d ----\n",cycle,failcnt,readerror,writeerror);
+		hxc_printf(0,"-----------------------------------------------------\n");
+
+		srand(fvalue);
+
+		gap3 = dd_track_test[trackindex].gap3min;
+		for(track=0;track<80;track++)
+		{
+			trackseek(drive,track,side);
+			for(side=0;side<=1;side++)
+			{
+				hxc_printf(0,"Write:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
+
+				for(i=0;i<(nbsector*sectorsize);i++)
+				{
+					bufwr[i] = rand();
+				}
+				memset(bufrd,0,nbsector*sectorsize);
+
+				sector = 0;
+				ret = write_sector(0,1+sector,drive,side,track,1,nbsector,sectorsize,density,0,bitrate,gap3);
+				fd_result(1);
+				if(ret)
+				{
+					writeerror++;
+					hxc_printf(0,"Write Error Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
+				}
+
+				gap3++;
+				if(gap3>dd_track_test[trackindex].gap3max)
+					gap3 = dd_track_test[trackindex].gap3min;
+
+			}
+		}
+
+		hxc_printf(0,"-----------------------------------------------------\n");
+		hxc_printf(0,"---- Test %d - fail: %d rderr %d wrerr %d ----\n",cycle,failcnt,readerror,writeerror);
+		hxc_printf(0,"-----------------------------------------------------\n");
+
+		srand(fvalue);
+		gap3 = dd_track_test[trackindex].gap3min;
 
 		for(track=0;track<80;track++)
 		{
 			trackseek(drive,track,side);
 			for(side=0;side<=1;side++)
 			{
-				hxc_printf(0,"Read Track:%d, Side:%d, density:%d, Precomp: %d, Rate:%d\n",track,side,density,precomp&7,bitrate);
+				hxc_printf(0,"(W) Read:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
 
-				for(sector=0;sector<nbsector;sector++)
+				for(i=0;i<(nbsector*sectorsize);i++)
 				{
-					ret = read_sector(0,1+sector,drive,side,track,1,sectorsize,density,bitrate);
-					fd_result(1);
-					if(ret)
-					{
-						readerror++;
-						hxc_printf(0,"Read Error Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
-					}
+					bufwr[i] = rand();
 				}
+
+				sector = 0;
+				ret = read_sector(0,1+sector,drive,side,track,1,nbsector,sectorsize,density,bitrate,gap3);
+				fd_result(1);
+				if(ret)
+				{
+					readerror++;
+					hxc_printf(0,"Read Error Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
+				}
+
+				if(memcmp(bufwr,bufrd,nbsector*sectorsize))
+				{
+					hxc_printf(0,"Write Data Error Track %d Side %d Sector %d Size :%d\n",track,side,1+sector,sectorsize);
+					readerror++;
+					writeerror++;
+					failcnt++;
+				}
+
+				gap3++;
+				if(gap3>dd_track_test[trackindex].gap3max)
+					gap3 = dd_track_test[trackindex].gap3min;
 			}
 		}
 
+		hxc_printf(0,"-----------------------------------------------------\n");
+		hxc_printf(0,"---- Test %d - fail: %d rderr %d wrerr %d ----\n",cycle,failcnt,readerror,writeerror);
+		hxc_printf(0,"-----------------------------------------------------\n");
+
 		formatvalue++;
+		trackindex++;
+
+		cycle++;
 	}while(1);
 }
 int	main(int argc, char* argv[])
