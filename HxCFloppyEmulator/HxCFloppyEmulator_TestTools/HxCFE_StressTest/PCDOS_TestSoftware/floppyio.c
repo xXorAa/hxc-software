@@ -82,7 +82,7 @@ unsigned int  ratecode[]={500,300,250,1000,0};
 
 unsigned char sector_buf[512];
 
-unsigned int sizecode[]={128,256,512,1024,0};
+unsigned int sizecode[]={128,256,512,1024,2048,4096,8192,0};
 
 void _interrupt	timer_interrupt_handler(void)
 {
@@ -117,14 +117,14 @@ void init_floppyio(void)
 	prev_timer_int = _dos_getvect( 8+0x0 );
 	_dos_setvect( 8+0x0, timer_interrupt_handler	);
 
-	if(_dos_allocmem( 4096/16, &dmabuf_seg_rd ))
+	if(_dos_allocmem( 32768/16, &dmabuf_seg_rd ))
 	{
 		hxc_printf(0,"Alloc Error !\n");
 		for(;;);
 	}
 	bufrd = (unsigned char *)MK_FP(dmabuf_seg_rd, 0);
 
-	if(_dos_allocmem( 4096/16, &dmabuf_seg_wr ))
+	if(_dos_allocmem( 32768/16, &dmabuf_seg_wr ))
 	{
 		hxc_printf(0,"Alloc Error !\n");
 		for(;;);
@@ -338,7 +338,7 @@ void trackseek(unsigned char drive,unsigned char track,unsigned char head)
 /*
  * Read a sector from the disk
  */
-int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigned char head,unsigned char track,unsigned char sector,unsigned int size,unsigned char density,int rate)
+int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigned char head,unsigned char track,unsigned char sector,unsigned char nbsector,unsigned int size,unsigned char density,int rate,int gap3)
 {
 	unsigned char byte,ret;
 
@@ -352,7 +352,7 @@ int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigne
 	outp(FDC_CCR,getratecode(rate));
 	outp(FDC_DOR, DORsel[drive&3] | 0xC);
 
-	initdma(FD_MODE_READ, size);
+	initdma(FD_MODE_READ, size * nbsector);
 
 	if(deleted)
 		byte = FDC_CMD_READDELETEDDATA;
@@ -372,9 +372,9 @@ int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigne
 	wrfdc(track);                               //  Cylinder
 	wrfdc(head);                                //  Head
 	wrfdc(index);                               //  Sector
-	wrfdc(getsizecode(size));                                //  N
-	wrfdc(18);                                  //  EOT
-	wrfdc(83);                                  //  GL
+	wrfdc(getsizecode(size));                   //  N
+	wrfdc(index + (nbsector-1));                //  EOT
+	wrfdc(gap3);                                //  GL
 	wrfdc(0xFF);
 
 	ret =   waitirq();
@@ -398,7 +398,7 @@ int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigne
 /*
  * Write a sector to the disk
  */
-int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigned char head, unsigned char track,unsigned char sector,unsigned int size,unsigned char density,unsigned char precomp,int rate)
+int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigned char head, unsigned char track,unsigned char sector,unsigned char nbsector,unsigned int size,unsigned char density,unsigned char precomp,int rate,int gap3)
 {
 	unsigned char byte,ret;
 
@@ -417,7 +417,7 @@ int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsign
 	outp(FDC_CCR, getratecode(rate));
 	outp(FDC_DOR, DORsel[drive&3] | 0xC);
 
-	initdma(FD_MODE_WRITE, size);
+	initdma(FD_MODE_WRITE, size * nbsector);
 
 	if(deleted)
 		byte = FDC_CMD_WRITEDELETEDDATA;
@@ -438,9 +438,9 @@ int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsign
 	wrfdc(track);                               //  Cylinder
 	wrfdc(head);                                //  Head
 	wrfdc(index);                               //  Sector
-	wrfdc(getsizecode(size));                                //  N
-	wrfdc(18);                                  //  EOT
-	wrfdc(83);                                  //  GL
+	wrfdc(getsizecode(size));                   //  N
+	wrfdc(index + (nbsector-1));                //  EOT
+	wrfdc(gap3);                                //  GL
 	wrfdc(0xFF);
 
 	ret =   waitirq();
