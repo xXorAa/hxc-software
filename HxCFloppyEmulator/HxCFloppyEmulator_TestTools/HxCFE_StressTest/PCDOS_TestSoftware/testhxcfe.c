@@ -72,8 +72,6 @@ unsigned char tracksectors[32][1024];
 extern unsigned char *bufrd;
 extern unsigned char *bufwr;
 
-unsigned int sizecode[]={128,256,512,1024,0};
-
 unsigned int sector_size_table_mfm_500[]={256,1024,256,512,256,512,256,1024,512,256,1024,256,256,512,512,512,1024,1024,0};
 unsigned int sector_size_table_fm_500[]={256,1024,128,256,128,512,128,128,128,256,512,512,256,1024,128,0};
 
@@ -114,19 +112,6 @@ int	randomaccess(unsigned long nbsect)
 
 	hxc_printf(0,"Ok!!!!\n");
 	return	0;
-}
-
-int	getsizecode(int size)
-{
-	int	i;
-
-	i=0;
-	while(sizecode[i] && (sizecode[i]!=size))
-	{
-		i++;
-	}
-
-	return i;
 }
 
 int forceaccess()
@@ -267,7 +252,7 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 			while(sectortable[i])
 			{
 				memcpy(bufwr,&tracksectors[i],sectortable[i]);
-				ret = write_sector(deleted,1+i,drive,head,track,1,getsizecode(sectortable[i]),density,precomp,bitrate);
+				ret = write_sector(deleted,1+i,drive,head,track,1,sectortable[i],density,precomp,bitrate);
 				fd_result(1);
 				if(ret)
 				{
@@ -284,7 +269,7 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 			c=0;
 			do
 			{
-				ret = read_sector(deleted,1+i,drive,head,track,1,getsizecode(sectortable[i]),density,bitrate);
+				ret = read_sector(deleted,1+i,drive,head,track,1,sectortable[i],density,bitrate);
 				fd_result(1);
 				if(ret)
 				{
@@ -332,6 +317,85 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 	}
 }
 
+void format_write_read(int drive,int density,int bitrate)
+{
+	int track,ret;
+	int side,nbsector,sector;
+	int sectorsize,precomp;
+	unsigned char formatvalue,gap3;
+
+	precomp=0;
+	gap3 = 30;
+	formatvalue = 0x00;
+	sectorsize = 512;
+
+	if(density)
+	{
+		switch(bitrate)
+		{
+			case 250:
+				nbsector = 10;
+			break;
+			case 300:
+				nbsector = 12;
+			break;
+			case 500:
+				nbsector = 20;
+			break;
+		}
+	}
+	else
+	{
+		switch(bitrate)
+		{
+			case 250:
+				nbsector = 5;
+			break;
+			case 300:
+				nbsector = 6;
+			break;
+			case 500:
+				nbsector = 10;
+			break;
+		}
+	}
+
+	do{
+		for(track=0;track<80;track++)
+		{
+			trackseek(drive,track,side);
+			for(side=0;side<=1;side++)
+			{
+				hxc_printf(0,"Format Track:%d, Side:%d, density:%d, Precomp: %d, Rate:%d\n",track,side,density,precomp&7,bitrate);
+				format_track(drive,density,track,side,nbsector,sectorsize,1,formatvalue,precomp,bitrate,gap3);
+				fd_result(1);
+				formatvalue++;
+			}
+		}
+
+		for(track=0;track<80;track++)
+		{
+			trackseek(drive,track,side);
+			for(side=0;side<=1;side++)
+			{
+				hxc_printf(0,"Read Track:%d, Side:%d, density:%d, Precomp: %d, Rate:%d\n",track,side,density,precomp&7,bitrate);
+
+				for(sector=0;sector<nbsector;sector++)
+				{
+					ret = read_sector(0,1+sector,drive,side,track,1,sectorsize,density,bitrate);
+					fd_result(1);
+					if(ret)
+					{
+						readerror++;
+						hxc_printf(0,"Read Error Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
+					}
+				}
+			}
+		}
+
+		formatvalue++;
+	}while(1);
+}
 int	main(int argc, char* argv[])
 {
 	unsigned char  c;
@@ -365,6 +429,7 @@ int	main(int argc, char* argv[])
 	hxc_printf(0,"e - FM300K.HFE (RO)\n");
 	hxc_printf(0,"f - FM250K.HFE (RO)\n");
 	hxc_printf(0,"T - Force Read\n");
+	hxc_printf(0,"F - Format Write Read\n");
 
 	do
 	{
@@ -409,6 +474,9 @@ int	main(int argc, char* argv[])
 			break;
 			case 'T':
 				forceaccess();
+			break;
+			case 'F':
+				format_write_read(0,1,250);
 			break;
 
 			default:
