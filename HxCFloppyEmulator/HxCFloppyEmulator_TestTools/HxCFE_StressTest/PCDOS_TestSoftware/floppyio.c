@@ -82,6 +82,8 @@ unsigned int  ratecode[]={500,300,250,1000,0};
 
 unsigned char sector_buf[512];
 
+unsigned int sizecode[]={128,256,512,1024,0};
+
 void _interrupt	timer_interrupt_handler(void)
 {
 	ticktimer++;
@@ -102,16 +104,16 @@ void init_floppyio(void)
 
 	ticktimer = 0x00;
 	intflag = 0x00;
-	
+
 	memset(&sector_buf,0,512);
 
 	status	= chs_biosdisk(_DISK_RESET,0, 0, 255,0, 1, &sector_buf);
 	if(status)
 		hxc_printf(0,"FDC Reset error : Return value %d\n",status);
-		
+
 	prev_floppy_int	= _dos_getvect( 8+0x6 );
 	_dos_setvect( 8+0x6, floppy_interrupt_handler );
-	
+
 	prev_timer_int = _dos_getvect( 8+0x0 );
 	_dos_setvect( 8+0x0, timer_interrupt_handler	);
 
@@ -131,6 +133,20 @@ void init_floppyio(void)
 
 	reset_drive(0);
 }
+
+int	getsizecode(int size)
+{
+	int	i;
+
+	i=0;
+	while(sizecode[i] && (sizecode[i]!=size))
+	{
+		i++;
+	}
+
+	return i;
+}
+
 
 /*
  * Read byte from FDC
@@ -322,7 +338,7 @@ void trackseek(unsigned char drive,unsigned char track,unsigned char head)
 /*
  * Read a sector from the disk
  */
-int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigned char head,unsigned char track,unsigned char sector,unsigned char size,unsigned char density,int rate)
+int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigned char head,unsigned char track,unsigned char sector,unsigned int size,unsigned char density,int rate)
 {
 	unsigned char byte,ret;
 
@@ -336,7 +352,7 @@ int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigne
 	outp(FDC_CCR,getratecode(rate));
 	outp(FDC_DOR, DORsel[drive&3] | 0xC);
 
-	initdma(FD_MODE_READ, 128 << size);
+	initdma(FD_MODE_READ, size);
 
 	if(deleted)
 		byte = FDC_CMD_READDELETEDDATA;
@@ -356,14 +372,14 @@ int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigne
 	wrfdc(track);                               //  Cylinder
 	wrfdc(head);                                //  Head
 	wrfdc(index);                               //  Sector
-	wrfdc(size);                                //  N
+	wrfdc(getsizecode(size));                                //  N
 	wrfdc(18);                                  //  EOT
 	wrfdc(83);                                  //  GL
 	wrfdc(0xFF);
 
 	ret =   waitirq();
 	//if(ret)
-	
+
 	fd_result(1);
 
 	if((status[0] & 0xC0) || !ret)
@@ -382,7 +398,7 @@ int read_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigne
 /*
  * Write a sector to the disk
  */
-int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigned char head, unsigned char track,unsigned char sector,unsigned char size,unsigned char density,unsigned char precomp,int rate)
+int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsigned char head, unsigned char track,unsigned char sector,unsigned int size,unsigned char density,unsigned char precomp,int rate)
 {
 	unsigned char byte,ret;
 
@@ -401,7 +417,7 @@ int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsign
 	outp(FDC_CCR, getratecode(rate));
 	outp(FDC_DOR, DORsel[drive&3] | 0xC);
 
-	initdma(FD_MODE_WRITE, 128 << size);
+	initdma(FD_MODE_WRITE, size);
 
 	if(deleted)
 		byte = FDC_CMD_WRITEDELETEDDATA;
@@ -414,7 +430,7 @@ int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsign
 	wrfdc(byte);
 
 	byte = drive & 3;
-	
+
 	if( head )
 		byte = byte | 0x4;
 	wrfdc(byte);
@@ -422,7 +438,7 @@ int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsign
 	wrfdc(track);                               //  Cylinder
 	wrfdc(head);                                //  Head
 	wrfdc(index);                               //  Sector
-	wrfdc(size);                                //  N
+	wrfdc(getsizecode(size));                                //  N
 	wrfdc(18);                                  //  EOT
 	wrfdc(83);                                  //  GL
 	wrfdc(0xFF);
@@ -433,7 +449,7 @@ int write_sector(unsigned char deleted,unsigned index,unsigned char drive,unsign
 
 	if((status[0]   &   0xC0)   ||  !ret)
 	{
-	
+
 		hxc_printf(0,"Write failed : ST0:0x%.2x, ST1:0x%.2x, ST2:0x%.2x\n",status[0],status[1],status[2]);
 		return  1;
 	}
@@ -500,6 +516,65 @@ void fdc_specify(unsigned char t)
 	wrfdc(0x02);
 }
 
+int format_track(int drive,unsigned char density,int track,int head,int nbsector,int sectorsize,int interleave,unsigned char formatvalue,unsigned char precomp,int rate,int gap3)
+{
+	unsigned char byte,ret,i;
+
+#ifdef DBGMODE
+	hxc_printf(0,"Format track %d head %d drive %d ...\n",track);
+#endif
+
+	intflag=0;
+
+	if(((precomp&7)==5) &&  rate==500)
+		precomp=6;
+
+	for( i = 0 ; i < nbsector ; i++ )
+	{
+		bufwr[(i*4) + 0] = track;
+		bufwr[(i*4) + 1] = head;
+		bufwr[(i*4) + 2] = i+1;
+		bufwr[(i*4) + 3] = getsizecode(sectorsize);
+	}
+
+	outp(FDC_DRS,((precomp&7)<<2) | getratecode(rate));
+
+	// Program data rate
+	outp(FDC_CCR, getratecode(rate));
+	outp(FDC_DOR, DORsel[drive&3] | 0xC);
+
+	initdma(FD_MODE_WRITE, nbsector * 4);
+
+	byte = FDC_CMD_FORMAT;
+	if(density)
+		byte = byte | 0x40;
+	wrfdc(byte);                                //  CMD
+	byte = drive & 3;
+	if( head )
+		byte = byte | 0x4;
+	wrfdc(byte);                                //  Drive
+	wrfdc(getsizecode(sectorsize));             //  N
+	wrfdc(nbsector);                            //  Nbsector
+	wrfdc(gap3);                                //  gap3
+	wrfdc(formatvalue);                         //  Format value
+
+	ret =   waitirq();
+	//if(ret)
+	fd_result(1);
+
+	if((status[0]   &   0xC0)   ||  !ret)
+	{
+		hxc_printf(0,"Format failed : ST0:0x%.2x, ST1:0x%.2x, ST2:0x%.2x\n",status[0],status[1],status[2]);
+		return  1;
+	}
+
+#ifdef  DBGMODE
+	hxc_printf(0,"done\n");
+#endif
+
+	return  0;
+}
+
 int chs_biosdisk(int cmd, int drive, int head, int track,int sector, int nsects, void *buf)
 {
 	unsigned tries, err;
@@ -531,7 +606,7 @@ int chs_biosdisk(int cmd, int drive, int head, int track,int sector, int nsects,
 			regs.h.ah = 0x05;
 		else
 			return 1; /* invalid command */
-	
+
 		regs.h.al = nsects;
 		int86x(0x13, &regs, &regs, &sregs);
 		err = regs.h.ah;
