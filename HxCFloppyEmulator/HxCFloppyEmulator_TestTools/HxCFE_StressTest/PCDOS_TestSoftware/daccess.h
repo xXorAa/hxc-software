@@ -8,6 +8,13 @@ typedef struct direct_access_status_sector_
         unsigned char read_cnt;
         unsigned char write_cnt;
         unsigned char last_cmd_status;
+		unsigned char write_locked;
+		unsigned char keys_status;
+		unsigned char sd_status;
+		unsigned char SD_WP;
+		unsigned char SD_CD;
+		unsigned char number_of_sector;
+		unsigned short current_index;		
 } direct_access_status_sector ;
 
 typedef struct direct_access_cmd_sector_
@@ -35,3 +42,5 @@ typedef struct DirectoryEntry_ {
         unsigned char longName[LFN_MAX_SIZE];   // boolean
 }DirectoryEntry;
 
+int GetCurrentIndex();
+int SetIndex(unsigned short index);

@@ -57,6 +57,8 @@
 #include	"print_output.h"
 #include	"floppyio.h"
 
+extern unsigned char *bufrd;
+extern unsigned char *bufwr;
 
 int setlbabase(unsigned long lba)
 {
@@ -88,5 +90,107 @@ int setlbabase(unsigned long lba)
 	if(status)	hxc_printf(0,"write Access error !!! \n");
 
 	hxc_printf(0,"\n");
+	return	0;
+}
+
+
+int GetCurrentIndex()
+{
+	unsigned char  sector[512];
+	unsigned short current_index;
+	int ret;
+
+	direct_access_cmd_sector    * dacs;
+	direct_access_status_sector * dass;
+
+	dass=(direct_access_status_sector *)sector;
+	dacs=(direct_access_cmd_sector *)sector;
+	do
+	{
+	
+		trackseek(0,255,0);
+	
+		memset(bufwr,0,512);	
+
+		ret = read_sector(0x00,0x00,0x00,0x00,255,0,1,512,1,250,30);
+		fd_result(1);
+		if(ret)
+		{
+			hxc_printf(0,"Read Error Status Reg !\n");		
+			trackseek(0,254,0);
+		}
+	}while(ret);
+	memcpy(&sector,bufrd,512);
+	
+	current_index = dass->current_index;
+	
+	trackseek(0,0,0);
+	
+	return current_index;
+}
+
+int SetIndex(unsigned short index)
+{
+	unsigned char  sector[512];
+	unsigned short current_index;
+	int ret;
+
+	direct_access_cmd_sector    * dacs;
+	direct_access_status_sector * dass;
+
+	dass=(direct_access_status_sector *)sector;
+	dacs=(direct_access_cmd_sector *)sector;
+
+	trackseek(0,255,0);
+	
+	memset(bufwr,0,512);	
+	ret = read_sector(0x00,0x00,0x00,0x00,255,0,1,512,1,250,30);
+	fd_result(1);
+	if(ret)
+	{
+		hxc_printf(0,"Read Error Status Reg !\n");
+	}
+	memcpy(&sector,bufrd,512);
+	
+	current_index = dass->current_index;
+	
+	do
+	{
+		memset(&sector,0,512);	
+		sprintf(dacs->DAHEADERSIGNATURE,"HxCFEDA");
+		dacs->cmd_code=4;
+		dacs->parameter_0=(index)&0xFF;
+		dacs->parameter_1=(index>>8)&0xFF;
+		dacs->parameter_2=0x00;
+		dacs->parameter_3=0x00;
+
+		memcpy(bufwr,&sector,512);
+		ret = write_sector(0x00,0x00,0x00,0x00,255,0,1,512,1,0,250,30);
+		fd_result(1);
+		if(ret)
+		{
+			hxc_printf(0,"Write Error Ctrl Reg !\n");
+		}
+		
+		trackseek(0,70,0);
+		
+		trackseek(0,255,0);
+
+		memset(bufrd,0,512);	
+		ret = read_sector(0x00,0x00,0x00,0x00,255,0,1,512,1,250,30);
+		fd_result(1);
+		if(ret)
+		{
+			hxc_printf(0,"Read Error Status Reg !\n");
+		}
+		memcpy(&sector,bufrd,512);
+		
+	}while( dass->current_index != index);
+	
+	trackseek(0,0,0);
+	
+	if(dass->current_index != index)
+		return -1;
+
 	return	0;
 }

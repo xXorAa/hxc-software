@@ -341,7 +341,7 @@ void format_write_read(int drive,int density,int bitrate)
 	int sectorsize,precomp,failcnt;
 	unsigned char formatvalue,gap3,fvalue;
 	int trackindex;
-	unsigned int cycle;
+	unsigned int cycle,current_index;
 
 	precomp = 0;
 	failcnt = 0;
@@ -351,6 +351,11 @@ void format_write_read(int drive,int density,int bitrate)
 
 	cycle = 0;
 	trackindex = 0;
+
+	current_index = GetCurrentIndex();
+	hxc_printf(0,"Current index : %d\n",current_index);
+
+	current_index++;
 
 	if(density)
 	{
@@ -385,6 +390,12 @@ void format_write_read(int drive,int density,int bitrate)
 
 	do{
 
+		printf(">>>>>>>>Change image : %d<<<<<<<<<<<<\n",current_index);
+		SetIndex(current_index);
+		current_index++;
+		if(current_index>29) 
+			current_index = 1;
+		
 		if(!dd_track_test[trackindex].sectorsize)
 			trackindex = 0;
 
