@@ -72,6 +72,8 @@ unsigned char tracksectors[32][1024];
 extern unsigned char *bufrd;
 extern unsigned char *bufwr;
 
+extern unsigned short ticktimer;
+
 unsigned int sector_size_table_mfm_500[]={256,1024,256,512,256,512,256,1024,512,256,1024,256,256,512,512,512,1024,1024,0};
 unsigned int sector_size_table_fm_500[]={256,1024,128,256,128,512,128,128,128,256,512,512,256,1024,128,0};
 
@@ -82,21 +84,113 @@ unsigned int sector_size_table_mfm_250[]={256,1024,256,512,512,256,256,512,256,1
 unsigned int sector_size_table_fm_250[]={256,1024,128,256,128,128,128,512,128,0};
 
 typedef struct _track_test{
+	unsigned int density;
+	unsigned int bitrate;
 	unsigned int sectorsize;
 	unsigned int nbsector;
 	unsigned int gap3min;
 	unsigned int gap3max;
 }track_test;
 
-track_test dd_track_test[]=
+typedef struct _track_list{
+	unsigned int nbsector;
+	unsigned int gap3;
+	unsigned int sectorsize;
+	int density;
+}track_list;
+
+typedef struct _filelist{
+	unsigned int index;
+	unsigned int rpm;
+	unsigned int bitrate;
+	unsigned int density;
+	unsigned int density_T0S0;
+	unsigned int density_T0S1;
+}filelist;
+
+track_list tlist[180];
+
+filelist file_list[]=
 {
-	{256,16,18,30},
-	{512,10,26,36},
-	{1024,4,26,74},
-	{2048,2,36,94},
-	{4096,1,36,34},
-	{0,0,0,0}
+	// MFM
+	{1,300,250,1,1,1}, 
+	{2,300,500,1,1,1}, 
+	{3,300,300,1,1,1}, 
+	{4,360,250,1,1,1}, 
+	{5,360,500,1,1,1}, 
+	{6,360,300,1,1,1}, 
+	// FM
+	{7,300,250,0,0,0}, 
+	{8,300,500,0,0,0}, 
+	{9,300,300,0,0,0}, 
+	{10,360,250,0,0,0}, 
+	{11,360,500,0,0,0}, 
+	{12,360,300,0,0,0}, 
+
+	//---------------//
+	// MFM (MIXED)
+	{13,300,250,1,0,0}, 
+	{14,300,500,1,0,0}, 
+	{15,300,300,1,0,0}, 
+	{16,360,250,1,0,0}, 
+	{17,360,500,1,0,0}, 
+	{18,360,300,1,0,0}, 
+	// FM (MIXED)
+	{19,300,250,0,1,1}, 
+	{20,300,500,0,1,1}, 
+	{21,300,300,0,1,1}, 
+	{22,360,250,0,1,1}, 
+	{23,360,500,0,1,1}, 
+	{24,360,300,0,1,1}, 
+
+	//---------------//
+	// MFM (MIXED)
+	{25,300,250,1,0,1}, 
+	{26,300,500,1,0,1}, 
+	{27,300,300,1,0,1}, 
+	{28,360,250,1,0,1}, 
+	{29,360,500,1,0,1}, 
+	{30,360,300,1,0,1}, 
+	// FM (MIXED)
+	{31,300,250,0,1,0}, 
+	{32,300,500,0,1,0}, 
+	{33,300,300,0,1,0}, 
+	{34,360,250,0,1,0}, 
+	{35,360,500,0,1,0}, 
+	{36,360,300,0,1,0}, 
+	
+	//---------------//
+	// MFM (MIXED)
+	{37,300,250,1,1,0}, 
+	{38,300,500,1,1,0}, 
+	{39,300,300,1,1,0}, 
+	{40,360,250,1,1,0}, 
+	{41,360,500,1,1,0}, 
+	{42,360,300,1,1,0}, 
+	// FM (MIXED)
+	{43,300,250,0,0,1}, 
+	{44,300,500,0,0,1}, 
+	{45,300,300,0,0,1}, 
+	{46,360,250,0,0,1}, 
+	{47,360,500,0,0,1}, 
+	{48,360,300,0,0,1}, 
+	
+	// Special
+	{49,150,250,1,1,1}, 
+	{50,150,300,1,1,1}, 
+	{51,600,250,1,1,1}, 
+	{52,600,500,1,1,1}, 
+	{53,600,300,1,1,1}, 
+	
+	{54,150,250,0,0,0}, 
+	{55,150,300,0,0,0}, 
+	{56,600,250,0,0,0}, 
+	{57,600,500,0,0,0}, 
+	{58,600,300,0,0,0}, 
+	
+	{0,0,0,0,0,0}
 };
+
 
 int	randomaccess(unsigned long nbsect)
 {
@@ -204,6 +298,14 @@ int forceaccess()
 
 }
 
+void wait(unsigned char second)
+{
+	ticktimer = 0;
+	do
+	{
+	
+	}while(ticktimer < (second*18) );
+}
 int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int * secttableT0S0, int trackformatT0S0,unsigned int * secttableT0S1, int trackformatT0S1,int bitrate,int readonly)
 {
 	unsigned int i,j,ret,c;
@@ -334,14 +436,36 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 	}
 }
 
+int getmaxsector(int sectorsize,int gap3,unsigned int bitrate,unsigned int rpm, int density)
+{
+	int tracksize;
+	long ssize,nbsect;
+
+	if(density)
+	{
+		tracksize = (unsigned long)((float)(bitrate)*( ((float)(60*125)/(float)rpm)));
+		ssize = 60 + sectorsize + 2 + gap3;
+		nbsect = (tracksize-62) / ssize;
+	}
+	else
+	{	
+		tracksize = (unsigned long)((float)(bitrate/2)*( ((float)(60*125)/(float)rpm)));
+		ssize = 31 + sectorsize + 2 + gap3;
+		nbsect = (tracksize-31) / ssize;
+	}
+
+	return nbsect;
+}
+
 void format_write_read(int drive,int density,int bitrate)
 {
 	int track,ret,i;
 	int side,nbsector,sector;
 	int sectorsize,precomp,failcnt;
 	unsigned char formatvalue,gap3,fvalue;
-	int trackindex;
-	unsigned int cycle,current_index;
+	int t,sectshift;
+	unsigned int cycle,current_index,base_index;
+	unsigned int filei;
 
 	precomp = 0;
 	failcnt = 0;
@@ -350,73 +474,75 @@ void format_write_read(int drive,int density,int bitrate)
 	sectorsize = 512;
 
 	cycle = 0;
-	trackindex = 0;
+	sectshift = 0;
+	filei = 0;
 
-	current_index = GetCurrentIndex();
-	hxc_printf(0,"Current index : %d\n",current_index);
-
-	current_index++;
-
-	if(density)
-	{
-		switch(bitrate)
-		{
-			case 250:
-				nbsector = 10;
-			break;
-			case 300:
-				nbsector = 12;
-			break;
-			case 500:
-				nbsector = 20;
-			break;
-		}
-	}
-	else
-	{
-		switch(bitrate)
-		{
-			case 250:
-				nbsector = 5;
-			break;
-			case 300:
-				nbsector = 6;
-			break;
-			case 500:
-				nbsector = 10;
-			break;
-		}
-	}
+	base_index = GetCurrentIndex();
+	hxc_printf(0,"Current index : %d\n",base_index);
 
 	do{
+	
+		if(!file_list[filei].index)
+			filei = 0;
 
+		current_index = file_list[filei].index + base_index;
+		
+		bitrate = file_list[filei].bitrate;		
+		do
+		{
+			t=0;
+			density = file_list[filei].density_T0S0;
+			tlist[t].sectorsize = 128<<(((sectshift%5)+density));
+			tlist[t].gap3 = 80;
+			tlist[t].density = density;
+			sectshift++;
+			tlist[t].nbsector = getmaxsector(tlist[t].sectorsize,tlist[t].gap3,bitrate,file_list[filei].rpm, density);
+		}while(tlist[t].nbsector<=0);
+
+		do
+		{
+			t=1;
+			density = file_list[filei].density_T0S1;
+			tlist[t].sectorsize = 128<<(((sectshift%5)+density));
+			tlist[t].gap3 = 80;
+			tlist[t].density = density;
+			sectshift++;
+			tlist[t].nbsector = getmaxsector(tlist[t].sectorsize,tlist[t].gap3,bitrate,file_list[filei].rpm, density);		
+		}while(tlist[t].nbsector<=0);
+		
+		for(t=2;t<160;t++)
+		{
+			do
+			{
+				density = file_list[filei].density;
+				tlist[t].gap3 = 80;
+				tlist[t].sectorsize = 128<<(((sectshift%5)+density));
+				tlist[t].density = density;
+				tlist[t].nbsector = getmaxsector(tlist[t].sectorsize,tlist[t].gap3,bitrate,file_list[filei].rpm, density);			
+				sectshift++;
+			}while(tlist[t].nbsector<=0);
+		}
+		sectshift++;
+		
 		printf(">>>>>>>>Change image : %d<<<<<<<<<<<<\n",current_index);
 		SetIndex(current_index);
-		current_index++;
-		if(current_index>29) 
-			current_index = 1;
+		wait(4);
 		
-		if(!dd_track_test[trackindex].sectorsize)
-			trackindex = 0;
-
-		sectorsize = dd_track_test[trackindex].sectorsize;
-		nbsector = dd_track_test[trackindex].nbsector;
-		gap3 = dd_track_test[trackindex].gap3min;
-
 		fvalue = formatvalue;
 		for(track=0;track<80;track++)
 		{
 			trackseek(drive,track,side);
 			for(side=0;side<=1;side++)
 			{
+				sectorsize = tlist[(track<<1) | side].sectorsize;
+				nbsector = tlist[(track<<1) | side].nbsector;
+				density = tlist[(track<<1) | side].density;
+				gap3 = 80;
+			
 				hxc_printf(0,"Format:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
 				format_track(drive,density,track,side,nbsector,sectorsize,1,formatvalue,precomp,bitrate,gap3);
 				fd_result(1);
 				formatvalue++;
-
-				gap3++;
-				if(gap3>dd_track_test[trackindex].gap3max)
-					gap3 = dd_track_test[trackindex].gap3min;
 			}
 		}
 
@@ -424,13 +550,17 @@ void format_write_read(int drive,int density,int bitrate)
 		hxc_printf(0,"---- Test %d - fail: %d rderr %d wrerr %d ----\n",cycle,failcnt,readerror,writeerror);
 		hxc_printf(0,"-----------------------------------------------------\n");
 
-		gap3 = dd_track_test[trackindex].gap3min;
 		formatvalue = fvalue;
 		for(track=0;track<80;track++)
 		{
 			trackseek(drive,track,side);
 			for(side=0;side<=1;side++)
 			{
+				sectorsize = tlist[(track<<1) | side].sectorsize;
+				nbsector = tlist[(track<<1) | side].nbsector;
+				density = tlist[(track<<1) | side].density;
+				gap3 = 80;
+			
 				hxc_printf(0,"Read:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
 
 				sector = 0;
@@ -452,11 +582,6 @@ void format_write_read(int drive,int density,int bitrate)
 				}
 
 				formatvalue++;
-
-				gap3++;
-				if(gap3>dd_track_test[trackindex].gap3max)
-					gap3 = dd_track_test[trackindex].gap3min;
-
 			}
 		}
 
@@ -466,12 +591,16 @@ void format_write_read(int drive,int density,int bitrate)
 
 		srand(fvalue);
 
-		gap3 = dd_track_test[trackindex].gap3min;
 		for(track=0;track<80;track++)
 		{
 			trackseek(drive,track,side);
 			for(side=0;side<=1;side++)
 			{
+				sectorsize = tlist[(track<<1) | side].sectorsize;
+				nbsector = tlist[(track<<1) | side].nbsector;
+				density = tlist[(track<<1) | side].density;
+				gap3 = 80;
+
 				hxc_printf(0,"Write:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
 
 				for(i=0;i<(nbsector*sectorsize);i++)
@@ -488,11 +617,6 @@ void format_write_read(int drive,int density,int bitrate)
 					writeerror++;
 					hxc_printf(0,"Write Error Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
 				}
-
-				gap3++;
-				if(gap3>dd_track_test[trackindex].gap3max)
-					gap3 = dd_track_test[trackindex].gap3min;
-
 			}
 		}
 
@@ -501,13 +625,16 @@ void format_write_read(int drive,int density,int bitrate)
 		hxc_printf(0,"-----------------------------------------------------\n");
 
 		srand(fvalue);
-		gap3 = dd_track_test[trackindex].gap3min;
-
 		for(track=0;track<80;track++)
 		{
 			trackseek(drive,track,side);
 			for(side=0;side<=1;side++)
 			{
+				sectorsize = tlist[(track<<1) | side].sectorsize;
+				nbsector = tlist[(track<<1) | side].nbsector;
+				density = tlist[(track<<1) | side].density;
+				gap3 = 80;
+			
 				hxc_printf(0,"(W) Read:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
 
 				for(i=0;i<(nbsector*sectorsize);i++)
@@ -531,10 +658,6 @@ void format_write_read(int drive,int density,int bitrate)
 					writeerror++;
 					failcnt++;
 				}
-
-				gap3++;
-				if(gap3>dd_track_test[trackindex].gap3max)
-					gap3 = dd_track_test[trackindex].gap3min;
 			}
 		}
 
@@ -543,9 +666,10 @@ void format_write_read(int drive,int density,int bitrate)
 		hxc_printf(0,"-----------------------------------------------------\n");
 
 		formatvalue++;
-		trackindex++;
 
 		cycle++;
+		
+		filei++;
 	}while(1);
 }
 int	main(int argc, char* argv[])
@@ -559,7 +683,7 @@ int	main(int argc, char* argv[])
 	writeerror=0;
 	readerror=0;
 	errorcnt=0;
-
+	
 	hxc_printf(0,"Test HxCFEDA\n");
 
 	memset(&dacs,0,sizeof(direct_access_cmd_sector));
