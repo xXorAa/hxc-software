@@ -444,13 +444,13 @@ int getmaxsector(int sectorsize,int gap3,unsigned int bitrate,unsigned int rpm, 
 	if(density)
 	{
 		tracksize = (unsigned long)((float)(bitrate)*( ((float)(60*125)/(float)rpm)));
-		ssize = 60 + sectorsize + 2 + gap3;
+		ssize = 60 + sectorsize + 2 + gap3 + 4;
 		nbsect = (tracksize-62) / ssize;
 	}
 	else
 	{	
 		tracksize = (unsigned long)((float)(bitrate/2)*( ((float)(60*125)/(float)rpm)));
-		ssize = 31 + sectorsize + 2 + gap3;
+		ssize = 31 + sectorsize + 2 + gap3 + 4;
 		nbsect = (tracksize-31) / ssize;
 	}
 
@@ -465,7 +465,7 @@ void format_write_read(int drive,int density,int bitrate)
 	unsigned char formatvalue,gap3,fvalue;
 	int t,sectshift;
 	unsigned int cycle,current_index,base_index;
-	unsigned int filei;
+	unsigned int filei, gapindex;
 
 	precomp = 0;
 	failcnt = 0;
@@ -476,6 +476,8 @@ void format_write_read(int drive,int density,int bitrate)
 	cycle = 0;
 	sectshift = 0;
 	filei = 0;
+
+	gapindex = 0;
 
 	base_index = GetCurrentIndex();
 	hxc_printf(0,"Current index : %d\n",base_index);
@@ -493,36 +495,42 @@ void format_write_read(int drive,int density,int bitrate)
 			t=0;
 			density = file_list[filei].density_T0S0;
 			tlist[t].sectorsize = 128<<(((sectshift%5)+density));
-			tlist[t].gap3 = 80;
+			tlist[t].gap3 = 30 + (gapindex&0x3F);
 			tlist[t].density = density;
 			sectshift++;
 			tlist[t].nbsector = getmaxsector(tlist[t].sectorsize,tlist[t].gap3,bitrate,file_list[filei].rpm, density);
 		}while(tlist[t].nbsector<=0);
+		gapindex++;
 
 		do
 		{
 			t=1;
 			density = file_list[filei].density_T0S1;
 			tlist[t].sectorsize = 128<<(((sectshift%5)+density));
-			tlist[t].gap3 = 80;
+			tlist[t].gap3 = 30 + (gapindex&0x3F);
 			tlist[t].density = density;
 			sectshift++;
 			tlist[t].nbsector = getmaxsector(tlist[t].sectorsize,tlist[t].gap3,bitrate,file_list[filei].rpm, density);		
 		}while(tlist[t].nbsector<=0);
-		
+		gapindex++;
+
 		for(t=2;t<160;t++)
 		{
 			do
 			{
 				density = file_list[filei].density;
-				tlist[t].gap3 = 80;
+				tlist[t].gap3 = 30 + (gapindex&0x3F);
 				tlist[t].sectorsize = 128<<(((sectshift%5)+density));
 				tlist[t].density = density;
 				tlist[t].nbsector = getmaxsector(tlist[t].sectorsize,tlist[t].gap3,bitrate,file_list[filei].rpm, density);			
 				sectshift++;
+
 			}while(tlist[t].nbsector<=0);
+
+			gapindex++;
 		}
 		sectshift++;
+		gapindex++;
 		
 		printf(">>>>>>>>Change image : %d<<<<<<<<<<<<\n",current_index);
 		SetIndex(current_index);
@@ -537,12 +545,13 @@ void format_write_read(int drive,int density,int bitrate)
 				sectorsize = tlist[(track<<1) | side].sectorsize;
 				nbsector = tlist[(track<<1) | side].nbsector;
 				density = tlist[(track<<1) | side].density;
-				gap3 = 80;
+				gap3 = tlist[(track<<1) | side].gap3;
 			
 				hxc_printf(0,"Format:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
 				format_track(drive,density,track,side,nbsector,sectorsize,1,formatvalue,precomp,bitrate,gap3);
 				fd_result(1);
 				formatvalue++;
+				precomp++;
 			}
 		}
 
@@ -550,6 +559,7 @@ void format_write_read(int drive,int density,int bitrate)
 		hxc_printf(0,"---- Test %d - fail: %d rderr %d wrerr %d ----\n",cycle,failcnt,readerror,writeerror);
 		hxc_printf(0,"-----------------------------------------------------\n");
 
+		precomp++;
 		formatvalue = fvalue;
 		for(track=0;track<80;track++)
 		{
@@ -559,7 +569,7 @@ void format_write_read(int drive,int density,int bitrate)
 				sectorsize = tlist[(track<<1) | side].sectorsize;
 				nbsector = tlist[(track<<1) | side].nbsector;
 				density = tlist[(track<<1) | side].density;
-				gap3 = 80;
+				gap3 = tlist[(track<<1) | side].gap3;
 			
 				hxc_printf(0,"Read:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
 
@@ -582,6 +592,7 @@ void format_write_read(int drive,int density,int bitrate)
 				}
 
 				formatvalue++;
+				precomp++;
 			}
 		}
 
@@ -599,7 +610,7 @@ void format_write_read(int drive,int density,int bitrate)
 				sectorsize = tlist[(track<<1) | side].sectorsize;
 				nbsector = tlist[(track<<1) | side].nbsector;
 				density = tlist[(track<<1) | side].density;
-				gap3 = 80;
+				gap3 = tlist[(track<<1) | side].gap3;
 
 				hxc_printf(0,"Write:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
 
@@ -617,6 +628,8 @@ void format_write_read(int drive,int density,int bitrate)
 					writeerror++;
 					hxc_printf(0,"Write Error Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
 				}
+
+				precomp++;
 			}
 		}
 
@@ -633,7 +646,7 @@ void format_write_read(int drive,int density,int bitrate)
 				sectorsize = tlist[(track<<1) | side].sectorsize;
 				nbsector = tlist[(track<<1) | side].nbsector;
 				density = tlist[(track<<1) | side].density;
-				gap3 = 80;
+				gap3 = tlist[(track<<1) | side].gap3;
 			
 				hxc_printf(0,"(W) Read:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
 
@@ -658,6 +671,8 @@ void format_write_read(int drive,int density,int bitrate)
 					writeerror++;
 					failcnt++;
 				}
+
+				precomp++;
 			}
 		}
 
@@ -668,7 +683,7 @@ void format_write_read(int drive,int density,int bitrate)
 		formatvalue++;
 
 		cycle++;
-		
+		precomp++;
 		filei++;
 	}while(1);
 }
