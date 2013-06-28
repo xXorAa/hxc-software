@@ -155,7 +155,7 @@ unsigned short rdfdc(void)
 {
 	int tmo;
 
-	for(tmo=0;tmo<128;tmo++)
+	for(tmo=0;tmo<2048;tmo++)
 	{
 		if( ( inp( FDC_MSR ) & 0xD0 ) == 0xD0 )
 		{
@@ -175,7 +175,7 @@ void wrfdc(unsigned char cmd)
 {
 	int tmo;
 
-	for (tmo=0;tmo<128;tmo++)
+	for (tmo=0;tmo<2048;tmo++)
 	{
 		if( ( inp(FDC_MSR) & 0xC0 ) == 0x80 )
 		{
