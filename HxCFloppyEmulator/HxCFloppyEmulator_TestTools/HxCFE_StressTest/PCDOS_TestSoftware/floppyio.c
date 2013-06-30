@@ -73,6 +73,8 @@ unsigned dmabuf_seg_rd,dmabuf_seg_wr;
 unsigned char *bufrd;
 unsigned char *bufwr;
 
+unsigned long time_tick_count;
+
 void (__interrupt __far *prev_floppy_int)( void );
 void (__interrupt __far *prev_timer_int)( void );
 
@@ -87,6 +89,7 @@ unsigned int sizecode[]={128,256,512,1024,2048,4096,8192,0};
 void _interrupt	timer_interrupt_handler(void)
 {
 	ticktimer++;
+	time_tick_count++;
 	outp(0x20,0x20);
 }
 
@@ -104,6 +107,7 @@ void init_floppyio(void)
 
 	ticktimer = 0x00;
 	intflag = 0x00;
+	time_tick_count = 0x00;
 
 	memset(&sector_buf,0,512);
 

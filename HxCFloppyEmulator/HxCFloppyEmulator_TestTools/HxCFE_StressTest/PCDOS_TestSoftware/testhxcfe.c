@@ -65,8 +65,6 @@
 
 //#define	DBGMODE	1
 
-int	errorcnt,readerror,writeerror;
-
 unsigned char tracksectors[32][1024];
 
 extern unsigned char *bufrd;
@@ -83,14 +81,7 @@ unsigned int sector_size_table_fm_300[]={256,1024,128,256,128,128,512,512,128,12
 unsigned int sector_size_table_mfm_250[]={256,1024,256,512,512,256,256,512,256,1024,0};
 unsigned int sector_size_table_fm_250[]={256,1024,128,256,128,128,128,512,128,0};
 
-typedef struct _track_test{
-	unsigned int density;
-	unsigned int bitrate;
-	unsigned int sectorsize;
-	unsigned int nbsector;
-	unsigned int gap3min;
-	unsigned int gap3max;
-}track_test;
+extern unsigned long time_tick_count;
 
 typedef struct _track_list{
 	unsigned int nbsector;
@@ -108,96 +99,117 @@ typedef struct _filelist{
 	unsigned int density_T0S1;
 }filelist;
 
+typedef struct _floppystat{
+	unsigned long cur_test_number;
+
+	unsigned long total_nb_read_sector;
+	unsigned long total_nb_write_sector;
+	unsigned long total_nb_format;
+
+	unsigned long total_size_read_sector;
+	unsigned long total_size_write_sector;
+
+	unsigned long total_nb_read_error;
+	unsigned long total_nb_write_error;
+	unsigned long total_nb_format_error;
+	unsigned long total_nb_data_error;
+
+	unsigned long last_index_error;
+	unsigned long last_track_error;
+	unsigned long last_hide_error;
+}floppystat;
+
+floppystat test_stat;
+
 track_list tlist[180];
 
 filelist file_list[]=
 {
 	// MFM
-	{1,300,250,1,1,1}, 
-	{2,300,500,1,1,1}, 
-	{3,300,300,1,1,1}, 
-	{4,360,250,1,1,1}, 
-	{5,360,500,1,1,1}, 
-	{6,360,300,1,1,1}, 
+	{1,300,250,1,1,1},
+	{2,300,500,1,1,1},
+	{3,300,300,1,1,1},
+	{4,360,250,1,1,1},
+	{5,360,500,1,1,1},
+	{6,360,300,1,1,1},
 	// FM
-	{7,300,250,0,0,0}, 
-	{8,300,500,0,0,0}, 
-	{9,300,300,0,0,0}, 
-	{10,360,250,0,0,0}, 
-	{11,360,500,0,0,0}, 
-	{12,360,300,0,0,0}, 
+	{7,300,250,0,0,0},
+	{8,300,500,0,0,0},
+	{9,300,300,0,0,0},
+	{10,360,250,0,0,0},
+	{11,360,500,0,0,0},
+	{12,360,300,0,0,0},
 
 	//---------------//
 	// MFM (MIXED)
-	{13,300,250,1,0,0}, 
-	{14,300,500,1,0,0}, 
-	{15,300,300,1,0,0}, 
-	{16,360,250,1,0,0}, 
-	{17,360,500,1,0,0}, 
-	{18,360,300,1,0,0}, 
+	{13,300,250,1,0,0},
+	{14,300,500,1,0,0},
+	{15,300,300,1,0,0},
+	{16,360,250,1,0,0},
+	{17,360,500,1,0,0},
+	{18,360,300,1,0,0},
 	// FM (MIXED)
-	{19,300,250,0,1,1}, 
-	{20,300,500,0,1,1}, 
-	{21,300,300,0,1,1}, 
-	{22,360,250,0,1,1}, 
-	{23,360,500,0,1,1}, 
-	{24,360,300,0,1,1}, 
+	{19,300,250,0,1,1},
+	{20,300,500,0,1,1},
+	{21,300,300,0,1,1},
+	{22,360,250,0,1,1},
+	{23,360,500,0,1,1},
+	{24,360,300,0,1,1},
 
 	//---------------//
 	// MFM (MIXED)
-	{25,300,250,1,0,1}, 
-	{26,300,500,1,0,1}, 
-	{27,300,300,1,0,1}, 
-	{28,360,250,1,0,1}, 
-	{29,360,500,1,0,1}, 
-	{30,360,300,1,0,1}, 
+	{25,300,250,1,0,1},
+	{26,300,500,1,0,1},
+	{27,300,300,1,0,1},
+	{28,360,250,1,0,1},
+	{29,360,500,1,0,1},
+	{30,360,300,1,0,1},
 	// FM (MIXED)
-	{31,300,250,0,1,0}, 
-	{32,300,500,0,1,0}, 
-	{33,300,300,0,1,0}, 
-	{34,360,250,0,1,0}, 
-	{35,360,500,0,1,0}, 
-	{36,360,300,0,1,0}, 
-	
+	{31,300,250,0,1,0},
+	{32,300,500,0,1,0},
+	{33,300,300,0,1,0},
+	{34,360,250,0,1,0},
+	{35,360,500,0,1,0},
+	{36,360,300,0,1,0},
+
 	//---------------//
 	// MFM (MIXED)
-	{37,300,250,1,1,0}, 
-	{38,300,500,1,1,0}, 
-	{39,300,300,1,1,0}, 
-	{40,360,250,1,1,0}, 
-	{41,360,500,1,1,0}, 
-	{42,360,300,1,1,0}, 
+	{37,300,250,1,1,0},
+	{38,300,500,1,1,0},
+	{39,300,300,1,1,0},
+	{40,360,250,1,1,0},
+	{41,360,500,1,1,0},
+	{42,360,300,1,1,0},
 	// FM (MIXED)
-	{43,300,250,0,0,1}, 
-	{44,300,500,0,0,1}, 
-	{45,300,300,0,0,1}, 
-	{46,360,250,0,0,1}, 
-	{47,360,500,0,0,1}, 
-	{48,360,300,0,0,1}, 
-	
+	{43,300,250,0,0,1},
+	{44,300,500,0,0,1},
+	{45,300,300,0,0,1},
+	{46,360,250,0,0,1},
+	{47,360,500,0,0,1},
+	{48,360,300,0,0,1},
+
 	// Special
-	{49,150,250,1,1,1}, 
-	{50,150,300,1,1,1}, 
-	{51,600,250,1,1,1}, 
-	{52,600,500,1,1,1}, 
-	{53,600,300,1,1,1}, 
-	
-	{54,150,250,0,0,0}, 
-	{55,150,300,0,0,0}, 
-	{56,600,250,0,0,0}, 
-	{57,600,500,0,0,0}, 
-	{58,600,300,0,0,0}, 
-	
+	{49,150,250,1,1,1},
+	{50,150,300,1,1,1},
+	{51,600,250,1,1,1},
+	{52,600,500,1,1,1},
+	{53,600,300,1,1,1},
+
+	{54,150,250,0,0,0},
+	{55,150,300,0,0,0},
+	{56,600,250,0,0,0},
+	{57,600,500,0,0,0},
+	{58,600,300,0,0,0},
+
 	{0,0,0,0,0,0}
 };
-
 
 int	randomaccess(unsigned long nbsect)
 {
 	unsigned long i;
 	int	track,head,sector;
 	unsigned char sectorbuf[512];
-	unsigned short status;
+	unsigned short status,errorcnt;
 
 	errorcnt=0;
 
@@ -303,12 +315,13 @@ void wait(unsigned char second)
 	ticktimer = 0;
 	do
 	{
-	
+
 	}while(ticktimer < (second*18) );
 }
-int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int * secttableT0S0, int trackformatT0S0,unsigned int * secttableT0S1, int trackformatT0S1,int bitrate,int readonly)
+
+int	testdrive(int index,int drive,unsigned int * secttable, int trackformat,unsigned int * secttableT0S0, int trackformatT0S0,unsigned int * secttableT0S1, int trackformatT0S1,int bitrate,int readonly)
 {
-	unsigned int i,j,ret,c;
+	unsigned int i,j,ret,c,testcnt;
 	unsigned char track,head,precomp;
 
 	unsigned int * sectortable;
@@ -322,9 +335,11 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 	okcnt   = 0;
 	gap3 = 30;
 
-	for(;;)
+	SetIndex(index);
+	wait(4);
+	
+	for(testcnt=0;testcnt<30;testcnt++)
 	{
-
 		track=(rand()%80);
 		head=rand()%2;
 
@@ -375,9 +390,16 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 				fd_result(1);
 				if(ret)
 				{
-					writeerror++;
+					test_stat.total_nb_write_error++;
+					test_stat.last_index_error = index;
+					test_stat.last_track_error = track;
+					test_stat.last_hide_error = head;
 				}
-				i++;
+
+				test_stat.total_nb_write_sector++;
+				test_stat.total_size_write_sector = test_stat.total_size_write_sector + sectortable[i];
+
+				i++;				
 			}
 		}
 
@@ -392,19 +414,30 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 				fd_result(1);
 				if(ret)
 				{
-					readerror++;
+					test_stat.total_nb_read_error++;
 					hxc_printf(0,"Read Error Track %d Side %d Sector %d Deleted:%d Size :%d Retry...\n",track,head,1+i,deleted,sectortable[i]);
+
+					test_stat.last_index_error = index;
+					test_stat.last_track_error = track;
+					test_stat.last_hide_error = head;					
 				}
 				c++;
 			}while(ret && c<5);
+
+			test_stat.total_nb_read_sector++;
+			test_stat.total_size_read_sector = test_stat.total_size_read_sector + sectortable[i];
 
 			if(!readonly)
 			{
 				if(memcmp(bufrd,&tracksectors[i],sectortable[i]))
 				{
+					test_stat.total_nb_data_error++;
 					hxc_printf(0,"-!-!-!-!-!-!-Write diff-!-!-!-!-!-!- : Sector %d Size:%d\n",i+1,sectortable[i]);
 					fail = 1;
-					//for(;;);
+
+					test_stat.last_index_error = index;
+					test_stat.last_track_error = track;
+					test_stat.last_hide_error = head;
 				}
 			}
 
@@ -415,14 +448,14 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 		{
 			okcnt++;
 			if(readonly)
-				hxc_printf(0,"---------Read  ok--------- ok: %d fail: %d rderr %d wrerr %d\n",okcnt,failcnt,readerror,writeerror);
+				hxc_printf(0,"---------Read  ok--------- ok: %d fail: %d rderr %d wrerr %d\n",okcnt,failcnt,test_stat.total_nb_read_error,test_stat.total_nb_write_error);
 			else
-				hxc_printf(0,"---------Write ok--------- ok: %d fail: %d rderr %d wrerr %d\n",okcnt,failcnt,readerror,writeerror);
+				hxc_printf(0,"---------Write ok--------- ok: %d fail: %d rderr %d wrerr %d\n",okcnt,failcnt,test_stat.total_nb_read_error,test_stat.total_nb_write_error);
 		}
 		else
 		{
 			failcnt++;
-			hxc_printf(0,"---!--->>Write Failed<<---!--- ok: %d fail: %d rderr %d\n",okcnt,failcnt,readerror,writeerror);
+			hxc_printf(0,"---!--->>Write Failed<<---!--- ok: %d fail: %d rderr %d\n",okcnt,failcnt,test_stat.total_nb_read_error,test_stat.total_nb_write_error);
 
 			trackseek(0,1,0);
 			calibratedrive(0);
@@ -434,6 +467,8 @@ int	testdrive(int drive,unsigned int * secttable, int trackformat,unsigned int *
 
 		precomp++;
 	}
+
+	return 0;
 }
 
 int getmaxsector(int sectorsize,int gap3,unsigned int bitrate,unsigned int rpm, int density)
@@ -441,37 +476,148 @@ int getmaxsector(int sectorsize,int gap3,unsigned int bitrate,unsigned int rpm, 
 	int tracksize;
 	long ssize,nbsect;
 
+	nbsect =0;
+
 	if(density)
 	{
+
 		tracksize = (unsigned long)((float)(bitrate)*( ((float)(60*125)/(float)rpm)));
 		ssize = 60 + sectorsize + 2 + gap3 + 4;
-		nbsect = (tracksize-62) / ssize;
+		
+		tracksize = tracksize - 80;
+		do
+		{
+			tracksize = tracksize - ssize;
+			if(tracksize>0)
+			{
+				nbsect++;
+			}
+		}while(tracksize>0);
 	}
 	else
-	{	
+	{
 		tracksize = (unsigned long)((float)(bitrate/2)*( ((float)(60*125)/(float)rpm)));
 		ssize = 31 + sectorsize + 2 + gap3 + 4;
-		nbsect = (tracksize-31) / ssize;
+
+		tracksize = tracksize - 38;
+		do
+		{
+			tracksize = tracksize - ssize;
+			if(tracksize>0)
+			{
+				nbsect++;
+			}
+		}while(tracksize>0);
 	}
 
 	return nbsect;
 }
 
-void format_write_read(int drive,int density,int bitrate)
+void printsize(unsigned long size)
+{
+	if(size < 1024)
+	{
+		hxc_printf(0,"%u B ",size);
+	}
+	else
+	{
+		if(size < 1048576)
+		{
+			hxc_printf(0,"%u.%.2d KB ",(size/1024),(((size-((size/1024)*1024))*100)/1024));
+		}
+		else
+		{
+			hxc_printf(0,"%u.",(size/(unsigned long)1048576));
+			hxc_printf(0,"%.3u MB ",((size-((size/1048576)*1048576))*1000)/1048576);
+		}
+	}
+}
+
+void print_stat(floppystat * floppystat)
+{
+	hxc_printf(0,"\n-------------------------------------------------------------------------------\n");
+	hxc_printf(0,"Test Duration : %lu s\n",(time_tick_count/91)*5);
+	hxc_printf(0,"Current Test Number : %lu\n",floppystat->cur_test_number);
+	hxc_printf(0,"\n");
+
+	hxc_printf(0,"Total number of Track Format : %lu\n",floppystat->total_nb_format);
+	hxc_printf(0,"Total number of Format Error: >>>> %lu <<<<<\n",floppystat->total_nb_format_error);
+	hxc_printf(0,"\n");
+
+	hxc_printf(0,"Total number of Write : %lu Sectors\n",floppystat->total_nb_write_sector);
+	hxc_printf(0,"Total Write Size : ");
+	printsize(floppystat->total_size_write_sector);
+	hxc_printf(0,"\n");
+	hxc_printf(0,"Total number of Write Error: >>>> %lu <<<<<\n",floppystat->total_nb_write_error);
+	hxc_printf(0,"\n");
+
+	hxc_printf(0,"Total number of Read : %lu Sectors\n",floppystat->total_nb_read_sector);
+	hxc_printf(0,"Total Read Size : ");
+	printsize(floppystat->total_size_read_sector);
+	hxc_printf(0,"\n");
+	hxc_printf(0,"Total number of Read Error: >>>> %lu <<<<<\n",floppystat->total_nb_read_error);
+	hxc_printf(0,"\n");
+	hxc_printf(0,"Total number of Data Error: >>>> %lu <<<<<\n",floppystat->total_nb_data_error);
+
+
+	hxc_printf(0,"\nLast Error Image %lu,Track %lu,Side %lu\n",test_stat.last_index_error,test_stat.last_track_error,test_stat.last_hide_error);
+
+	hxc_printf(0,"-------------------------------------------------------------------------------\n");
+}
+
+void write_read_test(int index)
+{
+	switch(index)
+	{
+		case 60:
+			hxc_printf(0,"1 - MFM500K.HFE\n");
+			testdrive(index,0,sector_size_table_mfm_500,1,sector_size_table_fm_500, 0,sector_size_table_fm_500,	0,500,0);
+		break;
+
+		case 61:
+			hxc_printf(0,"2 - MFM300K.HFE\n");
+			testdrive(index,0,sector_size_table_mfm_300,1,sector_size_table_fm_300, 0,sector_size_table_fm_300,	0,300,0);
+		break;
+
+		case 62:
+			hxc_printf(0,"3 - MFM250K.HFE\n");
+			testdrive(index,0,sector_size_table_mfm_250,1,sector_size_table_fm_250, 0,sector_size_table_fm_250, 0,250,0);
+		break;
+
+		case 63:
+			hxc_printf(0,"4 - FM500K.HFE\n");
+			testdrive(index,0,sector_size_table_fm_500,0,sector_size_table_mfm_500, 1,sector_size_table_mfm_500, 1,500,0);
+		break;
+
+		case 64:
+			hxc_printf(0,"5 - FM300K.HFE\n");
+			testdrive(index,0,sector_size_table_fm_300,0,sector_size_table_mfm_300, 1,sector_size_table_mfm_300, 1,300,0);
+		break;
+
+		case 65:			
+			hxc_printf(0,"6 - FM250K.HFE\n");			
+			testdrive(index,0,sector_size_table_fm_250,0,sector_size_table_mfm_250, 1,sector_size_table_mfm_250, 1,250,0);
+		break;		
+	}
+	
+	print_stat(&test_stat);
+}
+
+void format_write_read(int drive)
 {
 	int track,ret,i;
 	int side,nbsector,sector;
-	int sectorsize,precomp,failcnt;
+	int sectorsize,precomp;
 	unsigned char formatvalue,gap3,fvalue;
 	int t,sectshift;
-	unsigned int cycle,current_index,base_index;
+	unsigned int cycle,current_index,current_index2,base_index;
 	unsigned int filei, gapindex;
+	int bitrate;
+	int density;
 
 	precomp = 0;
-	failcnt = 0;
 	gap3 = 30;
 	formatvalue = 0x00;
-	sectorsize = 512;
 
 	cycle = 0;
 	sectshift = 0;
@@ -479,17 +625,26 @@ void format_write_read(int drive,int density,int bitrate)
 
 	gapindex = 0;
 
+	current_index2 = 60;
+
 	base_index = GetCurrentIndex();
 	hxc_printf(0,"Current index : %d\n",base_index);
 
 	do{
-	
+
+		write_read_test(current_index2);
+
+		current_index2++;
+		if(current_index2>65) current_index2 = 60;
+
 		if(!file_list[filei].index)
+		{			
 			filei = 0;
+		}
 
 		current_index = file_list[filei].index + base_index;
-		
-		bitrate = file_list[filei].bitrate;		
+
+		bitrate = file_list[filei].bitrate;
 		do
 		{
 			t=0;
@@ -510,7 +665,7 @@ void format_write_read(int drive,int density,int bitrate)
 			tlist[t].gap3 = 30 + (gapindex&0x3F);
 			tlist[t].density = density;
 			sectshift++;
-			tlist[t].nbsector = getmaxsector(tlist[t].sectorsize,tlist[t].gap3,bitrate,file_list[filei].rpm, density);		
+			tlist[t].nbsector = getmaxsector(tlist[t].sectorsize,tlist[t].gap3,bitrate,file_list[filei].rpm, density);
 		}while(tlist[t].nbsector<=0);
 		gapindex++;
 
@@ -522,7 +677,7 @@ void format_write_read(int drive,int density,int bitrate)
 				tlist[t].gap3 = 30 + (gapindex&0x3F);
 				tlist[t].sectorsize = 128<<(((sectshift%5)+density));
 				tlist[t].density = density;
-				tlist[t].nbsector = getmaxsector(tlist[t].sectorsize,tlist[t].gap3,bitrate,file_list[filei].rpm, density);			
+				tlist[t].nbsector = getmaxsector(tlist[t].sectorsize,tlist[t].gap3,bitrate,file_list[filei].rpm, density);
 				sectshift++;
 
 			}while(tlist[t].nbsector<=0);
@@ -531,11 +686,11 @@ void format_write_read(int drive,int density,int bitrate)
 		}
 		sectshift++;
 		gapindex++;
-		
+
 		printf(">>>>>>>>Change image : %d<<<<<<<<<<<<\n",current_index);
 		SetIndex(current_index);
 		wait(4);
-		
+
 		fvalue = formatvalue;
 		for(track=0;track<80;track++)
 		{
@@ -546,18 +701,29 @@ void format_write_read(int drive,int density,int bitrate)
 				nbsector = tlist[(track<<1) | side].nbsector;
 				density = tlist[(track<<1) | side].density;
 				gap3 = tlist[(track<<1) | side].gap3;
-			
+
 				hxc_printf(0,"Format:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
-				format_track(drive,density,track,side,nbsector,sectorsize,1,formatvalue,precomp,bitrate,gap3);
+				ret = format_track(drive,density,track,side,nbsector,sectorsize,1,formatvalue,precomp,bitrate,gap3);
 				fd_result(1);
+				if(ret)
+				{
+					test_stat.total_nb_format_error++;
+					hxc_printf(0,"Format Error Track %d Side %d...\n",track,side);
+
+					test_stat.last_index_error = current_index;
+					test_stat.last_track_error = track;
+					test_stat.last_hide_error = side;
+				}
+
 				formatvalue++;
 				precomp++;
+
+				test_stat.total_nb_format++;
+				test_stat.total_size_write_sector = test_stat.total_size_write_sector + (unsigned long)(nbsector * sectorsize);
 			}
 		}
 
-		hxc_printf(0,"-----------------------------------------------------\n");
-		hxc_printf(0,"---- Test %d - fail: %d rderr %d wrerr %d ----\n",cycle,failcnt,readerror,writeerror);
-		hxc_printf(0,"-----------------------------------------------------\n");
+		print_stat(&test_stat);
 
 		precomp++;
 		formatvalue = fvalue;
@@ -570,35 +736,45 @@ void format_write_read(int drive,int density,int bitrate)
 				nbsector = tlist[(track<<1) | side].nbsector;
 				density = tlist[(track<<1) | side].density;
 				gap3 = tlist[(track<<1) | side].gap3;
-			
+
 				hxc_printf(0,"Read:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
+				bufrd[0]=0xAA;
+				bufrd[1]=43;
 
 				sector = 0;
 				ret = read_sector(0,1+sector,drive,side,track,1,nbsector,sectorsize,density,bitrate,gap3);
 				fd_result(1);
 				if(ret)
 				{
-					readerror++;
+					test_stat.total_nb_read_error++;
 					hxc_printf(0,"Read Error Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
+
+					test_stat.last_index_error = current_index;
+					test_stat.last_track_error = track;
+					test_stat.last_hide_error = side;
 				}
 
 				memset(bufwr,formatvalue,nbsector*sectorsize);
 				if(memcmp(bufwr,bufrd,nbsector*sectorsize))
 				{
 					hxc_printf(0,"Data Error Track %d Side %d Sector %d Size :%d\n",track,side,1+sector,sectorsize);
-					readerror++;
-					writeerror++;
-					failcnt++;
+					test_stat.total_nb_data_error++;
+					test_stat.total_nb_format_error++;
+
+					test_stat.last_index_error = current_index;
+					test_stat.last_track_error = track;
+					test_stat.last_hide_error = side;
 				}
 
 				formatvalue++;
 				precomp++;
+
+				test_stat.total_nb_read_sector = test_stat.total_nb_read_sector + (unsigned long)nbsector;
+				test_stat.total_size_read_sector = test_stat.total_size_read_sector + (unsigned long)(nbsector * sectorsize);
 			}
 		}
 
-		hxc_printf(0,"-----------------------------------------------------\n");
-		hxc_printf(0,"---- Test %d - fail: %d rderr %d wrerr %d ----\n",cycle,failcnt,readerror,writeerror);
-		hxc_printf(0,"-----------------------------------------------------\n");
+		print_stat(&test_stat);
 
 		srand(fvalue);
 
@@ -625,17 +801,22 @@ void format_write_read(int drive,int density,int bitrate)
 				fd_result(1);
 				if(ret)
 				{
-					writeerror++;
+					test_stat.total_nb_write_error++;
 					hxc_printf(0,"Write Error Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
+
+					test_stat.last_index_error = current_index;
+					test_stat.last_track_error = track;
+					test_stat.last_hide_error = side;
 				}
 
 				precomp++;
+
+				test_stat.total_nb_write_sector = test_stat.total_nb_write_sector + (unsigned long)nbsector;
+				test_stat.total_size_write_sector = test_stat.total_size_write_sector + (unsigned long)(nbsector * sectorsize);
 			}
 		}
 
-		hxc_printf(0,"-----------------------------------------------------\n");
-		hxc_printf(0,"---- Test %d - fail: %d rderr %d wrerr %d ----\n",cycle,failcnt,readerror,writeerror);
-		hxc_printf(0,"-----------------------------------------------------\n");
+		print_stat(&test_stat);
 
 		srand(fvalue);
 		for(track=0;track<80;track++)
@@ -647,7 +828,7 @@ void format_write_read(int drive,int density,int bitrate)
 				nbsector = tlist[(track<<1) | side].nbsector;
 				density = tlist[(track<<1) | side].density;
 				gap3 = tlist[(track<<1) | side].gap3;
-			
+
 				hxc_printf(0,"(W) Read:%dx%d, T:%d, S:%d, Dens:%d, WComp:%d, Rate:%d, Gap:%d\n",sectorsize,nbsector,track,side,density,precomp&7,bitrate,gap3);
 
 				for(i=0;i<(nbsector*sectorsize);i++)
@@ -660,120 +841,62 @@ void format_write_read(int drive,int density,int bitrate)
 				fd_result(1);
 				if(ret)
 				{
-					readerror++;
+					test_stat.total_nb_read_error++;
 					hxc_printf(0,"Read Error Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
+
+					test_stat.last_index_error = current_index;
+					test_stat.last_track_error = track;
+					test_stat.last_hide_error = side;
 				}
 
 				if(memcmp(bufwr,bufrd,nbsector*sectorsize))
 				{
 					hxc_printf(0,"Write Data Error Track %d Side %d Sector %d Size :%d\n",track,side,1+sector,sectorsize);
-					readerror++;
-					writeerror++;
-					failcnt++;
+					test_stat.total_nb_write_error++;
+					test_stat.total_nb_data_error++;
+
+					test_stat.last_index_error = current_index;
+					test_stat.last_track_error = track;
+					test_stat.last_hide_error = side;
 				}
 
 				precomp++;
+
+				test_stat.total_nb_read_sector   = test_stat.total_nb_read_sector   + (unsigned long)nbsector;
+				test_stat.total_size_read_sector = test_stat.total_size_read_sector + (unsigned long)(nbsector * sectorsize);
 			}
 		}
 
-		hxc_printf(0,"-----------------------------------------------------\n");
-		hxc_printf(0,"---- Test %d - fail: %d rderr %d wrerr %d ----\n",cycle,failcnt,readerror,writeerror);
-		hxc_printf(0,"-----------------------------------------------------\n");
+		print_stat(&test_stat);
 
 		formatvalue++;
 
 		cycle++;
 		precomp++;
 		filei++;
+
+		test_stat.cur_test_number++;
 	}while(1);
 }
+
 int	main(int argc, char* argv[])
 {
-	unsigned char  c;
-
 	direct_access_cmd_sector dacs;
 
 	init_outputtxt();
 
-	writeerror=0;
-	readerror=0;
-	errorcnt=0;
-	
-	hxc_printf(0,"Test HxCFEDA\n");
+	hxc_printf(0,"--------------------------------------------------------\n");
+	hxc_printf(0,"-- HxC Floppy Emulator Endurance/Stress Test Software --\n");
+	hxc_printf(0,"--------------------------------------------------------\n");
+
+	memset(&test_stat,0,sizeof(floppystat));
 
 	memset(&dacs,0,sizeof(direct_access_cmd_sector));
 	sprintf(dacs.DAHEADERSIGNATURE,"HxCFEDA");
-
+	
 	init_floppyio();
 
-	hxc_printf(0,"Choose:\n");
-	hxc_printf(0,"1 - MFM500K.HFE\n");
-	hxc_printf(0,"2 - MFM300K.HFE\n");
-	hxc_printf(0,"3 - MFM250K.HFE\n");
-	hxc_printf(0,"4 - FM500K.HFE\n");
-	hxc_printf(0,"5 - FM300K.HFE\n");
-	hxc_printf(0,"6 - FM250K.HFE\n");
-	hxc_printf(0,"a - MFM500K.HFE (RO)\n");
-	hxc_printf(0,"b - MFM300K.HFE (RO)\n");
-	hxc_printf(0,"c - MFM250K.HFE (RO)\n");
-	hxc_printf(0,"d - FM500K.HFE (RO)\n");
-	hxc_printf(0,"e - FM300K.HFE (RO)\n");
-	hxc_printf(0,"f - FM250K.HFE (RO)\n");
-	hxc_printf(0,"T - Force Read\n");
-	hxc_printf(0,"F - Format Write Read\n");
-
-	do
-	{
-		c=getchar();
-		switch(c)
-		{
-			case '1':
-				testdrive(0,sector_size_table_mfm_500,1,sector_size_table_fm_500, 0,sector_size_table_fm_500,	0,500,0);
-			break;
-			case '2':
-				testdrive(0,sector_size_table_mfm_300,1,sector_size_table_fm_300, 0,sector_size_table_fm_300,	0,300,0);
-			break;
-			case '3':
-				testdrive(0,sector_size_table_mfm_250,1,sector_size_table_fm_250, 0,sector_size_table_fm_250, 0,250,0);
-			break;
-			case '4':
-				testdrive(0,sector_size_table_fm_500,0,sector_size_table_mfm_500, 1,sector_size_table_mfm_500, 1,500,0);
-			break;
-			case '5':
-				testdrive(0,sector_size_table_fm_300,0,sector_size_table_mfm_300, 1,sector_size_table_mfm_300, 1,300,0);
-			break;
-			case '6':
-				testdrive(0,sector_size_table_fm_250,0,sector_size_table_mfm_250, 1,sector_size_table_mfm_250, 1,250,0);
-			break;
-			case 'a':
-				testdrive(0,sector_size_table_mfm_500,1,sector_size_table_fm_500, 0,sector_size_table_fm_500, 0,500,1);
-			break;
-			case 'b':
-				testdrive(0,sector_size_table_mfm_300,1,sector_size_table_fm_300, 0,sector_size_table_fm_300, 0,300,1);
-			break;
-			case 'c':
-				testdrive(0,sector_size_table_mfm_250,1,sector_size_table_fm_250, 0,sector_size_table_fm_250, 0,250,1);
-			break;
-			case 'd':
-				testdrive(0,sector_size_table_fm_500,0,sector_size_table_mfm_500, 1,sector_size_table_mfm_500, 1,500,1);
-			break;
-			case 'e':
-				testdrive(0,sector_size_table_fm_300,0,sector_size_table_mfm_300, 1,sector_size_table_mfm_300, 1,300,1);
-			break;
-			case 'f':
-				testdrive(0,sector_size_table_fm_250,0,sector_size_table_mfm_250, 1,sector_size_table_mfm_250, 1,250,1);
-			break;
-			case 'T':
-				forceaccess();
-			break;
-			case 'F':
-				format_write_read(0,1,250);
-			break;
-
-			default:
-			break;
-		}
-	}while(1);
+	format_write_read(0);
 
 	return 0;
 }
