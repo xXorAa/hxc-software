@@ -97,6 +97,9 @@ typedef struct _filelist{
 	unsigned int density;
 	unsigned int density_T0S0;
 	unsigned int density_T0S1;
+
+	unsigned int disable;
+	unsigned int cycle;
 }filelist;
 
 typedef struct _floppystat{
@@ -123,85 +126,87 @@ floppystat test_stat;
 
 track_list tlist[180];
 
+unsigned long timetrack[180];
+
 filelist file_list[]=
 {
 	// MFM
-	{1,300,250,1,1,1},
-	{2,300,500,1,1,1},
-	{3,300,300,1,1,1},
-	{4,360,250,1,1,1},
-	{5,360,500,1,1,1},
-	{6,360,300,1,1,1},
+	{1,300,250,1,1,1,0,0},
+	{2,300,500,1,1,1,0,0},
+	{3,300,300,1,1,1,0,0},
+	{4,360,250,1,1,1,0,0},
+	{5,360,500,1,1,1,0,0},
+	{6,360,300,1,1,1,0,0},
 	// FM
-	{7,300,250,0,0,0},
-	{8,300,500,0,0,0},
-	{9,300,300,0,0,0},
-	{10,360,250,0,0,0},
-	{11,360,500,0,0,0},
-	{12,360,300,0,0,0},
+	{7,300,250,0,0,0,0,0},
+	{8,300,500,0,0,0,0,0},
+	{9,300,300,0,0,0,0,0},
+	{10,360,250,0,0,0,0,0},
+	{11,360,500,0,0,0,0,0},
+	{12,360,300,0,0,0,0,0},
 
 	//---------------//
 	// MFM (MIXED)
-	{13,300,250,1,0,0},
-	{14,300,500,1,0,0},
-	{15,300,300,1,0,0},
-	{16,360,250,1,0,0},
-	{17,360,500,1,0,0},
-	{18,360,300,1,0,0},
+	{13,300,250,1,0,0,0,0},
+	{14,300,500,1,0,0,0,0},
+	{15,300,300,1,0,0,0,0},
+	{16,360,250,1,0,0,0,0},
+	{17,360,500,1,0,0,0,0},
+	{18,360,300,1,0,0,0,0},
 	// FM (MIXED)
-	{19,300,250,0,1,1},
-	{20,300,500,0,1,1},
-	{21,300,300,0,1,1},
-	{22,360,250,0,1,1},
-	{23,360,500,0,1,1},
-	{24,360,300,0,1,1},
+	{19,300,250,0,1,1,0,0},
+	{20,300,500,0,1,1,0,0},
+	{21,300,300,0,1,1,0,0},
+	{22,360,250,0,1,1,0,0},
+	{23,360,500,0,1,1,0,0},
+	{24,360,300,0,1,1,0,0},
 
 	//---------------//
 	// MFM (MIXED)
-	{25,300,250,1,0,1},
-	{26,300,500,1,0,1},
-	{27,300,300,1,0,1},
-	{28,360,250,1,0,1},
-	{29,360,500,1,0,1},
-	{30,360,300,1,0,1},
+	{25,300,250,1,0,1,0,0},
+	{26,300,500,1,0,1,0,0},
+	{27,300,300,1,0,1,0,0},
+	{28,360,250,1,0,1,0,0},
+	{29,360,500,1,0,1,0,0},
+	{30,360,300,1,0,1,0,0},
 	// FM (MIXED)
-	{31,300,250,0,1,0},
-	{32,300,500,0,1,0},
-	{33,300,300,0,1,0},
-	{34,360,250,0,1,0},
-	{35,360,500,0,1,0},
-	{36,360,300,0,1,0},
+	{31,300,250,0,1,0,0,0},
+	{32,300,500,0,1,0,0,0},
+	{33,300,300,0,1,0,0,0},
+	{34,360,250,0,1,0,0,0},
+	{35,360,500,0,1,0,0,0},
+	{36,360,300,0,1,0,0,0},
 
 	//---------------//
 	// MFM (MIXED)
-	{37,300,250,1,1,0},
-	{38,300,500,1,1,0},
-	{39,300,300,1,1,0},
-	{40,360,250,1,1,0},
-	{41,360,500,1,1,0},
-	{42,360,300,1,1,0},
+	{37,300,250,1,1,0,0,0},
+	{38,300,500,1,1,0,0,0},
+	{39,300,300,1,1,0,0,0},
+	{40,360,250,1,1,0,0,0},
+	{41,360,500,1,1,0,0,0},
+	{42,360,300,1,1,0,0,0},
 	// FM (MIXED)
-	{43,300,250,0,0,1},
-	{44,300,500,0,0,1},
-	{45,300,300,0,0,1},
-	{46,360,250,0,0,1},
-	{47,360,500,0,0,1},
-	{48,360,300,0,0,1},
+	{43,300,250,0,0,1,0,0},
+	{44,300,500,0,0,1,0,0},
+	{45,300,300,0,0,1,0,0},
+	{46,360,250,0,0,1,0,0},
+	{47,360,500,0,0,1,0,0},
+	{48,360,300,0,0,1,0,0},
 
 	// Special
-	{49,150,250,1,1,1},
-	{50,150,300,1,1,1},
-	{51,600,250,1,1,1},
-	{52,600,500,1,1,1},
-	{53,600,300,1,1,1},
+	{49,150,250,1,1,1,0,0},
+	{50,150,300,1,1,1,0,0},
+	{51,600,250,1,1,1,0,0},
+	{52,600,500,1,1,1,0,0},
+	{53,600,300,1,1,1,0,0},
 
-	{54,150,250,0,0,0},
-	{55,150,300,0,0,0},
-	{56,600,250,0,0,0},
-	{57,600,500,0,0,0},
-	{58,600,300,0,0,0},
+	{54,150,250,0,0,0,0,0},
+	{55,150,300,0,0,0,0,0},
+	{56,600,250,0,0,0,0,0},
+	{57,600,500,0,0,0,0,0},
+	{58,600,300,0,0,0,0,0},
 
-	{0,0,0,0,0,0}
+	{0,0,0,0,0,0,0,0}
 };
 
 int	randomaccess(unsigned long nbsect)
@@ -235,6 +240,23 @@ int	randomaccess(unsigned long nbsect)
 
 	hxc_printf(0,"Ok!!!!\n");
 	return	0;
+}
+
+void test_step()
+{
+	int track;
+	int side;
+
+	side =0;
+	do
+	{
+		for(track=0;track<80;track++)
+		{
+			hxc_printf(0,"Track: %d, Side: %d\n",track,side);
+			trackseek(0,track,side);
+			wait(1);
+		}
+	}while(1);
 }
 
 int forceaccess()
@@ -607,7 +629,7 @@ void format_write_read(int drive)
 {
 	int track,ret,i;
 	int side,nbsector,sector;
-	int sectorsize,precomp;
+	int sectorsize,precomp,sprecomp;
 	unsigned char formatvalue,gap3,fvalue;
 	int t,sectshift;
 	unsigned int cycle,current_index,current_index2,base_index;
@@ -616,6 +638,7 @@ void format_write_read(int drive)
 	int density;
 
 	precomp = 0;
+	sprecomp = 0;
 	gap3 = 30;
 	formatvalue = 0x00;
 
@@ -637,10 +660,17 @@ void format_write_read(int drive)
 		current_index2++;
 		if(current_index2>65) current_index2 = 60;
 
-		if(!file_list[filei].index)
-		{			
-			filei = 0;
-		}
+		do
+		{
+			if(!file_list[filei].index)
+			{
+				filei = 0;
+			}
+
+			if(file_list[filei].disable)
+				filei++;
+
+		}while(file_list[filei].disable || !file_list[filei].index);
 
 		current_index = file_list[filei].index + base_index;
 
@@ -692,6 +722,7 @@ void format_write_read(int drive)
 		wait(4);
 
 		fvalue = formatvalue;
+		sprecomp = precomp;
 		for(track=0;track<80;track++)
 		{
 			trackseek(drive,track,side);
@@ -713,6 +744,8 @@ void format_write_read(int drive)
 					test_stat.last_index_error = current_index;
 					test_stat.last_track_error = track;
 					test_stat.last_hide_error = side;
+
+					file_list[filei].disable = 1;
 				}
 
 				formatvalue++;
@@ -725,7 +758,7 @@ void format_write_read(int drive)
 
 		print_stat(&test_stat);
 
-		precomp++;
+		precomp = sprecomp;
 		formatvalue = fvalue;
 		for(track=0;track<80;track++)
 		{
@@ -752,6 +785,8 @@ void format_write_read(int drive)
 					test_stat.last_index_error = current_index;
 					test_stat.last_track_error = track;
 					test_stat.last_hide_error = side;
+
+					file_list[filei].disable = 1;
 				}
 
 				memset(bufwr,formatvalue,nbsector*sectorsize);
@@ -764,6 +799,8 @@ void format_write_read(int drive)
 					test_stat.last_index_error = current_index;
 					test_stat.last_track_error = track;
 					test_stat.last_hide_error = side;
+
+					file_list[filei].disable = 1;
 				}
 
 				formatvalue++;
@@ -778,6 +815,7 @@ void format_write_read(int drive)
 
 		srand(fvalue);
 
+		precomp = sprecomp;
 		for(track=0;track<80;track++)
 		{
 			trackseek(drive,track,side);
@@ -794,6 +832,14 @@ void format_write_read(int drive)
 				{
 					bufwr[i] = rand();
 				}
+
+				timetrack[(track<<1) | side] = time_tick_count;
+
+				for(i=0;i<(nbsector);i++)
+				{
+					sprintf(&bufwr[i*sectorsize],"--- T%.2dH%dS%.2d,%.4dx%.2d,Dens:%d,Rate:%dkbs,Gap:%.2d,PComp:%d,filei:%d,Cycle:%.3d,fCycle:%.3d,Tim:%.8lu,Curtest:%.4lu ---",track,side,i+1,sectorsize,nbsector,density,bitrate,gap3,precomp&7,filei,cycle,file_list[filei].cycle,timetrack[(track<<1) | side],test_stat.cur_test_number);
+				}
+
 				memset(bufrd,0,nbsector*sectorsize);
 
 				sector = 0;
@@ -807,6 +853,8 @@ void format_write_read(int drive)
 					test_stat.last_index_error = current_index;
 					test_stat.last_track_error = track;
 					test_stat.last_hide_error = side;
+
+					file_list[filei].disable = 1;
 				}
 
 				precomp++;
@@ -818,6 +866,7 @@ void format_write_read(int drive)
 
 		print_stat(&test_stat);
 
+		precomp = sprecomp;
 		srand(fvalue);
 		for(track=0;track<80;track++)
 		{
@@ -835,6 +884,10 @@ void format_write_read(int drive)
 				{
 					bufwr[i] = rand();
 				}
+				for(i=0;i<(nbsector);i++)
+				{
+					sprintf(&bufwr[i*sectorsize],"--- T%.2dH%dS%.2d,%.4dx%.2d,Dens:%d,Rate:%dkbs,Gap:%.2d,PComp:%d,filei:%d,Cycle:%.3d,fCycle:%.3d,Tim:%.8lu,Curtest:%.4lu ---",track,side,i+1,sectorsize,nbsector,density,bitrate,gap3,precomp&7,filei,cycle,file_list[filei].cycle,timetrack[(track<<1) | side],test_stat.cur_test_number);
+				}
 
 				sector = 0;
 				ret = read_sector(0,1+sector,drive,side,track,1,nbsector,sectorsize,density,bitrate,gap3);
@@ -847,6 +900,8 @@ void format_write_read(int drive)
 					test_stat.last_index_error = current_index;
 					test_stat.last_track_error = track;
 					test_stat.last_hide_error = side;
+
+					file_list[filei].disable = 1;
 				}
 
 				if(memcmp(bufwr,bufrd,nbsector*sectorsize))
@@ -858,6 +913,8 @@ void format_write_read(int drive)
 					test_stat.last_index_error = current_index;
 					test_stat.last_track_error = track;
 					test_stat.last_hide_error = side;
+
+					file_list[filei].disable = 1;
 				}
 
 				precomp++;
@@ -867,9 +924,13 @@ void format_write_read(int drive)
 			}
 		}
 
+		file_list[filei].cycle++;
+
 		print_stat(&test_stat);
 
 		formatvalue++;
+
+		precomp = sprecomp;
 
 		cycle++;
 		precomp++;

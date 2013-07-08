@@ -240,9 +240,9 @@ unsigned char waitirq()
 	ticktimer = 0;
 	do
 	{
-	}while( (!intflag) && (ticktimer<(18*3)) );
+	}while( (!intflag) && (ticktimer<(18*8)) );
 
-	if(ticktimer>=(18*3))
+	if(ticktimer>=(18*8))
 	{
 		hxc_printf(0,"Waitirq Timeout\n");
 		return  0;
