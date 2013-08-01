@@ -244,7 +244,7 @@ enum DiskFormat	VolGetFormat(HWND dlg)
 			{
 				for(side=0;side<hxcfe_getNumberOfSide(hxcfe,fp);side++)
 				{
-					hxcfe_readSectorData(ss,track,side,0,nbsect,512,AMIGA_MFM_ENCODING,&floppybuffer[(512*nbsect)*((track*hxcfe_getNumberOfSide(hxcfe,fp))+side)]);
+					hxcfe_readSectorData(ss,track,side,0,nbsect,512,AMIGA_MFM_ENCODING,&floppybuffer[(512*nbsect)*((track*hxcfe_getNumberOfSide(hxcfe,fp))+side)],0);
 				}
 			}
 				
