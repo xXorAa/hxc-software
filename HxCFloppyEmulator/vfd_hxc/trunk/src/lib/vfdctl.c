@@ -1380,7 +1380,7 @@ DWORD WINAPI VfdOpenImage(
 			{
 				for(side=0;side<hxcfe_getNumberOfSide(hxcfe,fp);side++)
 				{
-					hxcfe_readSectorData(ss,track,side,1,nbsect,512,ISOIBM_MFM_ENCODING,&image_buf[(512*nbsect)*((track*hxcfe_getNumberOfSide(hxcfe,fp))+side)]);
+					hxcfe_readSectorData(ss,track,side,1,nbsect,512,ISOIBM_MFM_ENCODING,&image_buf[(512*nbsect)*((track*hxcfe_getNumberOfSide(hxcfe,fp))+side)],0);
 				}
 			}
 			
