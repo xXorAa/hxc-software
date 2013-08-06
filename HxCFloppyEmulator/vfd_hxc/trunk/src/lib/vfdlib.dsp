@@ -7,19 +7,19 @@
 CFG=lib - Win32 Debug
 !MESSAGE This is not a valid makefile. To build this project using NMAKE,
 !MESSAGE use the Export Makefile command and run
-!MESSAGE
+!MESSAGE 
 !MESSAGE NMAKE /f "vfdlib.mak".
-!MESSAGE
+!MESSAGE 
 !MESSAGE You can specify a configuration when running NMAKE
 !MESSAGE by defining the macro CFG on the command line. For example:
-!MESSAGE
+!MESSAGE 
 !MESSAGE NMAKE /f "vfdlib.mak" CFG="lib - Win32 Debug"
-!MESSAGE
+!MESSAGE 
 !MESSAGE Possible choices for configuration are:
-!MESSAGE
+!MESSAGE 
 !MESSAGE "lib - Win32 Release" (based on "Win32 (x86) Dynamic-Link Library")
 !MESSAGE "lib - Win32 Debug" (based on "Win32 (x86) Dynamic-Link Library")
-!MESSAGE
+!MESSAGE 
 
 # Begin Project
 # PROP AllowPerConfigDependencies 0
@@ -55,13 +55,6 @@ BSC32=bscmake.exe
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /machine:I386
 # ADD LINK32 zlibstat.lib version.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib ole32.lib shell32.lib user32.lib ../../../../build/libhxcfe.lib /nologo /version:2.1 /dll /pdb:none /machine:I386 /nodefaultlib:"libc" /out:"..\..\..\..\build\vfd.dll" /libpath:"../zlib" /release
-# Begin Special Build Tool
-OutDir=.\Release
-TargetPath=..\..\..\..\build\vfd.dll
-SOURCE="$(InputPath)"
-#PostBuild_Desc=Copying the target...
-#PostBuild_Cmds=xcopy $(TargetPath) ..\$(OutDir)\ /y /d /f
-# End Special Build Tool
 
 !ELSEIF  "$(CFG)" == "lib - Win32 Debug"
 
@@ -89,15 +82,8 @@ LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /dll /debug /machine:I386 /pdbtype:sept
 # ADD LINK32 zlibstat.lib version.lib advapi32.lib comctl32.lib comdlg32.lib gdi32.lib ole32.lib shell32.lib user32.lib ../../../../build/libhxcfe.lib /nologo /dll /pdb:none /debug /machine:I386 /nodefaultlib:"libc" /out:"..\..\..\..\build\vfd.dll" /libpath:"../zlib"
 # SUBTRACT LINK32 /verbose
-# Begin Special Build Tool
-OutDir=.\Debug
-TargetPath=..\..\..\..\build\vfd.dll
-SOURCE="$(InputPath)"
-#PostBuild_Desc=Copying the target...
-#PostBuild_Cmds=xcopy $(TargetPath) ..\$(OutDir)\ /y /d /f
-# End Special Build Tool
 
-!ENDIF
+!ENDIF 
 
 # Begin Target
 
@@ -211,9 +197,9 @@ SOURCE=.\vfdlib.rs
 !IF  "$(CFG)" == "lib - Win32 Release"
 
 # PROP Ignore_Default_Tool 1
-USERDEP__VFDLI="../inc/vfdver.h"	"../inc/vfdver.rc"	"vfdlib.h"	"vfdmsg.rc"	"vfdlib.rc"
+USERDEP__VFDLI="../inc/vfdver.h"	"../inc/vfdver.rc"	"vfdlib.h"	"vfdmsg.rc"	"vfdlib.rc"	
 # Begin Custom Build - Compiling Resource - $(InputPath)
-IntDir=.\Release
+IntDir=.\..\..\..\..\build\Release_vfdlib
 InputPath=.\vfdlib.rs
 InputName=vfdlib
 
@@ -225,9 +211,9 @@ InputName=vfdlib
 !ELSEIF  "$(CFG)" == "lib - Win32 Debug"
 
 # PROP Ignore_Default_Tool 1
-USERDEP__VFDLI="../inc/vfdver.h"	"../inc/vfdver.rc"	"vfdlib.h"	"vfdmsg.rc"	"vfdlib.rc"
+USERDEP__VFDLI="../inc/vfdver.h"	"../inc/vfdver.rc"	"vfdlib.h"	"vfdmsg.rc"	"vfdlib.rc"	
 # Begin Custom Build - Compiling Resource - $(InputPath)
-IntDir=.\Debug
+IntDir=.\..\..\..\..\build\Debug_vfdlib
 InputPath=.\vfdlib.rs
 InputName=vfdlib
 
@@ -236,7 +222,7 @@ InputName=vfdlib
 
 # End Custom Build
 
-!ENDIF
+!ENDIF 
 
 # End Source File
 # Begin Source File
