@@ -113,6 +113,7 @@ typedef struct _floppystat{
 	unsigned long total_size_write_sector;
 
 	unsigned long total_nb_read_error;
+	unsigned long total_nb_read_retry;
 	unsigned long total_nb_write_error;
 	unsigned long total_nb_format_error;
 	unsigned long total_nb_data_error;
@@ -446,6 +447,7 @@ int	testdrive(int index,int drive,unsigned int * secttable, int trackformat,unsi
 				c++;
 			}while(ret && c<5);
 
+			test_stat.total_nb_read_retry = test_stat.total_nb_read_retry + (c - 1);
 			test_stat.total_nb_read_sector++;
 			test_stat.total_size_read_sector = test_stat.total_size_read_sector + sectortable[i];
 
@@ -470,14 +472,14 @@ int	testdrive(int index,int drive,unsigned int * secttable, int trackformat,unsi
 		{
 			okcnt++;
 			if(readonly)
-				hxc_printf(0,"---------Read  ok--------- ok: %d fail: %d rderr %d wrerr %d\n",okcnt,failcnt,test_stat.total_nb_read_error,test_stat.total_nb_write_error);
+				hxc_printf(0,"---------Read  ok--------- ok: %d fail: %d rderr %d (retry %d) wrerr %d\n",okcnt,failcnt,test_stat.total_nb_read_error,test_stat.total_nb_read_retry,test_stat.total_nb_write_error);
 			else
-				hxc_printf(0,"---------Write ok--------- ok: %d fail: %d rderr %d wrerr %d\n",okcnt,failcnt,test_stat.total_nb_read_error,test_stat.total_nb_write_error);
+				hxc_printf(0,"---------Write ok--------- ok: %d fail: %d rderr %d (retry %d) wrerr %d\n",okcnt,failcnt,test_stat.total_nb_read_error,test_stat.total_nb_read_retry,test_stat.total_nb_write_error);
 		}
 		else
 		{
 			failcnt++;
-			hxc_printf(0,"---!--->>Write Failed<<---!--- ok: %d fail: %d rderr %d\n",okcnt,failcnt,test_stat.total_nb_read_error,test_stat.total_nb_write_error);
+			hxc_printf(0,"---!--->>Write Failed<<---!--- ok: %d fail: %d rderr %d (retry %d)\n",okcnt,failcnt,test_stat.total_nb_read_error,test_stat.total_nb_write_error,test_stat.total_nb_read_retry);
 
 			trackseek(0,1,0);
 			calibratedrive(0);
@@ -577,6 +579,8 @@ void print_stat(floppystat * floppystat)
 	hxc_printf(0,"Total Read Size : ");
 	printsize(floppystat->total_size_read_sector);
 	hxc_printf(0,"\n");
+	hxc_printf(0,"Total number of Read Retry: >>>> %lu <<<<<\n",floppystat->total_nb_read_retry);
+	hxc_printf(0,"\n");
 	hxc_printf(0,"Total number of Read Error: >>>> %lu <<<<<\n",floppystat->total_nb_read_error);
 	hxc_printf(0,"\n");
 	hxc_printf(0,"Total number of Data Error: >>>> %lu <<<<<\n",floppystat->total_nb_data_error);
@@ -635,7 +639,7 @@ void format_write_read(int drive)
 	unsigned int cycle,current_index,current_index2,base_index;
 	unsigned int filei, gapindex;
 	int bitrate;
-	int density;
+	int density,retry;
 
 	precomp = 0;
 	sprecomp = 0;
@@ -775,8 +779,20 @@ void format_write_read(int drive)
 				bufrd[1]=43;
 
 				sector = 0;
-				ret = read_sector(0,1+sector,drive,side,track,1,nbsector,sectorsize,density,bitrate,gap3);
-				fd_result(1);
+				retry = 0;
+				do
+				{
+					ret = read_sector(0,1+sector,drive,side,track,1,nbsector,sectorsize,density,bitrate,gap3);
+					fd_result(1);
+					retry++;
+
+					if(ret && (retry < 3))
+						hxc_printf(0,"Read Retry Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
+
+				}while(ret && (retry < 3) );
+
+				test_stat.total_nb_read_error = test_stat.total_nb_read_error + (retry-1);
+
 				if(ret)
 				{
 					test_stat.total_nb_read_error++;
@@ -890,8 +906,20 @@ void format_write_read(int drive)
 				}
 
 				sector = 0;
-				ret = read_sector(0,1+sector,drive,side,track,1,nbsector,sectorsize,density,bitrate,gap3);
-				fd_result(1);
+				retry = 0;
+				do
+				{
+					ret = read_sector(0,1+sector,drive,side,track,1,nbsector,sectorsize,density,bitrate,gap3);
+					fd_result(1);
+					retry++;
+
+					if(ret && (retry < 3))
+						hxc_printf(0,"Read Retry Track %d Side %d Sector %d Size :%d Retry...\n",track,side,1+sector,sectorsize);
+
+				}while(ret && (retry < 3) );
+
+				test_stat.total_nb_read_error = test_stat.total_nb_read_error + (retry-1);
+
 				if(ret)
 				{
 					test_stat.total_nb_read_error++;
