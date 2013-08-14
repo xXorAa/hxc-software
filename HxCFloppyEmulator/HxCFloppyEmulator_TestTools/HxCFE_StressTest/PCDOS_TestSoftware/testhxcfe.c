@@ -791,7 +791,7 @@ void format_write_read(int drive)
 
 				}while(ret && (retry < 3) );
 
-				test_stat.total_nb_read_error = test_stat.total_nb_read_error + (retry-1);
+				test_stat.total_nb_read_retry = test_stat.total_nb_read_retry + (retry-1);
 
 				if(ret)
 				{
@@ -918,7 +918,7 @@ void format_write_read(int drive)
 
 				}while(ret && (retry < 3) );
 
-				test_stat.total_nb_read_error = test_stat.total_nb_read_error + (retry-1);
+				test_stat.total_nb_read_retry = test_stat.total_nb_read_retry + (retry-1);
 
 				if(ret)
 				{
