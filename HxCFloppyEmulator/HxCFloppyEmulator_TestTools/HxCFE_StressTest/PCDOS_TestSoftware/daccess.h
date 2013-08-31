@@ -44,3 +44,4 @@ typedef struct DirectoryEntry_ {
 
 int GetCurrentIndex();
 int SetIndex(unsigned short index);
+int GetHxCVer(char * version);

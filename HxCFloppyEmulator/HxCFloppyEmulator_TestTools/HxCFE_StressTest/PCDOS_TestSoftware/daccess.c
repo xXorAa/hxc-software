@@ -194,3 +194,36 @@ int SetIndex(unsigned short index)
 
 	return	0;
 }
+
+int GetHxCVer(char * version)
+{
+	unsigned char  sector[512];
+	unsigned short current_index;
+	int ret;
+
+	direct_access_cmd_sector    * dacs;
+	direct_access_status_sector * dass;
+
+	dass=(direct_access_status_sector *)sector;
+	dacs=(direct_access_cmd_sector *)sector;
+
+	trackseek(0,255,0);
+	
+	memset(bufwr,0,512);	
+	ret = read_sector(0x00,0x00,0x00,0x00,255,0,1,512,1,250,30);
+	fd_result(1);
+	if(ret)
+	{
+		hxc_printf(0,"Read Error Status Reg !\n");
+	}
+	memcpy(&sector,bufrd,512);
+	
+	if(version)
+		strcpy(version,dass->FIRMWAREVERSION);
+	
+	hxc_printf(0,"Firmware version : %s\n",dass->FIRMWAREVERSION);
+	
+	trackseek(0,0,0);
+
+	return	0;
+}

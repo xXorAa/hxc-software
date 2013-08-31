@@ -433,11 +433,11 @@ int	testdrive(int index,int drive,unsigned int * secttable, int trackformat,unsi
 			c=0;
 			do
 			{
+				memset(bufrd,0,sectortable[i]);
 				ret = read_sector(deleted,1+i,drive,head,track,1,1,sectortable[i],density,bitrate,gap3);
 				fd_result(1);
 				if(ret)
-				{
-					test_stat.total_nb_read_error++;
+				{					
 					hxc_printf(0,"Read Error Track %d Side %d Sector %d Deleted:%d Size :%d Retry...\n",track,head,1+i,deleted,sectortable[i]);
 
 					test_stat.last_index_error = index;
@@ -445,7 +445,12 @@ int	testdrive(int index,int drive,unsigned int * secttable, int trackformat,unsi
 					test_stat.last_hide_error = head;					
 				}
 				c++;
-			}while(ret && c<5);
+			}while(ret &&  c < 3);
+
+			if(ret)
+			{
+				test_stat.total_nb_read_error++;
+			}
 
 			test_stat.total_nb_read_retry = test_stat.total_nb_read_retry + (c - 1);
 			test_stat.total_nb_read_sector++;
@@ -479,7 +484,7 @@ int	testdrive(int index,int drive,unsigned int * secttable, int trackformat,unsi
 		else
 		{
 			failcnt++;
-			hxc_printf(0,"---!--->>Write Failed<<---!--- ok: %d fail: %d rderr %d (retry %d)\n",okcnt,failcnt,test_stat.total_nb_read_error,test_stat.total_nb_write_error,test_stat.total_nb_read_retry);
+			hxc_printf(0,"---!--->>Write Failed<<---!--- ok: %d fail: %d rderr %d (retry %d) wrerr %d\n",okcnt,failcnt,test_stat.total_nb_read_error,test_stat.total_nb_write_error,test_stat.total_nb_read_retry,test_stat.total_nb_write_error);
 
 			trackseek(0,1,0);
 			calibratedrive(0);
@@ -984,6 +989,8 @@ int	main(int argc, char* argv[])
 	sprintf(dacs.DAHEADERSIGNATURE,"HxCFEDA");
 	
 	init_floppyio();
+
+	GetHxCVer(0);
 
 	format_write_read(0);
 
