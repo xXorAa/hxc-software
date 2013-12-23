@@ -8,3 +8,5 @@ void init_floppyio(void);
 void fdc_specify(unsigned char t);
 void reset_drive(unsigned char drive);
 int  fd_result(int sensei);
+void selectdrive(unsigned char drive);
+

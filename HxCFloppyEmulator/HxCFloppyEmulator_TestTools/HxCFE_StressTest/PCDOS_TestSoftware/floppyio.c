@@ -283,6 +283,15 @@ void initdma(unsigned char mode, unsigned count)
 	outp(DMA1_CHAN, 0x02);
 }
 
+void selectdrive(unsigned char drive)
+{
+	if(drive<4)
+		outp(FDC_DOR, DORsel[drive&3] | 0xC );
+	else
+		outp(FDC_DOR, 0x0C );
+		
+}
+
 void calibratedrive(unsigned char drive)
 {
 	intflag=0;

@@ -72,6 +72,9 @@ extern unsigned char *bufwr;
 
 extern unsigned short ticktimer;
 
+
+unsigned int sector_size_table_mfm_500_26s[]={256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,256,0};
+
 unsigned int sector_size_table_mfm_500[]={256,1024,256,512,256,512,256,1024,512,256,1024,256,256,512,512,512,1024,1024,0};
 unsigned int sector_size_table_fm_500[]={256,1024,128,256,128,512,128,128,128,256,512,512,256,1024,128,0};
 
@@ -210,6 +213,24 @@ filelist file_list[]=
 	{0,0,0,0,0,0,0,0}
 };
 
+void wait(unsigned char second)
+{
+	ticktimer = 0;
+	do
+	{
+
+	}while(ticktimer < (second*18) );
+}
+
+void waittick(unsigned short tick)
+{
+	ticktimer = 0;
+	do
+	{
+
+	}while(ticktimer < tick );
+}
+
 int	randomaccess(unsigned long nbsect)
 {
 	unsigned long i;
@@ -241,6 +262,128 @@ int	randomaccess(unsigned long nbsect)
 
 	hxc_printf(0,"Ok!!!!\n");
 	return	0;
+}
+
+void test_track00_()
+{
+	int i;
+	
+	i=0;
+	for(;;)
+	{
+		selectdrive(0);
+		if(!(i&3))
+			waittick(1);
+		i++;
+		
+		if((i&7))
+			selectdrive(4);
+		if(!(i&3))
+			waittick(1);
+		i++;	
+		
+		
+		selectdrive(1);
+		if(!(i&3))
+			waittick(1);
+		i++;
+		
+		if((i&7))
+			selectdrive(4);
+		
+		if(!(i&3))
+			waittick(1);
+		i++;		
+		
+		i++;
+/*		calibratedrive(0);
+	
+		calibratedrive(1);
+		
+		calibratedrive(2);
+		
+		calibratedrive(3);*/
+		
+//		waittick(1);
+	}
+
+}
+
+void swait()
+{
+	unsigned short w;
+	
+	w = 0;
+	
+	do
+	{
+		w--;
+	}while(w);
+}
+
+void test_track00()
+{
+	int i;
+	
+	i=0;
+	for(;;)
+	{
+		selectdrive(0);
+		swait();
+		
+		selectdrive(4);
+		swait();
+
+		selectdrive(0);
+		swait();
+		
+		selectdrive(4);
+		swait();
+
+		selectdrive(0);
+		swait();
+		
+		selectdrive(4);
+		swait();
+
+		selectdrive(0);
+		swait();
+		
+		selectdrive(4);
+		swait();
+		
+		selectdrive(1);
+		swait();
+		
+		selectdrive(4);
+		swait();
+////////////////////////////
+		selectdrive(1);
+		swait();
+		
+		selectdrive(4);
+		swait();		
+
+		selectdrive(1);
+		swait();
+		
+		selectdrive(4);
+		swait();		
+		
+		selectdrive(1);
+		swait();
+		
+		selectdrive(4);
+		swait();		
+		
+		selectdrive(1);
+		swait();
+		
+		selectdrive(4);
+		swait();		
+		
+		
+	}
 }
 
 void test_step()
@@ -333,13 +476,68 @@ int forceaccess()
 
 }
 
-void wait(unsigned char second)
+int seektest(int drive)
 {
-	ticktimer = 0;
-	do
-	{
+	int testcnt;
 
-	}while(ticktimer < (second*18) );
+	hxc_printf(0,"Seek test...\n");
+	for(testcnt=0;testcnt<10;testcnt++)
+	{	
+		trackseek(drive,10,0);
+		trackseek(drive,20,0);
+		
+		trackseek(drive,15,0);
+		trackseek(drive,30,0);
+		
+		trackseek(drive,20,0);
+		trackseek(drive,40,0);
+		
+		trackseek(drive,25,0);
+		trackseek(drive,50,0);
+		
+		trackseek(drive,30,0);
+		trackseek(drive,60,0);
+		
+		trackseek(drive,35,0);
+		trackseek(drive,70,0);
+		
+		trackseek(drive,70,0);
+		trackseek(drive,75,0);	
+	}
+
+	for(testcnt=0;testcnt<60;testcnt++)
+	{	
+		trackseek(drive,70,0);
+		trackseek(drive,72,0);
+	}
+
+	trackseek(drive,40,0);
+
+	for(testcnt=0;testcnt<10;testcnt++)
+	{	
+		trackseek(drive,50,0);
+		waittick(testcnt);
+		trackseek(drive,52,0);
+		waittick(testcnt);
+	}
+
+	for(testcnt=10;testcnt<80;testcnt++)
+	{	
+		trackseek(drive,testcnt,0);
+		waittick(3);
+	}
+
+	for(testcnt=80;testcnt>10;testcnt--)
+	{	
+		trackseek(drive,testcnt,0);
+		waittick(3);
+	}
+	
+	trackseek(drive,40,0);
+	
+	wait(1);
+
+	return 0;
 }
 
 int	testdrive(int index,int drive,unsigned int * secttable, int trackformat,unsigned int * secttableT0S0, int trackformatT0S0,unsigned int * secttableT0S1, int trackformatT0S1,int bitrate,int readonly)
@@ -360,7 +558,9 @@ int	testdrive(int index,int drive,unsigned int * secttable, int trackformat,unsi
 
 	SetIndex(index);
 	wait(4);
-	
+
+	seektest(drive);
+
 	for(testcnt=0;testcnt<30;testcnt++)
 	{
 		track=(rand()%80);
@@ -726,7 +926,7 @@ void format_write_read(int drive)
 		sectshift++;
 		gapindex++;
 
-		printf(">>>>>>>>Change image : %d<<<<<<<<<<<<\n",current_index);
+		hxc_printf(0,">>>>>>>>Change image : %d<<<<<<<<<<<<\n",current_index);
 		SetIndex(current_index);
 		wait(4);
 
@@ -993,6 +1193,13 @@ int	main(int argc, char* argv[])
 	GetHxCVer(0);
 
 	format_write_read(0);
+
+	//forceaccess();
+/*	for(;;)
+	{
+	
+	test_track00();
+	}*/
 
 	return 0;
 }
