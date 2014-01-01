@@ -1,6 +1,6 @@
 /*
 //
-// Copyright (C) 2009, 2010, 2011 Jean-François DEL NERO
+// Copyright (C) 2009-2014 Jean-François DEL NERO
 //
 // This file is part of the HxCFloppyEmulator file selector.
 //
@@ -432,7 +432,7 @@ int display_credits(int i)
 	int j;
 	char *strings[] = {
 		"SDCard HxC Floppy Emulator file selector for Atari ST",
-		"(c) 2006-2012 Jean-Francois DEL NERO (HxC2001) / Gilles Bouthenot",
+		"(c) 2006-2014 Jean-Francois DEL NERO (HxC2001) / Gilles Bouthenot",
 		"Official website: http://www.hxc2001.com/",
 		"Email: hxc2001@hxc2001.com"
 	};
