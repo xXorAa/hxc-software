@@ -55,7 +55,7 @@ DISKLOADERPLUGINS = copyqm_loader.o crctable.o adf_loader.o adz_loader.o amigado
 					camputerslynxldf_loader.o vegasdsk_loader.o dmk_loader.o oldextadf_loader.o extadf_loader.o fdi_loader.o ssd_dsd_loader.o adl_loader.o \
 					krz_loader.o w30_loader.o fei_loader.o svd_loader.o gkh_loader.o imz_loader.o raw_loader.o system24_loader.o kryofluxstream_loader.o kryofluxstream.o \
 					fzf_loader.o apple2_nib_loader.o apple2_do_loader.o sdd_speccydos_loader.o arburg_raw_loader.o scp_loader.o bmp_loader.o xml_loader.o \
-					flppcm_loader.o stw_loader.o
+					flppcm_loader.o stw_loader.o ql_loader.o
 
 DISKWRITERPLUGINS = cpcdsk_writer.o mfm_writer.o hfe_writer.o raw_writer.o afi_writer.o exthfe_writer.o imd_writer.o vtr_writer.o ti99v9t9_writer.o \
 					jv3_writer.o dmk_writer.o d88_writer.o msa_writer.o hfe_hddd_a2_writer.o arburg_raw_writer.o sdd_speccydos_writer.o scp_writer.o \
@@ -437,6 +437,9 @@ fei_loader.o : $(BASEDIR)/loaders/fei_loader/fei_loader.c $(BASEDIR)/loaders/fei
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 system24_loader.o : $(BASEDIR)/loaders/system24_loader/system24_loader.c $(BASEDIR)/loaders/system24_loader/system24_loader.h
+	$(CC) -o $@ -c $< $(CFLAGS)
+
+ql_loader.o : $(BASEDIR)/loaders/ql_loader/ql_loader.c $(BASEDIR)/loaders/ql_loader/ql_loader.h
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 vfile.o : $(BASEDIR)/thirdpartylibs/xdms/vfile.c $(BASEDIR)/thirdpartylibs/xdms/vfile.h

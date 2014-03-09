@@ -1,6 +1,6 @@
 /*
 //
-// Copyright (C) 2006-2014 Jean-François DEL NERO
+// Copyright (C) 2006-2014 Jean-Franï¿½ois DEL NERO
 //
 // This file is part of the HxCFloppyEmulator library
 //
@@ -103,6 +103,7 @@
 #include "./loaders/xml_loader/xml_loader.h"
 #include "./loaders/flppcm_loader/flppcm_loader.h"
 #include "./loaders/stw_loader/stw_loader.h"
+#include "./loaders/ql_loader/ql_loader.h"
 
 const GETPLUGININFOS staticplugins[]=
 {
@@ -189,5 +190,6 @@ const GETPLUGININFOS staticplugins[]=
 	(GETPLUGININFOS)BMP_Disk_libGetPluginInfo,
 	(GETPLUGININFOS)ARBURG_RAW_libGetPluginInfo,
 	(GETPLUGININFOS)XML_libGetPluginInfo,
+	(GETPLUGININFOS)QL_libGetPluginInfo,
 	(GETPLUGININFOS)-1
 };
