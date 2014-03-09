@@ -44,12 +44,11 @@ FTDIFLOPPYEMU=usb_hxcfloppyemulator.o variablebitrate.o
 GUI = main_gui.o about_gui.o batch_converter_window.o floppy_dump_window.o floppy_infos_window.o license_gui.o log.o rawfile_loader_window.o sdhxcfecfg_window.o usbhxcfecfg_window.o cb_batch_converter_window.o cb_floppy_dump_window.o cb_floppy_infos_window.o cb_rawfile_loader_window.o cb_sdhxcfecfg_window.o cb_usbhxcfecfg_window.o cb_filesystem_generator_window.o filesystem_generator_window.o cb_edittool_window.o edittool_window.o
 
 MICROINTRO = microintro.o lzw.o pack.o rle.o hxcmod.o
-FLTKLIB = ../sources/thirdpartylibs/fltk/fltk-1.3.x/lib/libfltk.a ../sources/thirdpartylibs/fltk/fltk-1.3.x/lib/libfltk_images.a
 
 all: $(EXEC)
 
-hxcfloppyemulator: main.o utils.o $(GUI) $(MICROINTRO) loader.o soft_cfg_file.o fileselector.o $(FLTKLIB) $(LIBHXCFE) $(LIBUSBHXCFE) ../../../build/libhxcadaptor.a
-	$(CPP) -o $@    $^ $(LDFLAGS)
+hxcfloppyemulator: main.o utils.o $(GUI) $(MICROINTRO) loader.o soft_cfg_file.o fileselector.o $(LIBHXCFE) $(LIBUSBHXCFE) ../../../build/libhxcadaptor.a
+	$(CPP) -o $@    $^ $(LDFLAGS) -lfltk -lfltk_images
 	cp $@ ../../../build
 
 $(LIBHXCFE): ../../../build/$(LIBHXCFE)
