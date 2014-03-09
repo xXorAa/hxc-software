@@ -1,0 +1,8 @@
+*.o
+*.so
+*.a
+HxCFloppyEmulator/HxCFloppyEmulator_cmdline/trunk/build/hxcfe
+HxCFloppyEmulator/HxCFloppyEmulator_software/trunk/build/hxcfloppyemulator
+HxCFloppyEmulator/build/hxcfe
+HxCFloppyEmulator/build/hxcfloppyemulator
+
