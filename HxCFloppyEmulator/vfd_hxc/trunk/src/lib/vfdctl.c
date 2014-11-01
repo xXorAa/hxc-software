@@ -1324,9 +1324,10 @@ DWORD WINAPI VfdOpenImage(
 	int i,fsize;
 
 	int side,track,nbsect,nbside,nbtrack;
-	HXCFLOPPYEMULATOR* hxcfe;
-	FLOPPY * fp;
-	SECTORSEARCH* ss;
+	HXCFE* hxcfe;
+	HXCFE_FLOPPY * fp;
+	HXCFE_SECTORACCESS* ss;
+	HXCFE_IMGLDR * imgldr_ctx;
 	int loaderId;
 	
 	//
@@ -1351,69 +1352,77 @@ DWORD WINAPI VfdOpenImage(
 	if (sFileName && *sFileName) {
 
 		HANDLE hFile;
-			
+
 		hxcfe=hxcfe_init();
-		
-		loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
-		fp=hxcfe_floppyLoad(hxcfe,(char*)sFileName,loaderId,0);
-		if(fp)
+		if(hxcfe)
 		{
-			image_size=hxcfe_getFloppySize(hxcfe,fp,0);
-			image_buf=malloc(image_size);
-			nbsect=9;
-
-			i=0;
-			fsize=media_tbl[i].number_of_track*media_tbl[i].number_of_side*media_tbl[i].number_of_sector*512;
-			while((i<VFD_MEDIA_MAX) && ((unsigned int)fsize!=image_size))
+			imgldr_ctx = hxcfe_imgInitLoader(hxcfe);
+			if(imgldr_ctx)
 			{
-				i++;
-				fsize=media_tbl[i].number_of_track*media_tbl[i].number_of_side*media_tbl[i].number_of_sector*512;
-			}
-			
-			nbsect=media_tbl[i].number_of_sector;
-			nbtrack=media_tbl[i].number_of_track;
-			nbside=media_tbl[i].number_of_side;
-
-			ss=hxcfe_initSectorSearch(hxcfe,fp);
-
-			for(track=0;track<hxcfe_getNumberOfTrack(hxcfe,fp);track++)
-			{
-				for(side=0;side<hxcfe_getNumberOfSide(hxcfe,fp);side++)
+				loaderId = hxcfe_imgGetLoaderID(imgldr_ctx,"HXC_HFE");
+		
+				fp = hxcfe_imgLoad(imgldr_ctx,(char*)sFileName,loaderId,0);
+				if(fp)
 				{
-					hxcfe_readSectorData(ss,track,side,1,nbsect,512,ISOIBM_MFM_ENCODING,&image_buf[(512*nbsect)*((track*hxcfe_getNumberOfSide(hxcfe,fp))+side)],0);
+					image_size = hxcfe_getFloppySize(hxcfe,fp,0);
+					image_buf = malloc(image_size);
+					nbsect=9;
+
+					i=0;
+					fsize=media_tbl[i].number_of_track*media_tbl[i].number_of_side*media_tbl[i].number_of_sector*512;
+					while((i<VFD_MEDIA_MAX) && ((unsigned int)fsize!=image_size))
+					{
+						i++;
+						fsize=media_tbl[i].number_of_track*media_tbl[i].number_of_side*media_tbl[i].number_of_sector*512;
+					}
+					
+					nbsect=media_tbl[i].number_of_sector;
+					nbtrack=media_tbl[i].number_of_track;
+					nbside=media_tbl[i].number_of_side;
+
+					ss = hxcfe_initSectorAccess(hxcfe,fp);
+
+					for(track=0;track<hxcfe_getNumberOfTrack(hxcfe,fp);track++)
+					{
+						for(side=0;side<hxcfe_getNumberOfSide(hxcfe,fp);side++)
+						{
+							hxcfe_readSectorData(ss,track,side,1,nbsect,512,ISOIBM_MFM_ENCODING,&image_buf[(512*nbsect)*((track*hxcfe_getNumberOfSide(hxcfe,fp))+side)],0);
+						}
+					}
+					
+					
+					hxcfe_deinitSectorAccess(ss);
+
+					hxcfe_imgUnload(imgldr_ctx,fp);
+
+					hxcfe_imgDeInitLoader(imgldr_ctx);
+
+					file_type = VFD_FILETYPE_HFE;
+					
+					VfdWriteProtect(hDevice, FALSE);
+				}
+				else
+				{
+					hxcfe_imgDeInitLoader(imgldr_ctx);
+					hxcfe_deinit(hxcfe);
+
+					//	check file contents and attributes
+
+					hFile = CreateFile(sFileName, GENERIC_READ,
+						FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
+
+					if (hFile == INVALID_HANDLE_VALUE) {
+						ret = GetLastError();
+
+					VFDTRACE(0,
+						(FUNC ": CreateFile(%s) - %s",
+						sFileName, SystemMessage(ret)));
+
+					return ret;
 				}
 			}
-			
-			
-			hxcfe_deinitSectorSearch(ss);
-
-			hxcfe_floppyUnload(hxcfe,fp);
-
 			hxcfe_deinit(hxcfe);
-
-			file_type = VFD_FILETYPE_HFE;
-			
-			VfdWriteProtect(hDevice, FALSE);
 		}
-		else
-		{
-			hxcfe_deinit(hxcfe);
-
-		//	check file contents and attributes
-
-		hFile = CreateFile(sFileName, GENERIC_READ,
-			FILE_SHARE_READ, NULL, OPEN_EXISTING, 0, NULL);
-
-		if (hFile == INVALID_HANDLE_VALUE) {
-			ret = GetLastError();
-
-			VFDTRACE(0,
-				(FUNC ": CreateFile(%s) - %s",
-				sFileName, SystemMessage(ret)));
-
-			return ret;
-		}
-
 		//	try extracting image data from zip compressed file
 
 		ExtractZipImage(hFile, &image_buf, &image_size);
@@ -2758,11 +2767,12 @@ DWORD WINAPI VfdSaveImage(
 	GET_LENGTH_INFORMATION	length;
 	int fpparam;
 	int side,track,nbsect,nbtrack,nbside,sector;
-	HXCFLOPPYEMULATOR* hxcfe;
-	FLOPPY * fp,*fp2;
+	HXCFE* hxcfe;
+	HXCFE_FLOPPY * fp,*fp2;
+	HXCFE_IMGLDR * imgldr_ctx;
 	int loaderId;
 	int image_size;
-	FBuilder* fb;
+	HXCFE_FLPGEN* fb;
 	int i,fsize;
 
 	ret = ERROR_SUCCESS;
@@ -2829,10 +2839,11 @@ DWORD WINAPI VfdSaveImage(
 
 	//	open the destination file
 
-	hxcfe=hxcfe_init();
-	loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
-	fp=hxcfe_floppyLoad(hxcfe,(char*)sFileName,loaderId,0);
-	image_size=length.Length.LowPart;
+	hxcfe = hxcfe_init();
+	imgldr_ctx = hxcfe_imgInitLoader(hxcfe);
+	loaderId = hxcfe_imgGetLoaderID(imgldr_ctx,"HXC_HFE");
+	fp = hxcfe_imgLoad(imgldr_ctx,(char*)sFileName,loaderId,0);
+	image_size = length.Length.LowPart;
 	if(fp)
 	{
 		i=0;
@@ -2874,25 +2885,23 @@ DWORD WINAPI VfdSaveImage(
 		hxcfe_floppyGetSetParams(hxcfe,fp ,GET,DOUBLESTEP,&fpparam);
 		hxcfe_floppyGetSetParams(hxcfe,fp2,SET,DOUBLESTEP,&fpparam);
 
-		hxcfe_floppyExport(hxcfe,fp2,(char*)sFileName,loaderId);
+		hxcfe_imgExport(imgldr_ctx,fp2,(char*)sFileName,loaderId);
 
-		hxcfe_floppyUnload(hxcfe,fp2);
-		hxcfe_floppyUnload(hxcfe,fp);
+		hxcfe_imgUnload(imgldr_ctx,fp2);
+		hxcfe_imgUnload(imgldr_ctx,fp);
 
+		hxcfe_imgDeInitLoader(imgldr_ctx);
 		hxcfe_deinit(hxcfe);
 	}
 	else
 	{
 
 	if(strstr((char*)sFileName,".hfe") || strstr((char*)sFileName,".HFE"))
-	{
-
-		hxcfe=hxcfe_init();
-		
+	{	
 		image_size=length.Length.LowPart;
-		if(hxcfe)
+		if(hxcfe && imgldr_ctx)
 		{		
-			loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
+			loaderId = hxcfe_imgGetLoaderID(imgldr_ctx,"HXC_HFE");
 
 			i=0;
 			fsize=media_tbl[i].number_of_track*media_tbl[i].number_of_side*media_tbl[i].number_of_sector*512;
@@ -2906,7 +2915,7 @@ DWORD WINAPI VfdSaveImage(
 			nbtrack=media_tbl[i].number_of_track;
 			nbside=media_tbl[i].number_of_side;
 
-			fb=hxcfe_initFloppy(hxcfe,nbtrack,nbside);
+			fb = hxcfe_initFloppy(hxcfe,nbtrack,nbside);
 
 			hxcfe_setTrackBitrate(fb,media_tbl[i].bitrate);
 
@@ -2938,10 +2947,11 @@ DWORD WINAPI VfdSaveImage(
 			fpparam=0;
 			hxcfe_floppyGetSetParams(hxcfe,fp2,SET,DOUBLESTEP,&fpparam);
 
-			hxcfe_floppyExport(hxcfe,fp2,(char*)sFileName,loaderId);
+			hxcfe_imgExport(imgldr_ctx,fp2,(char*)sFileName,loaderId);
 
-			hxcfe_floppyUnload(hxcfe,fp2);
+			hxcfe_imgUnload(imgldr_ctx,fp2);
 
+			hxcfe_imgDeInitLoader(imgldr_ctx);
 			hxcfe_deinit(hxcfe);
 
 		}
@@ -3233,8 +3243,9 @@ DWORD WINAPI VfdCheckImageFile(
 #undef	FUNC
 #define FUNC		"VfdCheckImageFile"
 	HANDLE			hFile;
-	HXCFLOPPYEMULATOR* hxcfe;
-	FLOPPY * fp;
+	HXCFE* hxcfe;
+	HXCFE_FLOPPY * fp;
+	HXCFE_IMGLDR * imgldr_ctx;
 	int loaderId;
 	DWORD			ret = ERROR_SUCCESS;
 
@@ -3261,19 +3272,23 @@ DWORD WINAPI VfdCheckImageFile(
 	//	Open the target file
 
 	hxcfe=hxcfe_init();
-	loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
-	fp=hxcfe_floppyLoad(hxcfe,(char*)sFileName,loaderId,0);
+	imgldr_ctx = hxcfe_imgInitLoader(hxcfe);
+	loaderId=hxcfe_imgGetLoaderID(imgldr_ctx,"HXC_HFE");
+	fp=hxcfe_imgLoad(imgldr_ctx,(char*)sFileName,loaderId,0);
 	if(fp)
 	{
 		*pImageSize=hxcfe_getFloppySize(hxcfe,fp,0);
 		*pFileType = VFD_FILETYPE_HFE;
-		
+
+		hxcfe_imgDeInitLoader(imgldr_ctx);
 		hxcfe_deinit(hxcfe);
 	}
 	else
 	{
 
-	hxcfe_deinit(hxcfe);
+		hxcfe_imgDeInitLoader(imgldr_ctx);
+
+		hxcfe_deinit(hxcfe);
 
 	hFile = CreateFile(sFileName, GENERIC_READ | GENERIC_WRITE,
 		0, NULL, OPEN_EXISTING, 0, NULL);
