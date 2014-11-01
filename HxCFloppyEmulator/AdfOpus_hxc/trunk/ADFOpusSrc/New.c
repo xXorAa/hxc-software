@@ -284,9 +284,10 @@ void NewCreateFile(void *lpVoid)
 	int				type = 0;
 	char strNewFileName[MAX_PATH * 2];
 	struct Volume	*vol;
-	HXCFLOPPYEMULATOR* hxcfe;
-	FLOPPY * fp;
+	HXCFE* hxcfe;
+	HXCFE_FLOPPY * fp;
 	int loaderId;
+	HXCFE_IMGLDR *imgldr_ctx;
 
 	Percent = 0;
 
@@ -335,22 +336,24 @@ void NewCreateFile(void *lpVoid)
 	if(iType == BST_CHECKED)
 	{
 		hxcfe=hxcfe_init();
+		imgldr_ctx = hxcfe_imgInitLoader(hxcfe);
 
 		fp=0;
 		// Load the image
-		loaderId=hxcfe_autoSelectLoader(hxcfe,strNewFileName,0);
+		loaderId = hxcfe_imgAutoSetectLoader(imgldr_ctx,strNewFileName,0);
 			// Load the image
 		if(loaderId>=0)
-			fp=hxcfe_floppyLoad(hxcfe,strNewFileName,loaderId,0);
+			fp=hxcfe_imgLoad(imgldr_ctx,strNewFileName,loaderId,0);
 		if(fp)
 		{
 			// Select the HFE loader/exporter.
-			loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
+			loaderId = hxcfe_imgGetLoaderID(imgldr_ctx,"HXC_HFE");
 			// Save the file...
-			hxcfe_floppyExport(hxcfe,fp,gstrFileName,loaderId);
+			hxcfe_imgExport(imgldr_ctx,fp,gstrFileName,loaderId);
 			// Free the loaded image
-			hxcfe_floppyUnload(hxcfe,fp);
+			hxcfe_imgUnload(imgldr_ctx,fp);
 		}
+		hxcfe_imgDeInitLoader(imgldr_ctx);
 		hxcfe_deinit(hxcfe);
 
 		// Delete intermediate adf.

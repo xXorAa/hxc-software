@@ -165,9 +165,10 @@ void BCConvert(HWND dlg)
 	HWND	sl = GetDlgItem(dlg, IDC_BCSTATUS);
 	
 	int side,track,nbsect,image_size;
-	HXCFLOPPYEMULATOR * hxcfe;
-	FLOPPY* fp;
-	SECTORSEARCH* ss;
+	HXCFE * hxcfe;
+	HXCFE_FLOPPY* fp;
+	HXCFE_SECTORACCESS* ss;
+	HXCFE_IMGLDR * imgldr_ctx;
 	int loaderId;
 	unsigned char * floppybuffer;
 	FILE * f;
@@ -240,12 +241,13 @@ void BCConvert(HWND dlg)
 			if(bOverwriting){
 			// Overwrite.
 				// Open HFE
-				hxcfe=hxcfe_init();
-				loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
-				fp=hxcfe_floppyLoad(hxcfe,(char*)inBuf,loaderId,0);
+				hxcfe =  hxcfe_init();
+				imgldr_ctx = hxcfe_imgInitLoader(hxcfe);
+				loaderId = hxcfe_imgGetLoaderID(imgldr_ctx,"HXC_HFE");
+				fp = hxcfe_imgLoad(imgldr_ctx,(char*)inBuf,loaderId,0);
 				if(fp)
 				{
-					image_size=hxcfe_getFloppySize(hxcfe,fp,0);
+					image_size = hxcfe_getFloppySize(hxcfe,fp,0);
 
 					if(image_size)
 					{
@@ -262,7 +264,7 @@ void BCConvert(HWND dlg)
 							break;
 						}
 
-						ss=hxcfe_initSectorSearch(hxcfe,fp);
+						ss = hxcfe_initSectorAccess(hxcfe,fp);
 
 						for(track=0;track<hxcfe_getNumberOfTrack(hxcfe,fp);track++)
 						{
@@ -272,10 +274,11 @@ void BCConvert(HWND dlg)
 							}
 						}
 							
-						hxcfe_deinitSectorSearch(ss);
+						hxcfe_deinitSectorAccess(ss);
 
-						hxcfe_floppyUnload(hxcfe,fp);
+						hxcfe_imgUnload(imgldr_ctx,fp);
 
+						hxcfe_imgDeInitLoader(imgldr_ctx);
 						hxcfe_deinit(hxcfe);
 							
 						f=fopen(outBuf,"wb");
@@ -417,26 +420,29 @@ void BCConvert(HWND dlg)
 			SendMessage(sl, LB_ADDSTRING, 0, (LPARAM)&statusBuf);
 
 			hxcfe=hxcfe_init();
+			imgldr_ctx = hxcfe_imgInitLoader(hxcfe);
 
 			fp=0;
-			loaderId=hxcfe_autoSelectLoader(hxcfe,inBuf,0);
+			loaderId = hxcfe_imgAutoSetectLoader(imgldr_ctx,inBuf,0);
 			// Load the image
 			if(loaderId>=0)
-				fp=hxcfe_floppyLoad(hxcfe,inBuf,loaderId,0);
+				fp = hxcfe_imgLoad(imgldr_ctx,inBuf,loaderId,0);
 			if(fp)
 			{
 				// Select the HFE loader/exporter.
-				loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
+				loaderId=hxcfe_imgGetLoaderID(imgldr_ctx,"HXC_HFE");
 				// Save the file...
-				hxcfe_floppyExport(hxcfe,fp,outBuf,loaderId);
+				hxcfe_imgExport(imgldr_ctx,fp,outBuf,loaderId);
 				// Free the loaded image
-				hxcfe_floppyUnload(hxcfe,fp);
+				hxcfe_imgUnload(imgldr_ctx,fp);
 				strcpy(statusBuf, "...file compressed successfully.");
 			}
 			else
 			{
 				strcpy(statusBuf, "...failed to compress file.");
 			}
+
+			hxcfe_imgDeInitLoader(imgldr_ctx);
 			hxcfe_deinit(hxcfe);
 
 			// Delete intermediate adf.

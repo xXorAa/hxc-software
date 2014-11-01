@@ -300,8 +300,9 @@ void ChildOnDestroy(HWND win)
 {
 	CHILDINFO	*ci = (CHILDINFO *)GetWindowLong(win, 0);
 
-	HXCFLOPPYEMULATOR* hxcfe;
-	FLOPPY * fp;
+	HXCFE* hxcfe;
+	HXCFE_FLOPPY * fp;
+	HXCFE_IMGLDR * imgldr_ctx;
 	int loaderId;
 
 	/* unmount volume and device if this an amiga lister */
@@ -326,13 +327,23 @@ void ChildOnDestroy(HWND win)
 	if(ci->dfDisk == HFE){
 
 		hxcfe=hxcfe_init();
-		loaderId=hxcfe_getLoaderID(hxcfe,"AMIGA_ADF");
-		fp=hxcfe_floppyLoad(hxcfe,(char*)ci->temp_path,loaderId,0);
-		if(fp)
+		if(hxcfe)
 		{
-			loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
-			hxcfe_floppyExport(hxcfe,fp,(char*)ci->orig_path,loaderId);
-			hxcfe_floppyUnload(hxcfe,fp);
+			imgldr_ctx = hxcfe_imgInitLoader(hxcfe);
+			if(imgldr_ctx)
+			{
+				loaderId = hxcfe_imgGetLoaderID(imgldr_ctx,"AMIGA_ADF");
+				
+				fp = hxcfe_imgLoad(imgldr_ctx,(char*)ci->temp_path,loaderId,0);
+				if(fp)
+				{
+					loaderId = hxcfe_imgGetLoaderID(imgldr_ctx,"HXC_HFE");
+					hxcfe_imgExport(imgldr_ctx,fp,(char*)ci->orig_path,loaderId);
+					hxcfe_imgUnload(imgldr_ctx,fp);					
+				}
+
+				hxcfe_imgDeInitLoader(imgldr_ctx);
+			}
 			hxcfe_deinit(hxcfe);
 		}
 

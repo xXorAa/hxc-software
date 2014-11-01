@@ -178,9 +178,10 @@ enum DiskFormat	VolGetFormat(HWND dlg)
 	char	fileName[MAX_PATH];
 
 	int side,track,nbsect;
-	HXCFLOPPYEMULATOR* hxcfe;
-	FLOPPY * fp;
-	SECTORSEARCH* ss;
+	HXCFE* hxcfe;
+	HXCFE_FLOPPY * fp;
+	HXCFE_SECTORACCESS* ss;
+	HXCFE_IMGLDR * imgldr_ctx;
 	int image_size;
 	FILE * f;
 	int loaderId;
@@ -211,11 +212,13 @@ enum DiskFormat	VolGetFormat(HWND dlg)
 
 	// Open HFE
 	hxcfe=hxcfe_init();
-	loaderId=hxcfe_getLoaderID(hxcfe,"HXC_HFE");
-	fp=hxcfe_floppyLoad(hxcfe,(char*)gstrFileName,loaderId,0);
+	imgldr_ctx = hxcfe_imgInitLoader(hxcfe);
+
+	loaderId = hxcfe_imgGetLoaderID(imgldr_ctx,"HXC_HFE");
+	fp = hxcfe_imgLoad(imgldr_ctx,(char*)gstrFileName,loaderId,0);
 	if(fp)
 	{
-		image_size=hxcfe_getFloppySize(hxcfe,fp,0);
+		image_size = hxcfe_getFloppySize(hxcfe,fp,0);
 
 		if(image_size)
 		{
@@ -238,7 +241,7 @@ enum DiskFormat	VolGetFormat(HWND dlg)
 			strcat(gstrFileName, fileName);
 			strcat(gstrFileName, ".adf");
 
-			ss=hxcfe_initSectorSearch(hxcfe,fp);
+			ss=hxcfe_initSectorAccess(hxcfe,fp);
 
 			for(track=0;track<hxcfe_getNumberOfTrack(hxcfe,fp);track++)
 			{
@@ -248,9 +251,11 @@ enum DiskFormat	VolGetFormat(HWND dlg)
 				}
 			}
 				
-			hxcfe_deinitSectorSearch(ss);
+			hxcfe_deinitSectorAccess(ss);
 
-			hxcfe_floppyUnload(hxcfe,fp);
+			hxcfe_imgUnload(imgldr_ctx,fp);
+
+			hxcfe_imgDeInitLoader(imgldr_ctx);
 
 			hxcfe_deinit(hxcfe);
 				
