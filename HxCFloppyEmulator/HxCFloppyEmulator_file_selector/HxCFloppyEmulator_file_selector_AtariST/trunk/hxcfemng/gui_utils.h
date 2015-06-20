@@ -47,6 +47,6 @@ void redraw_statusl();
 int  display_credits();
 unsigned char set_color_scheme(unsigned char color);
 
-#define VERSIONCODE "2.00 beta 1"
-#define DATECODE "2012-08-26"
+#define VERSIONCODE "2.01"
+#define DATECODE "2015-06-20"
 #endif

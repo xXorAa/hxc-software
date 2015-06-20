@@ -151,6 +151,34 @@ void _setlbabase(unsigned long lba)
 }
 
 
+int getext(unsigned char * path, unsigned char * exttodest)
+{
+	int i;
+
+	i = 0;
+	while(path[i] && i<256)
+	{
+		i++;
+	}
+
+	while( i && path[i]!='.')
+	{
+		i--;
+	}
+
+	if(path[i]=='.')
+	{
+		i++;
+		exttodest[0] = path[i];
+		exttodest[1] = path[i+1];
+		exttodest[2] = path[i+2];
+		exttodest[3] = 0;
+	}
+
+	return 0;
+}
+
+
 /**
  * Init the hardware
  * Display Firmware version
@@ -485,10 +513,28 @@ void clear_slot()
 void insert_in_slot(unsigned char drive)
 {
 	void *diskslot_ptr;
+	int j;
+	struct ShortDirectoryEntry * dir_entry;
+
 	diskslot_ptr = sdfecfg_file + 1024 + _slotnumber*128 + drive*64;
+
+	dir_entry = (struct ShortDirectoryEntry *)diskslot_ptr;
 
 	memset(diskslot_ptr, 0, sizeof(disk_in_drive));
 	memcpy(diskslot_ptr, gfl_dirEntLSB_ptr, sizeof(struct ShortDirectoryEntry));
+	
+	// Get the short name - with the file name extension !
+	dir_entry->name[8+3] = 0;
+	memset(dir_entry->name,' ',8+3);
+	getext(gfl_dirEntLSB_ptr->longName,&dir_entry->name[8]);
+
+	j = 0;
+	while(j<8 && gfl_dirEntLSB_ptr->longName[j] != 0 && gfl_dirEntLSB_ptr->longName[j] != '.')
+	{
+		dir_entry->name[j] = gfl_dirEntLSB_ptr->longName[j];
+		j++;
+	}
+
 	display_slot();
 }
 
@@ -731,7 +777,7 @@ void handle_emucfg(void)
 	UWORD ypos = HELP_Y_POS;
 
 	i=0;
-	hxc_printf(0,0,ypos, "SD HxC Floppy Emulator settings:");
+	hxc_printf(0,0,ypos, "HxC Floppy Emulator settings:");
 
 	ypos += 16;
 	hxc_printf(0,0,ypos, "Track step sound :");
@@ -746,7 +792,7 @@ void handle_emucfg(void)
 	hxc_printf(0,SCREEN_XRESOL/2,ypos, "%d s",cfgfile_ptr->back_light_tmr);
 
 	ypos += 8;
-	hxc_printf(0,0,ypos, "SDCard Standby:");
+	hxc_printf(0,0,ypos, "Flash Disk Standby:");
 	hxc_printf(0,SCREEN_XRESOL/2,ypos, "%d s",cfgfile_ptr->standby_tmr);
 
 	ypos += 16;
@@ -903,11 +949,6 @@ void handle_show_all_slots(void)
 		}
 	}while(keylow!=0x0f && !fExit); /* Tab */
 }
-
-
-
-
-
 
 int main(int argc, char* argv[])
 {

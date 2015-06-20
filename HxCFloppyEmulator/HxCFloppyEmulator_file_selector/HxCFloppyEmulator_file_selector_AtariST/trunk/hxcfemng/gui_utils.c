@@ -409,7 +409,7 @@ void display_welcome()
 {
 	int i;
 
-	hxc_printf(1,0,0,"SDCard HxC Floppy Emulator Manager for Atari ST");
+	hxc_printf(1,0,0,"HxC Floppy Emulator Manager for Atari ST");
 	h_line(8,0xFFFF) ;
 
 	i=0;
@@ -431,8 +431,8 @@ int display_credits(int i)
 {
 	int j;
 	char *strings[] = {
-		"SDCard HxC Floppy Emulator file selector for Atari ST",
-		"(c) 2006-2014 Jean-Francois DEL NERO (HxC2001) / Gilles Bouthenot",
+		"HxC Floppy Emulator file selector for Atari ST",
+		"(c) 2006-2015 Jean-Francois DEL NERO (HxC2001) / Gilles Bouthenot",
 		"Official website: http://www.hxc2001.com/",
 		"Email: hxc2001@hxc2001.com"
 	};
