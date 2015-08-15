@@ -1,7 +1,7 @@
 /*
 //
 // Copyright (C) 2006-2014 Jean-François DEL NERO
-// Copyright (C) 2014 Graeme Gregory <gg@slimlogic.co.uk>
+// Copyright (C) 2014-2015 Graeme Gregory <gg@slimlogic.co.uk>
 //
 // This file is part of the HxCFloppyEmulator library
 //
@@ -48,8 +48,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <arpa/inet.h>
 
 #include "types.h"
+
+#include "internal_libhxcfe.h"
+#include "tracks/track_generator.h"
 #include "libhxcfe.h"
 
 #include "floppy_loader.h"
@@ -58,6 +62,8 @@
 #include "ql_loader.h"
 
 #include "libhxcadaptor.h"
+
+#include "tracks/sector_extractor.h"
 
 struct ql_block0
 {
@@ -81,29 +87,24 @@ struct ql_block0
 	uint8_t map[1];
 };
 
-static uint16_t swapword (uint16_t val)
-{
-    return (uint16_t) (val << 8) + (val >> 8);
-}
-
 #define QL_SSIZE 512
 
-int QL_libIsValidDiskFile(HXCFLOPPYEMULATOR* floppycontext,char * imgfile)
+int QL_libIsValidDiskFile(HXCFE_IMGLDR* imgldr_ctx,char * imgfile)
 {
 	FILE *f;
 	struct ql_block0 b0;
 	int sectors;
 
-	floppycontext->hxc_printf(MSG_DEBUG,"QL_libIsValidDiskFile");
+	imgldr_ctx->hxcfe->hxc_printf(MSG_DEBUG,"IMG_libIsValidDiskFile");
 
 	if(hxc_checkfileext(imgfile,"img"))
 	{
-		floppycontext->hxc_printf(MSG_DEBUG,"QL_libIsValidDiskFile : %s is an QL file !",imgfile);
+		imgldr_ctx->hxcfe->hxc_printf(MSG_DEBUG,"QL_libIsValidDiskFile : %s is an QL file !",imgfile);
 
 		f=hxc_fopen(imgfile,"rb");
 		if(!f)
 		{
-			floppycontext->hxc_printf(MSG_ERROR,"Cannot open %s !",imgfile);
+			imgldr_ctx->hxcfe->hxc_printf(MSG_ERROR,"IMG_libIsValidDiskFile : Cannot open %s !",imgfile);
 			return HXCFE_ACCESSERROR;
 		}
 
@@ -112,13 +113,13 @@ int QL_libIsValidDiskFile(HXCFLOPPYEMULATOR* floppycontext,char * imgfile)
 
 		if(strncmp("QL5",b0.q5a_id,3)!=0)
 		{
-			floppycontext->hxc_printf(MSG_DEBUG,"QL_libIsValidDiskFile : QL5 header missing !");
+			imgldr_ctx->hxcfe->hxc_printf(MSG_DEBUG,"QL_libIsValidDiskFile : non IMG file - invalid header !");
 			return HXCFE_BADFILE;
 		}
 
-		sectors=swapword(b0.q5a_totl);
+		sectors=htons(b0.q5a_totl);
 		if ((sectors!=1440)&&(sectors!=2880)) {
-			floppycontext->hxc_printf(MSG_DEBUG,"QL_libIsValidDiskFile : unknown disk size %d\n",sectors);
+			imgldr_ctx->hxcfe->hxc_printf(MSG_DEBUG,"QL_libIsValidDiskFile : unknown disk size %d\n",sectors);
 			return HXCFE_BADFILE;
 		}
 
@@ -126,14 +127,14 @@ int QL_libIsValidDiskFile(HXCFLOPPYEMULATOR* floppycontext,char * imgfile)
 	}
 	else
 	{
-		floppycontext->hxc_printf(MSG_DEBUG,"QL_libIsValidDiskFile : not .img file !");
+		imgldr_ctx->hxcfe->hxc_printf(MSG_DEBUG,"QL_libIsValidDiskFile : not .img file !");
 		return HXCFE_BADFILE;
 	}
 
 	return HXCFE_BADPARAMETER;
 }
 
-int QL_libLoad_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppydisk,char * imgfile,void * parameters)
+int QL_libLoad_DiskFile(HXCFE_IMGLDR* imgldr_ctx,HXCFE_FLOPPY * floppydisk,char * imgfile,void * parameters)
 {
 	FILE * f;
 	unsigned int filesize;
@@ -143,22 +144,22 @@ int QL_libLoad_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppydisk,cha
 	unsigned char* trackdata;
 	unsigned char gap3len,trackformat,interleave;
 	unsigned short sectorsize;
-	CYLINDER* currentcylinder;
+	HXCFE_CYLINDER* currentcylinder;
 	struct ql_block0 b0;
 	int sectors;
 
-	floppycontext->hxc_printf(MSG_DEBUG,"QL_libLoad_DiskFile %s",imgfile);
+	imgldr_ctx->hxcfe->hxc_printf(MSG_DEBUG,"QL_libLoad_DiskFile %s",imgfile);
 
 	f=hxc_fopen(imgfile,"rb");
 	if(f==NULL)
 	{
-		floppycontext->hxc_printf(MSG_ERROR,"Cannot open %s !",imgfile);
+		imgldr_ctx->hxcfe->hxc_printf(MSG_ERROR,"Cannot open %s !",imgfile);
 		return HXCFE_ACCESSERROR;
 	}
 
 	fread(&b0,sizeof(b0),1,f);
 
-	sectors=swapword(b0.q5a_totl);
+	sectors=htons(b0.q5a_totl);
 	switch(sectors) {
 	case 1440:
 		floppydisk->floppySectorPerTrack=9;
@@ -179,7 +180,7 @@ int QL_libLoad_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppydisk,cha
 
 	floppydisk->floppyNumberOfSide=2;
 	floppydisk->floppyNumberOfTrack=80;
-	floppydisk->tracks=(CYLINDER**)malloc(sizeof(CYLINDER*)*floppydisk->floppyNumberOfTrack);
+	floppydisk->tracks=(HXCFE_CYLINDER**)malloc(sizeof(HXCFE_CYLINDER*)*floppydisk->floppyNumberOfTrack);
 
 	sectorsize=QL_SSIZE;
 	interleave=1;
@@ -207,12 +208,12 @@ int QL_libLoad_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppydisk,cha
 
 	free(trackdata);
 
-	floppycontext->hxc_printf(MSG_INFO_1,"track file successfully loaded and encoded!");
+	imgldr_ctx->hxcfe->hxc_printf(MSG_INFO_1,"track file successfully loaded and encoded!");
 	hxc_fclose(f);
 	return HXCFE_NOERROR;
 }
 
-int QL_libWrite_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppy,char * filename)
+int QL_libWrite_DiskFile(HXCFE_IMGLDR* imgldr_ctx,HXCFE_FLOPPY * floppy,char * filename)
 {
 	int i,j,k,s;
 	FILE * rawfile;
@@ -222,10 +223,10 @@ int QL_libWrite_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppy,char *
 	struct ql_block0 b0;
 	int sectors,sec_track;
 
-	SECTORSEARCH* ss;
-	SECTORCONFIG* sc;
+	HXCFE_SECTORACCESS* ss;
+	HXCFE_SECTCFG* sc;
 
-	floppycontext->hxc_printf(MSG_INFO_1,"Write QL_IMG file %s...",filename);
+	imgldr_ctx->hxcfe->hxc_printf(MSG_INFO_1,"Write QL_IMG file %s...",filename);
 
 	memset(blankblock,0x00,sizeof(blankblock));
 
@@ -237,7 +238,7 @@ int QL_libWrite_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppy,char *
 	rawfile=hxc_fopen(filename,"wb");
 	if(rawfile)
 	{
-		ss=hxcfe_initSectorSearch(floppycontext,floppy);
+		ss=hxcfe_initSectorAccess(imgldr_ctx->hxcfe,floppy);
 
 		/* Get header block to check size */
 		sc=hxcfe_searchSector(ss,0,0,1,ISOIBM_MFM_ENCODING);
@@ -247,17 +248,17 @@ int QL_libWrite_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppy,char *
 
 			if(strncmp("QL5",b0.q5a_id,3)!=0)
 			{
-				floppycontext->hxc_printf(MSG_DEBUG,"QL_libWrite_DiskFile : QL5 header missing\n");
+				imgldr_ctx->hxcfe->hxc_printf(MSG_DEBUG,"QL_libWrite_DiskFile : QL5 header missing\n");
 				goto error;
 			}
 		}
 		else
 		{
-			floppycontext->hxc_printf(MSG_DEBUG,"QL_libWrite_DiskFile : Cannot find root sector\n");
+			imgldr_ctx->hxcfe->hxc_printf(MSG_DEBUG,"QL_libWrite_DiskFile : Cannot find root sector\n");
 			goto error;
 		}
 
-		sectors=swapword(b0.q5a_totl);
+		sectors=htons(b0.q5a_totl);
 		switch(sectors)
 		{
 			case 1440:
@@ -267,7 +268,7 @@ int QL_libWrite_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppy,char *
 				sec_track=18;
 				break;
 			default:
-				floppycontext->hxc_printf(MSG_DEBUG,"QL_libWrite_DiskFile : unknown number of sectors %d\n", sectors);
+				imgldr_ctx->hxcfe->hxc_printf(MSG_DEBUG,"QL_libWrite_DiskFile : unknown number of sectors %d\n", sectors);
 				goto error;
 		}
 
@@ -303,7 +304,7 @@ int QL_libWrite_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppy,char *
 						}
 						else
 						{
-							floppycontext->hxc_printf(MSG_WARNING,"T%.2dH%dS%d : QL Sector not found !?!...",j,i,s);
+							imgldr_ctx->hxcfe->hxc_printf(MSG_WARNING,"T%.2dH%dS%d : QL Sector not found !?!...",j,i,s);
 							// Sector Not found ?!?
 							// Put a blank data sector instead...
 							memset(blankblock,0x00,sizeof(blankblock));
@@ -314,7 +315,7 @@ int QL_libWrite_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppy,char *
 					}
 				}
 			}
-			hxcfe_deinitSectorSearch(ss);
+			hxcfe_deinitSectorAccess(ss);
 		}
 		hxc_fclose(rawfile);
 	}
@@ -322,12 +323,12 @@ int QL_libWrite_DiskFile(HXCFLOPPYEMULATOR* floppycontext,FLOPPY * floppy,char *
 	return 0;
 
 error:
-	hxcfe_deinitSectorSearch(ss);
+	hxcfe_deinitSectorAccess(ss);
 	hxc_fclose(rawfile);
 	return HXCFE_BADFILE;
 }
 
-int QL_libGetPluginInfo(HXCFLOPPYEMULATOR* floppycontext,unsigned long infotype,void * returnvalue)
+int QL_libGetPluginInfo(HXCFE_IMGLDR* imgldr_ctx,uint32_t infotype,void * returnvalue)
 {
 
 	static const char plug_id[]="QL_IMG";
@@ -343,7 +344,7 @@ int QL_libGetPluginInfo(HXCFLOPPYEMULATOR* floppycontext,unsigned long infotype,
 	};
 
 	return libGetPluginInfo(
-			floppycontext,
+			imgldr_ctx,
 			infotype,
 			returnvalue,
 			plug_id,

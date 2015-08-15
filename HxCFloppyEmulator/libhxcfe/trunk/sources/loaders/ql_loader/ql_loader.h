@@ -26,4 +26,4 @@
 //
 */
 
-int QL_libGetPluginInfo(HXCFLOPPYEMULATOR* floppycontext,unsigned long infotype,void * returnvalue);
+int QL_libGetPluginInfo(HXCFE_IMGLDR *imgldr_ctx,uint32_t infotype,void * returnvalue);
